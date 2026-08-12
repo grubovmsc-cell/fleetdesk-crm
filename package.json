@@ -1,0 +1,20 @@
+{
+  "name": "fleetdesk-telegram-bot",
+  "version": "1.0.0",
+  "description": "FleetDesk — Telegram бот для водителей корпоративного автопарка",
+  "main": "bot-manager.js",
+  "scripts": {
+    "start":  "node bot-manager.js",
+    "dev":    "nodemon bot-manager.js",
+    "single": "node bot.js"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.3",
+    "pg":       "^8.11.5",
+    "dotenv":   "^16.4.5",
+    "express":  "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
