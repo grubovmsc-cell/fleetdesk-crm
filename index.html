@@ -1,1 +1,2423 @@
-placeholder
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FleetDesk CRM</title>
+<style>
+:root {
+  --sidebar-bg: #0f172a;
+  --sidebar-w: 220px;
+  --bg: #f1f5f9;
+  --card-bg: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --blue: #3b82f6;
+  --blue-light: #eff6ff;
+  --amber: #f59e0b;
+  --amber-light: #fffbeb;
+  --green: #22c55e;
+  --green-light: #f0fdf4;
+  --red: #ef4444;
+  --red-light: #fef2f2;
+  --purple: #a855f7;
+  --purple-light: #faf5ff;
+  --orange: #f97316;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; font-size: 14px; }
+
+/* ── SIDEBAR ── */
+.sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.logo-mark { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -.5px; }
+.logo-sub  { font-size: 11px; color: #64748b; margin-top: 2px; }
+.sidebar-nav { padding: 12px 8px; flex: 1; }
+.nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #475569; padding: 0 8px; margin: 12px 0 4px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; cursor: pointer; color: #94a3b8; font-size: 13px; font-weight: 500; transition: all .15s; margin-bottom: 1px; }
+.nav-item:hover  { background: rgba(255,255,255,.06); color: #e2e8f0; }
+.nav-item.active { background: rgba(59,130,246,.18); color: #60a5fa; }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+.sidebar-user { padding: 14px 14px; border-top: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 10px; }
+.user-ava { width: 32px; height: 32px; border-radius: 50%; background: #3b82f6; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.user-name { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+.user-role { font-size: 10px; color: #64748b; }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── TOPBAR ── */
+.topbar { background: #fff; border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 60px; flex-shrink: 0; }
+.topbar-title { font-size: 17px; font-weight: 700; }
+.stats-row { display: flex; gap: 6px; margin-left: 8px; }
+.stat-chip { display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid; cursor: pointer; transition: all .15s; }
+.stat-chip:hover { opacity: .8; }
+.stat-chip.all    { background: #f8fafc; border-color: #cbd5e1; color: #475569; }
+.stat-chip.new    { background: var(--amber-light); border-color: #fcd34d; color: #92400e; }
+.stat-chip.wip    { background: var(--blue-light); border-color: #93c5fd; color: #1e40af; }
+.stat-chip.done   { background: var(--green-light); border-color: #86efac; color: #15803d; }
+.stat-chip.urgent { background: var(--red-light); border-color: #fca5a5; color: #b91c1c; }
+.stat-chip.active-filter { box-shadow: 0 0 0 2px currentColor; }
+.topbar-spacer { flex: 1; }
+.search-box { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; width: 220px; }
+.search-box input { border: none; background: none; outline: none; font-size: 13px; width: 100%; color: var(--text); }
+.search-box input::placeholder { color: var(--text-muted); }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg); }
+
+/* ── FILTER BAR ── */
+.filter-bar { background: #fff; border-bottom: 1px solid var(--border); padding: 8px 24px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.filter-bar label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+select.fsel { padding: 5px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 12px; background: #fff; color: var(--text); cursor: pointer; outline: none; }
+select.fsel:focus { border-color: var(--blue); }
+.filter-bar-spacer { flex: 1; }
+.tickets-count { font-size: 12px; color: var(--text-muted); }
+
+/* ── KANBAN ── */
+.kanban { display: flex; gap: 16px; padding: 20px 24px; overflow-x: auto; flex: 1; align-items: flex-start; }
+.column { flex: 0 0 320px; display: flex; flex-direction: column; gap: 10px; }
+.col-header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: var(--radius) var(--radius) 0 0; font-weight: 700; font-size: 13px; border-bottom: 2px solid transparent; }
+.col-header .col-count { margin-left: auto; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.col-wrap { background: rgba(0,0,0,.03); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; gap: 8px; min-height: 120px; }
+
+.col-new .col-header    { background: var(--amber-light); color: #92400e; border-color: var(--amber); }
+.col-new .col-count     { background: var(--amber); color: #fff; }
+.col-wip .col-header    { background: var(--blue-light); color: #1e40af; border-color: var(--blue); }
+.col-wip .col-count     { background: var(--blue); color: #fff; }
+.col-done .col-header   { background: var(--green-light); color: #15803d; border-color: var(--green); }
+.col-done .col-count    { background: var(--green); color: #fff; }
+
+/* ── CARD ── */
+.card { background: var(--card-bg); border-radius: 9px; box-shadow: var(--shadow); padding: 13px 14px; cursor: pointer; transition: all .18s; border: 1px solid var(--border); border-left: 3px solid transparent; }
+.card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.card.urgent { border-left-color: var(--red); }
+.card.high   { border-left-color: var(--orange); }
+.card.medium { border-left-color: var(--blue); }
+.card.low    { border-left-color: #cbd5e1; }
+.card-top { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.card-type-icon { font-size: 16px; }
+.card-num { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+.card-priority { margin-left: auto; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+.pri-urgent { background: #fef2f2; color: #b91c1c; }
+.pri-high   { background: #fff7ed; color: #c2410c; }
+.pri-medium { background: #eff6ff; color: #1e40af; }
+.pri-low    { background: #f8fafc; color: #475569; }
+.card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; line-height: 1.4; }
+.card-meta { display: flex; flex-direction: column; gap: 5px; }
+.card-meta-row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+.card-ava { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.card-contractor { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+
+/* ── MODAL OVERLAY ── */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
+.overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 14px; width: 100%; max-width: 660px; box-shadow: 0 20px 60px rgba(0,0,0,.25); overflow: hidden; margin: auto; }
+.modal-header { display: flex; align-items: center; gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--border); }
+.modal-type-icon { font-size: 24px; }
+.modal-title-block { flex: 1; }
+.modal-num { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 2px; }
+.modal-title { font-size: 16px; font-weight: 700; }
+.modal-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--bg); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+.modal-close:hover { background: var(--border); }
+.modal-body { padding: 20px 22px; }
+.modal-section { margin-bottom: 20px; }
+.modal-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-bottom: 10px; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.info-item { }
+.info-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
+.info-val { font-size: 13px; font-weight: 500; color: var(--text); }
+.status-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.status-btn { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1.5px solid; cursor: pointer; transition: all .15s; background: #fff; }
+.status-btn.active { color: #fff !important; }
+.status-btn.s-new    { border-color: var(--amber); color: #92400e; }
+.status-btn.s-new.active { background: var(--amber); }
+.status-btn.s-wip    { border-color: var(--blue); color: #1e40af; }
+.status-btn.s-wip.active { background: var(--blue); }
+.status-btn.s-wait   { border-color: var(--purple); color: #7e22ce; }
+.status-btn.s-wait.active { background: var(--purple); }
+.status-btn.s-done   { border-color: var(--green); color: #15803d; }
+.status-btn.s-done.active { background: var(--green); }
+.status-btn.s-cancel { border-color: #94a3b8; color: #475569; }
+.status-btn.s-cancel.active { background: #94a3b8; }
+.contractor-sel { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text); outline: none; background: #fff; }
+.contractor-sel:focus { border-color: var(--blue); }
+.comments-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; max-height: 200px; overflow-y: auto; }
+.comment { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+.comment-header { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+.comment-ava { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #fff; }
+.comment-author { font-size: 12px; font-weight: 600; }
+.comment-time { font-size: 11px; color: var(--text-muted); }
+.comment-internal { font-size: 10px; color: var(--purple); background: var(--purple-light); padding: 1px 6px; border-radius: 8px; }
+.comment-text { font-size: 13px; line-height: 1.5; }
+.comment-input-row { display: flex; gap: 8px; }
+.comment-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; resize: none; font-family: inherit; }
+.comment-input:focus { border-color: var(--blue); }
+.history-list { display: flex; flex-direction: column; gap: 0; }
+.history-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.history-item:last-child { border-bottom: none; }
+.history-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.history-text { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.history-text strong { color: var(--text); }
+.modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ── EMPTY STATE ── */
+.empty-col { text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 12px; }
+.empty-col-icon { font-size: 28px; margin-bottom: 6px; opacity: .4; }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow-md); z-index: 200; transform: translateY(80px); opacity: 0; transition: all .3s; }
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+/* ── TABS ── */
+.tab-bar { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 18px; gap: 0; overflow-x: auto; flex-shrink: 0; }
+.tab-btn { padding: 11px 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all .15s; }
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── FIELD EDIT ── */
+.fg { margin-bottom: 14px; }
+.fg-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+.fg-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text); outline: none; background: #fff; font-family: inherit; transition: border-color .15s; }
+.fg-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+.fg-select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text); outline: none; background: #fff; cursor: pointer; }
+.fg-select:focus { border-color: var(--blue); }
+.frow  { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.frow3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.fg-static { padding: 8px 12px; background: var(--bg); border-radius: 8px; font-size: 13px; color: var(--text); border: 1px solid var(--border); }
+
+/* ── STATUS BADGES ── */
+.ibadge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.ib-active   { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+.ib-repair   { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.ib-idle     { background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; }
+.ib-vacation { background: #eff6ff; color: #1e40af; border: 1px solid #93c5fd; }
+.ib-fired    { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+/* ── VEHICLE / DRIVER MODAL ── */
+.vmodal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+.vmodal-overlay.open { display: flex; }
+.vmodal { background: #fff; border-radius: 14px; width: 100%; max-width: 800px; box-shadow: 0 20px 60px rgba(0,0,0,.25); margin: auto; overflow: hidden; display: flex; flex-direction: column; max-height: 92vh; }
+.vmodal-header { padding: 16px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.vmodal-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.vmodal-htext { flex: 1; }
+.vmodal-subtitle { font-size: 11px; color: var(--text-muted); }
+.vmodal-htitle { font-size: 16px; font-weight: 700; }
+.vmodal-tabs { padding: 0 22px; flex-shrink: 0; }
+.vmodal-body { flex: 1; overflow-y: auto; padding: 4px 22px 20px; }
+.vmodal-footer { padding: 12px 22px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; background: #fafbfc; }
+
+/* ── TIMELINE ── */
+.timeline { display: flex; flex-direction: column; }
+.tl-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.tl-item:last-child { border-bottom: none; }
+.tl-left { display: flex; flex-direction: column; align-items: center; width: 12px; flex-shrink: 0; }
+.tl-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
+.tl-line { flex: 1; width: 1px; background: var(--border); margin-top: 4px; }
+.tl-content { flex: 1; }
+.tl-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+.tl-title { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
+.tl-desc  { font-size: 12px; color: var(--text-muted); }
+
+/* ── DEADLINE ROWS ── */
+.dl-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; border-radius: 9px; border: 1px solid var(--border); margin-bottom: 8px; background: #fff; }
+.dl-label { font-size: 13px; font-weight: 600; }
+.dl-date  { font-size: 12px; color: var(--text-muted); }
+.dl-badge { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 10px; }
+.dl-ok   { background: #f0fdf4; color: #15803d; }
+.dl-warn { background: #fffbeb; color: #92400e; }
+.dl-crit { background: #fef2f2; color: #b91c1c; }
+.dl-none { background: #f8fafc; color: #94a3b8; }
+
+/* ── SCORE BAR ── */
+.score-wrap { margin-top: 5px; }
+.score-row  { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.score-label { font-size: 12px; color: var(--text-muted); width: 130px; flex-shrink: 0; }
+.score-bar { flex: 1; height: 6px; background: var(--border); border-radius: 10px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 10px; }
+.score-val  { font-size: 12px; font-weight: 700; width: 35px; text-align: right; flex-shrink: 0; }
+
+/* ── FLEET CARDS ── */
+.fleet-card { background: #fff; border-radius: 11px; padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); cursor: pointer; transition: all .18s; }
+.fleet-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: #c7d7f0; }
+.driver-card { background: #fff; border-radius: 11px; padding: 14px 16px; box-shadow: var(--shadow); border: 1px solid var(--border); cursor: pointer; transition: all .18s; display: flex; align-items: center; gap: 14px; }
+.driver-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); border-color: #c7d7f0; }
+.driver-ava-lg { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0; }
+
+/* ── AUTH SCREEN ── */
+.auth-overlay { position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.auth-overlay.hidden { display: none; }
+.auth-card { background: #fff; border-radius: 16px; width: 420px; box-shadow: 0 24px 80px rgba(0,0,0,.4); overflow: hidden; }
+.auth-header { background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); padding: 32px 32px 24px; text-align: center; color: #fff; }
+.auth-logo { font-size: 28px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 4px; }
+.auth-tagline { font-size: 13px; color: #93c5fd; }
+.auth-tabs { display: flex; border-bottom: 1px solid var(--border); background: #f8fafc; }
+.auth-tab { flex: 1; padding: 12px; text-align: center; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all .15s; }
+.auth-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: #fff; }
+.auth-body { padding: 28px 32px; }
+.auth-field { margin-bottom: 16px; }
+.auth-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+.auth-input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: border-color .15s; color: var(--text); }
+.auth-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+.auth-btn { width: 100%; padding: 12px; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background .15s; }
+.auth-btn:hover { background: #2563eb; }
+.auth-error { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+.auth-error.show { display: block; }
+.auth-demo { margin-top: 20px; padding: 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; }
+.auth-demo-title { font-size: 11px; font-weight: 700; color: #15803d; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.auth-demo-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; margin-bottom: 4px; cursor: pointer; padding: 4px 6px; border-radius: 5px; transition: background .1s; }
+.auth-demo-row:hover { background: #dcfce7; }
+.auth-demo-company { font-weight: 600; color: #166534; }
+.auth-demo-creds { color: #15803d; font-family: monospace; font-size: 11px; }
+
+/* ── SIDEBAR LOGOUT ── */
+.sidebar-user { padding: 12px 14px; border-top: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 10px; cursor: default; }
+.logout-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #64748b; font-size: 16px; padding: 4px; border-radius: 5px; transition: color .15s; flex-shrink: 0; }
+.logout-btn:hover { color: #ef4444; }
+</style>
+</head>
+<body>
+
+<!-- ── AUTH OVERLAY ── -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo">🚗 FleetDesk</div>
+      <div class="auth-tagline">Система управления корпоративным автопарком</div>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Войти</div>
+      <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Регистрация</div>
+    </div>
+    <div class="auth-body">
+      <div id="auth-error" class="auth-error"></div>
+
+      <!-- LOGIN -->
+      <div id="pane-login">
+        <div class="auth-field">
+          <label>Email</label>
+          <input class="auth-input" id="login-email" type="email" placeholder="admin@company.ru" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label>Пароль</label>
+          <input class="auth-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="auth-btn" onclick="doLogin()">Войти →</button>
+        <div class="auth-demo">
+          <div class="auth-demo-title">🎯 Демо-аккаунты (нажмите для заполнения)</div>
+          <div class="auth-demo-row" onclick="fillDemo('admin@logistics.ru','demo123')">
+            <span class="auth-demo-company">ООО Логистика Плюс</span>
+            <span class="auth-demo-creds">admin@logistics.ru / demo123</span>
+          </div>
+          <div class="auth-demo-row" onclick="fillDemo('admin@express.ru','demo123')">
+            <span class="auth-demo-company">ИП Экспресс Доставка</span>
+            <span class="auth-demo-creds">admin@express.ru / demo123</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="pane-register" style="display:none">
+        <div class="auth-field">
+          <label>Название компании</label>
+          <input class="auth-input" id="reg-company" type="text" placeholder="ООО Ромашка">
+        </div>
+        <div class="auth-field">
+          <label>Ваше имя (Fleet Manager)</label>
+          <input class="auth-input" id="reg-name" type="text" placeholder="Иван Иванов">
+        </div>
+        <div class="auth-field">
+          <label>Email</label>
+          <input class="auth-input" id="reg-email" type="email" placeholder="ivan@company.ru">
+        </div>
+        <div class="auth-field">
+          <label>Пароль</label>
+          <input class="auth-input" id="reg-password" type="password" placeholder="Минимум 6 символов" onkeydown="if(event.key==='Enter')doRegister()">
+        </div>
+        <button class="auth-btn" onclick="doRegister()">Создать аккаунт →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">🚗 FleetDesk</div>
+    <div class="logo-sub" id="sidebar-company">—</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-label">Управление</div>
+    <div class="nav-item active" onclick="setPage('kanban')">
+      <span class="nav-icon">📋</span> Заявки
+      <span class="nav-badge" id="new-badge">3</span>
+    </div>
+    <div class="nav-item" onclick="setPage('fleet')">
+      <span class="nav-icon">🚗</span> Автопарк
+    </div>
+    <div class="nav-item" onclick="setPage('drivers')">
+      <span class="nav-icon">👤</span> Водители
+    </div>
+    <div class="nav-item" onclick="setPage('contractors')">
+      <span class="nav-icon">🔧</span> Подрядчики
+    </div>
+    <div class="nav-label">Аналитика</div>
+    <div class="nav-item" onclick="showToast('Раздел в разработке')">
+      <span class="nav-icon">📊</span> Отчёты
+    </div>
+    <div class="nav-label">Система</div>
+    <div class="nav-item" onclick="setPage('bot')">
+      <span class="nav-icon">🤖</span> Telegram Bot
+    </div>
+    <div class="nav-item" onclick="setPage('settings')">
+      <span class="nav-icon">⚙️</span> Настройки
+    </div>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-ava" id="sidebar-ava">—</div>
+    <div style="flex:1;min-width:0">
+      <div class="user-name" id="sidebar-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+      <div class="user-role">Fleet Manager</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()" title="Выйти">⏻</button>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Заявки</div>
+    <div class="stats-row" id="stats-row">
+      <div class="stat-chip all active-filter" onclick="filterByStatus('all')" id="chip-all">Все <span id="cnt-all">0</span></div>
+      <div class="stat-chip new" onclick="filterByStatus('NEW')" id="chip-new">🆕 Новые <span id="cnt-new">0</span></div>
+      <div class="stat-chip wip" onclick="filterByStatus('IN_PROGRESS')" id="chip-wip">⚙️ В работе <span id="cnt-wip">0</span></div>
+      <div class="stat-chip done" onclick="filterByStatus('DONE')" id="chip-done">✅ Выполнено <span id="cnt-done">0</span></div>
+      <div class="stat-chip urgent" onclick="filterByStatus('urgent')" id="chip-urgent">🚨 Срочные <span id="cnt-urgent">0</span></div>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="search-box">
+      <span>🔍</span>
+      <input id="search-input" placeholder="Поиск заявки..." oninput="applyFilters()">
+    </div>
+    <button class="btn btn-primary" onclick="openNewTicketModal()">+ Новая заявка</button>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar" id="filter-bar">
+    <label>Тип:</label>
+    <select class="fsel" id="filter-type" onchange="applyFilters()">
+      <option value="all">Все типы</option>
+      <option value="breakdown">🔴 Поломка</option>
+      <option value="maintenance">🔧 ТО</option>
+      <option value="tires">🛞 Шины</option>
+      <option value="fuel">⛽ Топливо</option>
+      <option value="documents">📄 Документы</option>
+      <option value="fines">💸 Штрафы</option>
+      <option value="accident">🚨 ДТП</option>
+      <option value="car_wash">🚿 Мойка</option>
+      <option value="replacement">🏥 Подмена</option>
+      <option value="tow_truck">🚛 Эвакуатор</option>
+      <option value="spare_parts">🔩 Запчасти</option>
+      <option value="other">❓ Прочее</option>
+    </select>
+    <label>Приоритет:</label>
+    <select class="fsel" id="filter-priority" onchange="applyFilters()">
+      <option value="all">Все</option>
+      <option value="URGENT">🔴 Срочный</option>
+      <option value="HIGH">🟠 Высокий</option>
+      <option value="MEDIUM">🔵 Средний</option>
+      <option value="LOW">⚪ Низкий</option>
+    </select>
+    <label>Автомобиль:</label>
+    <select class="fsel" id="filter-vehicle" onchange="applyFilters()">
+      <option value="all">Все</option>
+    </select>
+    <div class="filter-bar-spacer"></div>
+    <span class="tickets-count" id="tickets-count"></span>
+    <button class="btn btn-ghost" onclick="resetFilters()">Сбросить</button>
+  </div>
+
+  <!-- KANBAN VIEW -->
+  <div class="kanban" id="kanban-view">
+    <div class="column col-new">
+      <div class="col-header">🆕 Новые <span class="col-count" id="col-cnt-new">0</span></div>
+      <div class="col-wrap" id="col-NEW"></div>
+    </div>
+    <div class="column col-wip">
+      <div class="col-header">⚙️ В работе <span class="col-count" id="col-cnt-wip">0</span></div>
+      <div class="col-wrap" id="col-IN_PROGRESS"></div>
+    </div>
+    <div class="column col-done">
+      <div class="col-header">✅ Выполнено <span class="col-count" id="col-cnt-done">0</span></div>
+      <div class="col-wrap" id="col-DONE"></div>
+    </div>
+  </div>
+
+  <!-- OTHER PAGES (fleet, contractors) -->
+  <div id="other-view" style="display:none; padding:24px; overflow-y:auto; flex:1;">
+    <div id="other-content"></div>
+  </div>
+
+</div>
+
+<!-- ── MODAL ── -->
+<div class="overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-type-icon" id="m-icon"></div>
+      <div class="modal-title-block">
+        <div class="modal-num" id="m-num"></div>
+        <div class="modal-title" id="m-title"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Закрыть</button>
+      <button class="btn btn-primary" onclick="saveModal()">💾 Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── VEHICLE / DRIVER MODAL ── -->
+<div class="vmodal-overlay" id="vmodal-overlay" onclick="handleVOverlayClick(event)">
+  <div class="vmodal" id="vmodal">
+    <div class="vmodal-header">
+      <div class="vmodal-icon" id="vm-icon-wrap"><span id="vm-icon"></span></div>
+      <div class="vmodal-htext">
+        <div class="vmodal-subtitle" id="vm-subtitle"></div>
+        <div class="vmodal-htitle" id="vm-title"></div>
+      </div>
+      <span id="vm-status-badge"></span>
+      <button class="modal-close" onclick="closeVModal()" style="margin-left:8px">✕</button>
+    </div>
+    <div class="vmodal-tabs">
+      <div class="tab-bar" id="vm-tabs"></div>
+    </div>
+    <div class="vmodal-body" id="vm-body"></div>
+    <div class="vmodal-footer">
+      <span id="vm-footer-info" style="font-size:12px;color:var(--text-muted)"></span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="closeVModal()">Закрыть</button>
+        <button class="btn btn-primary" onclick="saveVModal()">💾 Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════
+let USERS = [
+  {
+    id:'u1', name:'Иванов Алексей', initials:'ИА', color:'#3b82f6',
+    telegram:'@ivanov_a', phone:'+7 916 100-11-22', email:'ivanov@fleet.ru',
+    status:'active', license_number:'77 АА 123456', license_category:'B',
+    license_expires:'2029-05-15', medical_expires:'2026-12-01', tachograph:false,
+    briefing_date:'2026-01-15', medical_date:'2026-06-01',
+    has_waybill:true, has_app:true,
+    fuel_card:'4276 3001 1234 5678', transponder:'T-001-2023',
+    assigned_vehicle:'v1', driving_style:4.2, fuel_per_100km:9.1,
+    fines_count:1, accidents_count:0,
+  },
+  {
+    id:'u2', name:'Петрова Светлана', initials:'ПС', color:'#a855f7',
+    telegram:'@petrova_s', phone:'+7 916 200-33-44', email:'petrova@fleet.ru',
+    status:'active', license_number:'77 БВ 234567', license_category:'B',
+    license_expires:'2027-08-20', medical_expires:'2026-09-15', tachograph:false,
+    briefing_date:'2025-12-10', medical_date:'2026-03-10',
+    has_waybill:true, has_app:true,
+    fuel_card:'4276 3001 9876 5432', transponder:'T-002-2022',
+    assigned_vehicle:'v2', driving_style:4.7, fuel_per_100km:13.2,
+    fines_count:0, accidents_count:0,
+  },
+  {
+    id:'u3', name:'Сидоров Дмитрий', initials:'СД', color:'#22c55e',
+    telegram:'@sidorov_d', phone:'+7 916 300-55-66', email:'sidorov@fleet.ru',
+    status:'active', license_number:'50 ГД 345678', license_category:'B, C',
+    license_expires:'2028-03-10', medical_expires:'2026-11-20', tachograph:true,
+    briefing_date:'2026-02-01', medical_date:'2026-05-20',
+    has_waybill:true, has_app:false,
+    fuel_card:'4276 3001 1111 2222', transponder:null,
+    assigned_vehicle:'v3', driving_style:3.5, fuel_per_100km:11.8,
+    fines_count:2, accidents_count:0,
+  },
+  {
+    id:'u4', name:'Козлова Мария', initials:'КМ', color:'#f97316',
+    telegram:'@kozlova_m', phone:'+7 916 400-77-88', email:'kozlova@fleet.ru',
+    status:'vacation', license_number:'77 ЕЖ 456789', license_category:'B, C, D',
+    license_expires:'2026-10-05', medical_expires:'2027-01-30', tachograph:true,
+    briefing_date:'2025-11-15', medical_date:'2026-01-30',
+    has_waybill:false, has_app:true,
+    fuel_card:'4276 3001 3333 4444', transponder:'T-004-2020',
+    assigned_vehicle:'v4', driving_style:4.9, fuel_per_100km:16.4,
+    fines_count:0, accidents_count:0,
+  },
+  {
+    id:'u5', name:'Фёдоров Игорь', initials:'ФИ', color:'#ef4444',
+    telegram:'@fedorov_i', phone:'+7 916 500-99-00', email:'fedorov@fleet.ru',
+    status:'active', license_number:'77 ЗИ 567890', license_category:'B',
+    license_expires:'2030-07-22', medical_expires:'2026-08-15', tachograph:false,
+    briefing_date:'2026-03-01', medical_date:'2026-02-15',
+    has_waybill:true, has_app:true,
+    fuel_card:'4276 3001 5555 6666', transponder:'T-005-2023',
+    assigned_vehicle:'v5', driving_style:3.8, fuel_per_100km:10.2,
+    fines_count:1, accidents_count:1,
+  },
+];
+
+let VEHICLES = [
+  {
+    id:'v1', brand:'Toyota', model:'Camry', year:2021, color:'Белый', plate:'А123БВ77',
+    vin:'JT2BF22K1W0246816', type:'sedan', length:4885, width:1840, height:1445, max_mass:1720,
+    purchase_date:'2021-03-15', purchase_type:'buy', lease_end:null,
+    status:'active', mileage:84200, location:'Офис, Парковка А',
+    next_service_km:90000, next_service_date:'2026-10-01',
+    insurance_until:'2027-01-20', inspection_until:'2027-03-15', tires_change_date:'2027-04-01',
+    fuel_card_number:'4276 3001 1234 5678', fuel_card_code:'FC-001',
+    insurance_policy:'ОСАГО ААА-1234567890', assigned_user_id:'u1',
+    telematics:'Wialon GPS-трекер',
+    tco_monthly:45000, parking:'Офис, Парковка А', operation_mode:'return', availability_window:'08:00–20:00',
+    history:[
+      {date:'2026-05-10', type:'maintenance', desc:'Замена масла и фильтров, ТО-80000', mileage:80200},
+      {date:'2025-11-20', type:'tires',       desc:'Замена резины на зимнюю', mileage:71000},
+      {date:'2025-09-04', type:'repair',      desc:'Замена передних тормозных колодок', mileage:68000},
+      {date:'2025-04-15', type:'tires',       desc:'Замена резины на летнюю', mileage:62000},
+    ]
+  },
+  {
+    id:'v2', brand:'BMW', model:'X5', year:2022, color:'Чёрный', plate:'В456ГД77',
+    vin:'5UXCR6C55KLL56789', type:'suv', length:4922, width:2004, height:1745, max_mass:2720,
+    purchase_date:'2022-01-10', purchase_type:'lease', lease_end:'2025-01-10',
+    status:'repair', mileage:62100, location:'СТО Авторем',
+    next_service_km:65000, next_service_date:'2026-09-01',
+    insurance_until:'2026-08-21', inspection_until:'2026-12-10', tires_change_date:'2026-11-01',
+    fuel_card_number:'4276 3001 9876 5432', fuel_card_code:'FC-002',
+    insurance_policy:'ОСАГО ААА-9876543210', assigned_user_id:'u2',
+    telematics:'Wialon GPS-трекер',
+    tco_monthly:95000, parking:'Офис, Парковка Б', operation_mode:'return', availability_window:'07:00–22:00',
+    history:[
+      {date:'2026-08-11', type:'accident',    desc:'Диагностика — не заводится (текущий ремонт)', mileage:62100},
+      {date:'2026-06-01', type:'maintenance', desc:'Плановое ТО-60000', mileage:60000},
+      {date:'2026-01-15', type:'tires',       desc:'Замена резины на зимнюю', mileage:54000},
+    ]
+  },
+  {
+    id:'v3', brand:'Kia', model:'Sorento', year:2020, color:'Серебристый', plate:'Е789ЖЗ77',
+    vin:'KNAGH814XA5040001', type:'suv', length:4685, width:1900, height:1700, max_mass:2550,
+    purchase_date:'2020-07-20', purchase_type:'buy', lease_end:null,
+    status:'active', mileage:41800, location:'В пути',
+    next_service_km:45000, next_service_date:'2026-11-01',
+    insurance_until:'2027-02-28', inspection_until:'2026-07-20', tires_change_date:'2026-10-15',
+    fuel_card_number:'4276 3001 1111 2222', fuel_card_code:'FC-003',
+    insurance_policy:'ОСАГО БББ-1112223334', assigned_user_id:'u3',
+    telematics:'—',
+    tco_monthly:38000, parking:'Склад № 2, Мытищи', operation_mode:'distributed', availability_window:'Круглосуточно',
+    history:[
+      {date:'2026-03-15', type:'maintenance', desc:'ТО-40000, замена масла, свечей', mileage:40000},
+      {date:'2025-10-10', type:'tires',       desc:'Замена на зимнюю резину', mileage:35000},
+    ]
+  },
+  {
+    id:'v4', brand:'Mercedes', model:'Sprinter', year:2019, color:'Белый', plate:'К012МН77',
+    vin:'WDB9066321R000001', type:'van', length:5910, width:1993, height:2350, max_mass:3500,
+    purchase_date:'2019-04-01', purchase_type:'buy', lease_end:null,
+    status:'active', mileage:128000, location:'Склад № 1, Химки',
+    next_service_km:130000, next_service_date:'2026-08-20',
+    insurance_until:'2026-11-30', inspection_until:'2026-04-01', tires_change_date:'2026-10-20',
+    fuel_card_number:'4276 3001 3333 4444', fuel_card_code:'FC-004',
+    insurance_policy:'ОСАГО ВВВ-4445556667', assigned_user_id:'u4',
+    telematics:'Wialon GPS-трекер',
+    tco_monthly:62000, parking:'Склад № 1, Химки', operation_mode:'distributed', availability_window:'06:00–23:00',
+    history:[
+      {date:'2026-04-05', type:'maintenance', desc:'ТО-125000, замена масла, фильтров, ремня', mileage:125000},
+      {date:'2025-10-01', type:'repair',      desc:'Замена передних амортизаторов', mileage:119000},
+      {date:'2025-04-01', type:'maintenance', desc:'ТО-115000', mileage:115000},
+      {date:'2024-09-15', type:'accident',    desc:'ДТП — вмятина на правом борту, устранена', mileage:108000},
+    ]
+  },
+  {
+    id:'v5', brand:'Lada', model:'Vesta', year:2023, color:'Синий', plate:'О345ПР77',
+    vin:'XTA210900N0000001', type:'sedan', length:4410, width:1764, height:1497, max_mass:1530,
+    purchase_date:'2023-05-10', purchase_type:'buy', lease_end:null,
+    status:'repair', mileage:33500, location:'СТО Авторем (ДТП)',
+    next_service_km:35000, next_service_date:'2026-09-15',
+    insurance_until:'2026-09-10', inspection_until:'2026-05-10', tires_change_date:'2027-04-01',
+    fuel_card_number:'4276 3001 5555 6666', fuel_card_code:'FC-005',
+    insurance_policy:'ОСАГО ГГГ-7778889990', assigned_user_id:'u5',
+    telematics:'Wialon GPS-трекер',
+    tco_monthly:25000, parking:'Офис, Парковка А', operation_mode:'return', availability_window:'09:00–18:00',
+    history:[
+      {date:'2026-08-11', type:'accident',    desc:'ДТП на Садовом кольце, повреждён передний бампер', mileage:33500},
+      {date:'2026-02-01', type:'maintenance', desc:'ТО-30000', mileage:30000},
+      {date:'2025-10-20', type:'tires',       desc:'Замена на зимнюю резину', mileage:27000},
+    ]
+  },
+];
+
+let CONTRACTORS = [
+  { id:'c1', name:'СТО Авторем',       specializations:['breakdown','maintenance','spare_parts'], phone:'+7 495 100-11-22' },
+  { id:'c2', name:'ШинМастер',         specializations:['tires'], phone:'+7 495 200-33-44' },
+  { id:'c3', name:'АвтоДок Сервис',    specializations:['documents','fines'], phone:'+7 495 300-55-66' },
+  { id:'c4', name:'Буксир-Экспресс',   specializations:['tow_truck'], phone:'+7 495 400-77-88' },
+  { id:'c5', name:'АвтоБлеск',         specializations:['car_wash'], phone:'+7 495 500-99-00' },
+];
+
+const TICKET_TYPES = {
+  breakdown:   { name:'Поломка / Неисправность', icon:'🔴' },
+  maintenance: { name:'Плановое ТО',              icon:'🔧' },
+  tires:       { name:'Шины / Резина',            icon:'🛞' },
+  fuel:        { name:'Топливо',                  icon:'⛽' },
+  documents:   { name:'Документы',                icon:'📄' },
+  fines:       { name:'Штрафы',                   icon:'💸' },
+  accident:    { name:'ДТП / Авария',             icon:'🚨' },
+  car_wash:    { name:'Мойка',                    icon:'🚿' },
+  replacement: { name:'Подменный автомобиль',      icon:'🏥' },
+  tow_truck:   { name:'Эвакуатор',                icon:'🚛' },
+  spare_parts: { name:'Запчасти',                 icon:'🔩' },
+  other:       { name:'Прочее',                   icon:'❓' },
+};
+
+const PRIORITY_LABELS = { URGENT:'Срочный', HIGH:'Высокий', MEDIUM:'Средний', LOW:'Низкий' };
+
+let tickets = [
+  {
+    id:'t1', num:'TK-0001', type:'breakdown', title:'Не заводится BMW X5, остановился у офиса',
+    desc:'Утром не смог завести машину. Возможно аккумулятор или стартер. Машина стоит на парковке офиса.',
+    status:'NEW', priority:'HIGH', vehicleId:'v2', userId:'u1', contractorId:null,
+    created:'2026-08-11T08:14:00', due:null,
+    comments:[ { userId:'u1', text:'Машина на парковке Б, место 12', time:'2026-08-11T08:16:00', internal:false } ],
+    history:[ { from:null, to:'NEW', time:'2026-08-11T08:14:00', who:'u1' } ]
+  },
+  {
+    id:'t2', num:'TK-0002', type:'tires', title:'Замена летней резины на зимнюю — 3 автомобиля',
+    desc:'Нужна замена резины на зимнюю на Toyota Camry, Kia Sorento и Lada Vesta. Резина уже куплена, лежит на складе.',
+    status:'NEW', priority:'MEDIUM', vehicleId:'v1', userId:'u2', contractorId:null,
+    created:'2026-08-11T10:02:00', due:'2026-08-15',
+    comments:[], history:[ { from:null, to:'NEW', time:'2026-08-11T10:02:00', who:'u2' } ]
+  },
+  {
+    id:'t3', num:'TK-0003', type:'fines', title:'Штраф за превышение скорости — А123БВ77',
+    desc:'Пришёл штраф на 500 руб за превышение 20 км/ч. Дата нарушения 05.08.2026.',
+    status:'NEW', priority:'LOW', vehicleId:'v1', userId:'u3', contractorId:null,
+    created:'2026-08-10T16:30:00', due:null,
+    comments:[], history:[ { from:null, to:'NEW', time:'2026-08-10T16:30:00', who:'u3' } ]
+  },
+  {
+    id:'t4', num:'TK-0004', type:'maintenance', title:'Плановое ТО — Mercedes Sprinter 128 000 км',
+    desc:'Пробег достиг 128 000 км, необходима замена масла, фильтров. Заодно проверить тормозные колодки.',
+    status:'IN_PROGRESS', priority:'MEDIUM', vehicleId:'v4', userId:'u4', contractorId:'c1',
+    created:'2026-08-09T11:00:00', due:'2026-08-15',
+    comments:[ { userId:'u5', text:'Записали в СТО Авторем на 14 августа 10:00', time:'2026-08-09T14:00:00', internal:true } ],
+    history:[
+      { from:null, to:'NEW', time:'2026-08-09T11:00:00', who:'u4' },
+      { from:'NEW', to:'IN_PROGRESS', time:'2026-08-09T14:05:00', who:'u5' }
+    ]
+  },
+  {
+    id:'t5', num:'TK-0005', type:'fuel', title:'Не работает топливная карта на Kia Sorento',
+    desc:'Пытался заправиться на АЗС Shell, карта отклоняется. Сказали что превышен лимит.',
+    status:'IN_PROGRESS', priority:'HIGH', vehicleId:'v3', userId:'u3', contractorId:null,
+    created:'2026-08-11T12:45:00', due:null,
+    comments:[
+      { userId:'u3', text:'Застрял на заправке, нужна помощь срочно', time:'2026-08-11T12:46:00', internal:false },
+      { userId:'u5', text:'Позвонил в банк, лимит восстановлен. Можете заправляться.', time:'2026-08-11T13:10:00', internal:false }
+    ],
+    history:[
+      { from:null, to:'NEW', time:'2026-08-11T12:45:00', who:'u3' },
+      { from:'NEW', to:'IN_PROGRESS', time:'2026-08-11T12:48:00', who:'u5' }
+    ]
+  },
+  {
+    id:'t6', num:'TK-0006', type:'accident', title:'ДТП на Садовом кольце, Lada Vesta',
+    desc:'Попал в небольшое ДТП. Повреждён передний бампер. Оформили европротокол. Второй участник застрахован в Росгосстрахе.',
+    status:'IN_PROGRESS', priority:'URGENT', vehicleId:'v5', userId:'u5', contractorId:'c1',
+    created:'2026-08-11T09:20:00', due:null,
+    comments:[
+      { userId:'u5', text:'Фото прилагаю, европротокол заполнен', time:'2026-08-11T09:35:00', internal:false },
+      { userId:'u5', text:'Нужно передать в страховую до пятницы', time:'2026-08-11T10:00:00', internal:true }
+    ],
+    history:[
+      { from:null, to:'NEW', time:'2026-08-11T09:20:00', who:'u5' },
+      { from:'NEW', to:'IN_PROGRESS', time:'2026-08-11T09:25:00', who:'u5' }
+    ]
+  },
+  {
+    id:'t7', num:'TK-0007', type:'car_wash', title:'Мойка Toyota Camry после командировки',
+    desc:'Вернулся из командировки в Тулу. Машина очень грязная, нужна полная мойка снаружи и химчистка салона.',
+    status:'DONE', priority:'LOW', vehicleId:'v1', userId:'u1', contractorId:'c5',
+    created:'2026-08-08T17:00:00', due:null,
+    comments:[ { userId:'u5', text:'Готово! Машина у входа', time:'2026-08-09T15:30:00', internal:false } ],
+    history:[
+      { from:null, to:'NEW', time:'2026-08-08T17:00:00', who:'u1' },
+      { from:'NEW', to:'IN_PROGRESS', time:'2026-08-09T09:00:00', who:'u5' },
+      { from:'IN_PROGRESS', to:'DONE', time:'2026-08-09T15:30:00', who:'u5' }
+    ]
+  },
+  {
+    id:'t8', num:'TK-0008', type:'documents', title:'Истекает страховка BMW X5 через 10 дней',
+    desc:'ОСАГО на BMW X5 заканчивается 21 августа. Нужно продлить. Пробег 62 100 км.',
+    status:'DONE', priority:'HIGH', vehicleId:'v2', userId:'u2', contractorId:'c3',
+    created:'2026-08-07T10:00:00', due:'2026-08-20',
+    comments:[ { userId:'u5', text:'Страховка продлена, полис отправлен на email', time:'2026-08-10T11:00:00', internal:false } ],
+    history:[
+      { from:null, to:'NEW', time:'2026-08-07T10:00:00', who:'u2' },
+      { from:'NEW', to:'IN_PROGRESS', time:'2026-08-08T09:00:00', who:'u5' },
+      { from:'IN_PROGRESS', to:'DONE', time:'2026-08-10T11:00:00', who:'u5' }
+    ]
+  },
+];
+
+// ══════════════════════════════════════════
+//  MULTI-TENANT DATABASE
+// ══════════════════════════════════════════
+const DB = {};
+
+// Company 1: ООО Логистика Плюс (existing data)
+DB['co1'] = { vehicles: VEHICLES, users: USERS, contractors: CONTRACTORS, tickets };
+
+// Company 2: ИП Экспресс Доставка (demo second tenant)
+DB['co2'] = {
+  vehicles: [
+    {
+      id:'v_e1', brand:'Ford', model:'Transit', year:2022, color:'Белый', plate:'О777РР77',
+      vin:'WF0XXXTTGXKB12345', type:'van', length:5982, width:2034, height:2474, max_mass:3500,
+      purchase_date:'2022-06-01', purchase_type:'buy', lease_end:null,
+      status:'active', mileage:61000, location:'Склад №1',
+      next_service_km:65000, next_service_date:'2026-09-01',
+      insurance_until:'2027-03-10', inspection_until:'2026-11-01', tires_change_date:'2026-11-15',
+      fuel_card_number:'4276 9001 0001 1111', fuel_card_code:'EX-001',
+      insurance_policy:'ОСАГО БББ-0011223344', assigned_user_id:'u_e1',
+      telematics:'Gurtam Wialon',
+      tco_monthly:55000, parking:'Склад №1', operation_mode:'return', availability_window:'07:00–22:00',
+      history:[
+        {date:'2026-04-15', type:'maintenance', desc:'ТО-60000, замена масла, фильтры', mileage:60000},
+        {date:'2025-11-10', type:'tires',       desc:'Замена на зимнюю резину R16', mileage:52000},
+      ]
+    },
+    {
+      id:'v_e2', brand:'ГАЗ', model:'Газель Next', year:2020, color:'Синий', plate:'К321МН77',
+      vin:'X96330000L2012345', type:'van', length:5480, width:1970, height:2200, max_mass:2800,
+      purchase_date:'2020-09-01', purchase_type:'buy', lease_end:null,
+      status:'repair', mileage:112500, location:'СТО Авто-Эксперт',
+      next_service_km:115000, next_service_date:'2026-08-20',
+      insurance_until:'2026-09-15', inspection_until:'2026-10-01', tires_change_date:'2026-11-01',
+      fuel_card_number:'4276 9001 0001 2222', fuel_card_code:'EX-002',
+      insurance_policy:'ОСАГО ВВВ-9988776655', assigned_user_id:'u_e2',
+      telematics:'Gurtam Wialon',
+      tco_monthly:38000, parking:'Склад №1', operation_mode:'return', availability_window:'08:00–20:00',
+      history:[
+        {date:'2026-08-08', type:'repair',      desc:'Ремонт тормозной системы, замена колодок', mileage:112400},
+        {date:'2026-03-01', type:'maintenance', desc:'ТО-110000', mileage:110000},
+        {date:'2025-11-05', type:'tires',       desc:'Замена на зимнюю резину', mileage:105000},
+      ]
+    },
+  ],
+  users: [
+    {
+      id:'u_e1', name:'Петров Дмитрий', initials:'ПД', color:'#10b981',
+      telegram:'@petrov_d', phone:'+7 916 200-33-44', email:'petrov@express.ru',
+      status:'active', license_number:'77 ВВ 654321', license_category:'B,C',
+      license_expires:'2028-11-20', medical_expires:'2027-03-01', tachograph:true,
+      briefing_date:'2026-05-10', medical_date:'2026-03-01',
+      has_waybill:true, has_app:true,
+      fuel_card:'4276 9001 0001 1111', transponder:'T-EX-001',
+      assigned_vehicle:'v_e1', driving_style:4.5, fuel_per_100km:11.2,
+      fines_count:0, accidents_count:0,
+    },
+    {
+      id:'u_e2', name:'Сидоров Игорь', initials:'СИ', color:'#f59e0b',
+      telegram:'@sidorov_i', phone:'+7 916 300-55-66', email:'sidorov@express.ru',
+      status:'active', license_number:'77 СС 789012', license_category:'B,C,D',
+      license_expires:'2027-04-10', medical_expires:'2026-09-15', tachograph:true,
+      briefing_date:'2026-04-20', medical_date:'2026-09-15',
+      has_waybill:true, has_app:false,
+      fuel_card:'4276 9001 0001 2222', transponder:'T-EX-002',
+      assigned_vehicle:'v_e2', driving_style:3.8, fuel_per_100km:13.5,
+      fines_count:2, accidents_count:1,
+    },
+  ],
+  contractors: [
+    { id:'c_e1', name:'СТО Авто-Эксперт', specializations:['breakdown','maintenance','repair'], phone:'+7 495 700-11-22' },
+    { id:'c_e2', name:'ЭкспрессШина', specializations:['tires'], phone:'+7 495 800-33-44' },
+  ],
+  tickets: [
+    {
+      id:'te1', num:'TK-0001', type:'breakdown', title:'Тормозная система Газели — стук при торможении',
+      desc:'Водитель сообщает о характерном стуке при нажатии на тормоз. Машина направлена на СТО.',
+      priority:'HIGH', status:'IN_PROGRESS', vehicleId:'v_e2', userId:'u_e2', contractorId:'c_e1',
+      created: new Date(Date.now()-86400000*2).toISOString(),
+      comments:[{userId:'u_e2', text:'Отдал машину в СТО вчера утром', time: new Date(Date.now()-86400000).toISOString(), internal:false}],
+      history:[
+        {from:null, to:'NEW', time: new Date(Date.now()-86400000*2).toISOString(), who:'u_e2'},
+        {from:'NEW', to:'IN_PROGRESS', time: new Date(Date.now()-86400000).toISOString(), who:'u_e1'},
+      ]
+    },
+    {
+      id:'te2', num:'TK-0002', type:'tires', title:'Замена резины Ford Transit на зимнюю',
+      desc:'Приближается осень, нужно поменять резину на Transit до 15 ноября.',
+      priority:'MEDIUM', status:'NEW', vehicleId:'v_e1', userId:'u_e1', contractorId:null,
+      created: new Date(Date.now()-86400000).toISOString(),
+      comments:[],
+      history:[{from:null, to:'NEW', time: new Date(Date.now()-86400000).toISOString(), who:'u_e1'}]
+    },
+    {
+      id:'te3', num:'TK-0003', type:'fuel', title:'Пополнить топливную карту EX-002',
+      desc:'На топливной карте Сидорова заканчивается баланс, нужно пополнить.',
+      priority:'LOW', status:'DONE', vehicleId:'v_e2', userId:'u_e1', contractorId:null,
+      created: new Date(Date.now()-86400000*5).toISOString(),
+      comments:[],
+      history:[
+        {from:null, to:'NEW', time: new Date(Date.now()-86400000*5).toISOString(), who:'u_e1'},
+        {from:'NEW', to:'DONE', time: new Date(Date.now()-86400000*4).toISOString(), who:'u_e1'},
+      ]
+    },
+  ],
+};
+
+// ══════════════════════════════════════════
+//  ACCOUNTS & COMPANIES
+// ══════════════════════════════════════════
+const COMPANIES_LIST = [
+  { id:'co1', name:'ООО Логистика Плюс' },
+  { id:'co2', name:'ИП Экспресс Доставка' },
+];
+
+let ACCOUNTS = [
+  { id:'acc1', email:'admin@logistics.ru', password:'demo123', companyId:'co1', name:'Смирнов Алексей', initials:'СА' },
+  { id:'acc2', email:'admin@express.ru',   password:'demo123', companyId:'co2', name:'Козлов Михаил',   initials:'КМ' },
+];
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let state = {
+  statusFilter: 'all',
+  openTicketId: null,
+  page: 'kanban',
+  driverSearch: '',
+  driverStatusFilter: 'all',
+  currentAccount: null,
+  companyId: null,
+  botToken: '',
+  botUsername: '',
+  // URL бот-менеджера — устанавливается в ⚙️ Настройки
+  botManagerUrl: localStorage.getItem('fleetdesk_bot_manager_url') || '',
+  notifySecret:  localStorage.getItem('fleetdesk_notify_secret')    || '',
+};
+
+// ══════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════
+function switchAuthTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('pane-login').style.display    = tab==='login' ? '' : 'none';
+  document.getElementById('pane-register').style.display = tab==='register' ? '' : 'none';
+  setAuthError('');
+}
+
+function setAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.toggle('show', !!msg);
+}
+
+function fillDemo(email, password) {
+  document.getElementById('login-email').value = email;
+  document.getElementById('login-password').value = password;
+  switchAuthTab('login');
+}
+
+function doLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { setAuthError('Введите email и пароль'); return; }
+
+  const account = ACCOUNTS.find(a => a.email === email && a.password === password);
+  if (!account) { setAuthError('Неверный email или пароль'); return; }
+
+  _applyLogin(account);
+}
+
+function doRegister() {
+  const companyName = document.getElementById('reg-company').value.trim();
+  const userName    = document.getElementById('reg-name').value.trim();
+  const email       = document.getElementById('reg-email').value.trim();
+  const password    = document.getElementById('reg-password').value;
+
+  if (!companyName || !userName || !email || !password) { setAuthError('Заполните все поля'); return; }
+  if (password.length < 6) { setAuthError('Пароль минимум 6 символов'); return; }
+  if (ACCOUNTS.find(a => a.email === email)) { setAuthError('Email уже зарегистрирован'); return; }
+
+  const companyId = 'co_' + Date.now();
+  const initials  = userName.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
+  const account   = { id:'acc_'+Date.now(), email, password, companyId, name: userName, initials };
+
+  ACCOUNTS.push(account);
+  COMPANIES_LIST.push({ id: companyId, name: companyName });
+  DB[companyId] = { vehicles: [], users: [], contractors: [], tickets: [] };
+
+  _applyLogin(account);
+}
+
+function _applyLogin(account) {
+  state.currentAccount = account;
+  state.companyId      = account.companyId;
+
+  // Swap working data to this company's dataset
+  const data = DB[account.companyId];
+  VEHICLES    = data.vehicles;
+  USERS       = data.users;
+  CONTRACTORS = data.contractors;
+  tickets     = data.tickets;
+
+  // Update sidebar
+  const company = COMPANIES_LIST.find(c => c.id === account.companyId);
+  document.getElementById('sidebar-company').textContent = company ? company.name : '—';
+  document.getElementById('sidebar-ava').textContent     = account.initials;
+  document.getElementById('sidebar-name').textContent    = account.name;
+
+  // Hide auth, show app, navigate to kanban
+  document.getElementById('auth-overlay').classList.add('hidden');
+  state.page = 'kanban';
+  // Reset nav active state
+  document.querySelectorAll('.nav-item').forEach((el,i) => el.classList.toggle('active', i===0));
+  document.getElementById('kanban-view').style.display = 'flex';
+  document.getElementById('other-view').style.display  = 'none';
+  document.getElementById('filter-bar').style.display  = 'flex';
+  document.getElementById('stats-row').style.display   = 'flex';
+  document.getElementById('page-title').textContent    = 'Заявки';
+  renderKanban();
+}
+
+function doLogout() {
+  state.currentAccount = null;
+  state.companyId      = null;
+  // Clear auth inputs
+  ['login-email','login-password','reg-company','reg-name','reg-email','reg-password'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  setAuthError('');
+  switchAuthTab('login');
+  document.getElementById('auth-overlay').classList.remove('hidden');
+}
+
+// ══════════════════════════════════════════
+//  FILTERING
+// ══════════════════════════════════════════
+function getFiltered() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const fType = document.getElementById('filter-type').value;
+  const fPri  = document.getElementById('filter-priority').value;
+  const fVeh  = document.getElementById('filter-vehicle').value;
+
+  return tickets.filter(t => {
+    if (state.statusFilter === 'urgent' && t.priority !== 'URGENT') return false;
+    if (state.statusFilter !== 'all' && state.statusFilter !== 'urgent' && t.status !== state.statusFilter) return false;
+    if (fType !== 'all' && t.type !== fType) return false;
+    if (fPri  !== 'all' && t.priority !== fPri) return false;
+    if (fVeh  !== 'all' && t.vehicleId !== fVeh) return false;
+    if (search && !t.title.toLowerCase().includes(search) && !t.num.toLowerCase().includes(search)) return false;
+    return true;
+  });
+}
+
+function applyFilters() { renderKanban(); }
+
+function filterByStatus(s) {
+  state.statusFilter = s;
+  ['all','new','wip','done','urgent'].forEach(k => {
+    document.getElementById('chip-'+k)?.classList.remove('active-filter');
+  });
+  const map = { all:'all', NEW:'new', IN_PROGRESS:'wip', DONE:'done', urgent:'urgent' };
+  document.getElementById('chip-' + (map[s]||s))?.classList.add('active-filter');
+  renderKanban();
+}
+
+function resetFilters() {
+  state.statusFilter = 'all';
+  document.getElementById('search-input').value = '';
+  document.getElementById('filter-type').value = 'all';
+  document.getElementById('filter-priority').value = 'all';
+  document.getElementById('filter-vehicle').value = 'all';
+  filterByStatus('all');
+}
+
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+function render() {
+  populateVehicleFilter();
+  updateStatChips();
+  renderKanban();
+}
+
+function populateVehicleFilter() {
+  const sel = document.getElementById('filter-vehicle');
+  if (sel.options.length > 1) return;
+  VEHICLES.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v.id; o.text = v.plate + ' ' + v.brand + ' ' + v.model;
+    sel.appendChild(o);
+  });
+}
+
+function updateStatChips() {
+  const all = tickets.length;
+  const nw  = tickets.filter(t => t.status === 'NEW').length;
+  const wip = tickets.filter(t => t.status === 'IN_PROGRESS').length;
+  const dn  = tickets.filter(t => t.status === 'DONE').length;
+  const urg = tickets.filter(t => t.priority === 'URGENT').length;
+  document.getElementById('cnt-all').textContent    = all;
+  document.getElementById('cnt-new').textContent    = nw;
+  document.getElementById('cnt-wip').textContent    = wip;
+  document.getElementById('cnt-done').textContent   = dn;
+  document.getElementById('cnt-urgent').textContent = urg;
+  document.getElementById('new-badge').textContent  = nw;
+}
+
+function renderKanban() {
+  const filtered = getFiltered();
+  const cols = { NEW:[], IN_PROGRESS:[], DONE:[] };
+  filtered.forEach(t => { if (cols[t.status]) cols[t.status].push(t); });
+
+  ['NEW','IN_PROGRESS','DONE'].forEach(s => {
+    const el = document.getElementById('col-'+s);
+    if (!el) return;
+    if (cols[s].length === 0) {
+      el.innerHTML = '<div class="empty-col"><div class="empty-col-icon">📭</div>Нет заявок</div>';
+    } else {
+      el.innerHTML = cols[s].map(renderCard).join('');
+    }
+  });
+
+  document.getElementById('col-cnt-new').textContent = cols.NEW.length;
+  document.getElementById('col-cnt-wip').textContent = cols.IN_PROGRESS.length;
+  document.getElementById('col-cnt-done').textContent = cols.DONE.length;
+
+  const total = filtered.length;
+  document.getElementById('tickets-count').textContent = `Показано: ${total} из ${tickets.length}`;
+  updateStatChips();
+}
+
+function renderCard(t) {
+  const u   = USERS.find(u => u.id === t.userId) || {};
+  const v   = VEHICLES.find(v => v.id === t.vehicleId) || {};
+  const tp  = TICKET_TYPES[t.type] || {};
+  const ctr = t.contractorId ? CONTRACTORS.find(c => c.id === t.contractorId) : null;
+  const pri = t.priority.toLowerCase();
+  const priLabel = { urgent:'Срочный', high:'Высокий', medium:'Средний', low:'Низкий' }[pri] || '';
+  const dt = new Date(t.created).toLocaleDateString('ru', { day:'2-digit', month:'short' });
+
+  return `<div class="card ${pri}" onclick="openModal('${t.id}')">
+    <div class="card-top">
+      <span class="card-type-icon">${tp.icon||'📋'}</span>
+      <span class="card-num">${t.num}</span>
+      <span class="card-priority pri-${pri}">${priLabel}</span>
+    </div>
+    <div class="card-title">${t.title}</div>
+    <div class="card-meta">
+      <div class="card-meta-row">
+        <div class="card-ava" style="background:${u.color||'#94a3b8'}">${u.initials||'?'}</div>
+        ${u.name||'—'}
+      </div>
+      <div class="card-meta-row">
+        🚗 ${v.plate||'—'} · ${v.brand||''} ${v.model||''}
+      </div>
+      <div class="card-meta-row">
+        📅 ${dt}${t.due ? ' · до ' + new Date(t.due).toLocaleDateString('ru',{day:'2-digit',month:'short'}) : ''}
+      </div>
+    </div>
+    ${ctr ? `<div class="card-contractor">🔧 ${ctr.name}</div>` : ''}
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  MODAL
+// ══════════════════════════════════════════
+function openModal(id) {
+  state.openTicketId = id;
+  const t   = tickets.find(t => t.id === id);
+  if (!t) return;
+  const u   = USERS.find(u => u.id === t.userId) || {};
+  const v   = VEHICLES.find(v => v.id === t.vehicleId) || {};
+  const tp  = TICKET_TYPES[t.type] || {};
+
+  document.getElementById('m-icon').textContent  = tp.icon || '📋';
+  document.getElementById('m-num').textContent   = t.num + ' · ' + tp.name;
+  document.getElementById('m-title').textContent = t.title;
+
+  const statusMap = { NEW:'s-new', IN_PROGRESS:'s-wip', WAITING:'s-wait', DONE:'s-done', CANCELLED:'s-cancel' };
+  const statusNames = { NEW:'Новая', IN_PROGRESS:'В работе', WAITING:'Ожидание', DONE:'Выполнено', CANCELLED:'Отменена' };
+
+  const historyHTML = t.history.slice().reverse().map(h => {
+    const who = USERS.find(u => u.id === h.who);
+    const dt  = new Date(h.time).toLocaleString('ru', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    const colors = { NEW:'#f59e0b', IN_PROGRESS:'#3b82f6', DONE:'#22c55e', CANCELLED:'#94a3b8', WAITING:'#a855f7' };
+    const fromTo = h.from
+      ? `<strong>${statusNames[h.from]||h.from}</strong> → <strong>${statusNames[h.to]||h.to}</strong>`
+      : `Создана со статусом <strong>${statusNames[h.to]||h.to}</strong>`;
+    return `<div class="history-item">
+      <div class="history-dot" style="background:${colors[h.to]||'#94a3b8'}"></div>
+      <div class="history-text">${dt} · ${fromTo}${who ? ' · ' + who.name : ''}</div>
+    </div>`;
+  }).join('');
+
+  const commentsHTML = t.comments.map(c => {
+    const cu = USERS.find(u => u.id === c.userId) || { name:'Система', initials:'СИ', color:'#94a3b8' };
+    const dt = new Date(c.time).toLocaleString('ru', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `<div class="comment">
+      <div class="comment-header">
+        <div class="comment-ava" style="background:${cu.color}">${cu.initials}</div>
+        <span class="comment-author">${cu.name}</span>
+        <span class="comment-time">${dt}</span>
+        ${c.internal ? '<span class="comment-internal">внутренний</span>' : ''}
+      </div>
+      <div class="comment-text">${c.text}</div>
+    </div>`;
+  }).join('');
+
+  const contractorOptions = CONTRACTORS.map(c =>
+    `<option value="${c.id}" ${t.contractorId === c.id ? 'selected' : ''}>${c.name}</option>`
+  ).join('');
+
+  const typeOptions = Object.entries(TICKET_TYPES).map(([key, tp]) =>
+    `<option value="${key}" ${t.type === key ? 'selected' : ''}>${tp.icon} ${tp.name}</option>`
+  ).join('');
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-section">
+      <div class="modal-section-title">Детали заявки</div>
+      <div class="info-grid">
+        <div class="info-item" style="grid-column:span 2">
+          <div class="info-label">Тип заявки</div>
+          <div class="info-val" style="margin-top:4px">
+            <select id="modal-type" class="contractor-sel" style="width:100%" onchange="updateModalTypeIcon(this.value)">
+              ${typeOptions}
+            </select>
+          </div>
+        </div>
+        <div class="info-item"><div class="info-label">Сотрудник</div>
+          <div class="info-val" style="display:flex;align-items:center;gap:6px">
+            <div class="card-ava" style="background:${u.color||'#94a3b8'};width:24px;height:24px;font-size:10px">${u.initials||'?'}</div>
+            ${u.name||'—'}
+          </div>
+        </div>
+        <div class="info-item"><div class="info-label">Автомобиль</div>
+          <div class="info-val">🚗 ${v.plate||'—'} · ${v.brand||''} ${v.model||''}</div>
+        </div>
+        <div class="info-item"><div class="info-label">Приоритет</div>
+          <div class="info-val">${PRIORITY_LABELS[t.priority]||t.priority}</div>
+        </div>
+        <div class="info-item"><div class="info-label">Создана</div>
+          <div class="info-val">${new Date(t.created).toLocaleString('ru',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+        ${t.due ? `<div class="info-item"><div class="info-label">Срок</div><div class="info-val">📅 ${new Date(t.due).toLocaleDateString('ru',{day:'2-digit',month:'long'})}</div></div>` : ''}
+      </div>
+      ${t.desc ? `<div style="margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;font-size:13px;line-height:1.6;color:var(--text-muted)">${t.desc}</div>` : ''}
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Статус</div>
+      <div class="status-btns">
+        <button class="status-btn s-new  ${t.status==='NEW'?'active':''}"         onclick="changeStatus('NEW')">🆕 Новая</button>
+        <button class="status-btn s-wip  ${t.status==='IN_PROGRESS'?'active':''}" onclick="changeStatus('IN_PROGRESS')">⚙️ В работе</button>
+        <button class="status-btn s-wait ${t.status==='WAITING'?'active':''}"     onclick="changeStatus('WAITING')">⏳ Ожидание</button>
+        <button class="status-btn s-done ${t.status==='DONE'?'active':''}"        onclick="changeStatus('DONE')">✅ Выполнено</button>
+        <button class="status-btn s-cancel ${t.status==='CANCELLED'?'active':''}" onclick="changeStatus('CANCELLED')">✕ Отменена</button>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Подрядчик</div>
+      <select class="contractor-sel" id="modal-contractor">
+        <option value="">— Не назначен —</option>
+        ${contractorOptions}
+      </select>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Комментарии (${t.comments.length})</div>
+      <div class="comments-list">${commentsHTML || '<div style="font-size:12px;color:var(--text-muted)">Комментариев нет</div>'}</div>
+      <div class="comment-input-row">
+        <textarea class="comment-input" id="comment-input" rows="2" placeholder="Написать комментарий..."></textarea>
+        <button class="btn btn-primary" onclick="addComment()">Отправить</button>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">История статусов</div>
+      <div class="history-list">${historyHTML}</div>
+    </div>
+  `;
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  state.openTicketId = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function updateModalTypeIcon(typeKey) {
+  const tp = TICKET_TYPES[typeKey] || {};
+  document.getElementById('m-icon').textContent = tp.icon || '📋';
+  const t = tickets.find(t => t.id === state.openTicketId);
+  if (t) document.getElementById('m-num').textContent = t.num + ' · ' + tp.name;
+}
+
+function changeStatus(newStatus) {
+  const t = tickets.find(t => t.id === state.openTicketId);
+  if (!t || t.status === newStatus) return;
+  t.history.push({ from: t.status, to: newStatus, time: new Date().toISOString(), who: 'u5' });
+  t.status = newStatus;
+  if (newStatus === 'DONE') t.closed_at = new Date().toISOString();
+  showToast('Статус изменён → ' + { NEW:'Новая', IN_PROGRESS:'В работе', WAITING:'Ожидание', DONE:'Выполнено', CANCELLED:'Отменена' }[newStatus]);
+  openModal(state.openTicketId);
+  renderKanban();
+}
+
+function addComment() {
+  const t = tickets.find(t => t.id === state.openTicketId);
+  const input = document.getElementById('comment-input');
+  if (!t || !input.value.trim()) return;
+  t.comments.push({ userId:'u5', text: input.value.trim(), time: new Date().toISOString(), internal: false });
+  openModal(state.openTicketId);
+  showToast('Комментарий добавлен');
+}
+
+function saveModal() {
+  const t = tickets.find(t => t.id === state.openTicketId);
+  if (!t) return;
+  const sel = document.getElementById('modal-contractor');
+  t.contractorId = sel.value || null;
+  const typeSel = document.getElementById('modal-type');
+  if (typeSel && typeSel.value) t.type = typeSel.value;
+  renderKanban();
+  showToast('✅ Изменения сохранены');
+  closeModal();
+}
+
+// ══════════════════════════════════════════
+//  NEW TICKET MODAL
+// ══════════════════════════════════════════
+function openNewTicketModal() {
+  const typeOptions = Object.entries(TICKET_TYPES).map(([k,v]) =>
+    `<option value="${k}">${v.icon} ${v.name}</option>`).join('');
+  const vehicleOptions = VEHICLES.map(v =>
+    `<option value="${v.id}">${v.plate} · ${v.brand} ${v.model}</option>`).join('');
+  const userOptions = USERS.map(u =>
+    `<option value="${u.id}">${u.name}</option>`).join('');
+
+  document.getElementById('m-icon').textContent  = '➕';
+  document.getElementById('m-num').textContent   = 'Новая заявка';
+  document.getElementById('m-title').textContent = 'Создание заявки';
+  state.openTicketId = '__new__';
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-section">
+      <div class="info-grid" style="gap:14px">
+        <div class="info-item" style="grid-column:span 2">
+          <div class="info-label">Заголовок *</div>
+          <input id="new-title" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none" placeholder="Коротко опишите проблему">
+        </div>
+        <div class="info-item"><div class="info-label">Тип заявки *</div>
+          <select class="contractor-sel" id="new-type">${typeOptions}</select>
+        </div>
+        <div class="info-item"><div class="info-label">Приоритет</div>
+          <select class="contractor-sel" id="new-priority">
+            <option value="LOW">⚪ Низкий</option>
+            <option value="MEDIUM" selected>🔵 Средний</option>
+            <option value="HIGH">🟠 Высокий</option>
+            <option value="URGENT">🔴 Срочный</option>
+          </select>
+        </div>
+        <div class="info-item"><div class="info-label">Автомобиль</div>
+          <select class="contractor-sel" id="new-vehicle"><option value="">— Не выбрано —</option>${vehicleOptions}</select>
+        </div>
+        <div class="info-item"><div class="info-label">Сотрудник</div>
+          <select class="contractor-sel" id="new-user">${userOptions}</select>
+        </div>
+        <div class="info-item" style="grid-column:span 2">
+          <div class="info-label">Описание</div>
+          <textarea id="new-desc" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;resize:vertical;min-height:80px;font-family:inherit" placeholder="Подробности..."></textarea>
+        </div>
+        <div class="info-item"><div class="info-label">Срок выполнения</div>
+          <input type="date" id="new-due" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function saveModal() {
+  if (state.openTicketId === '__new__') {
+    const title = document.getElementById('new-title')?.value.trim();
+    if (!title) { showToast('⚠️ Введите заголовок'); return; }
+    const newNum = 'TK-' + String(tickets.length + 1).padStart(4,'0');
+    tickets.unshift({
+      id: 't' + Date.now(), num: newNum,
+      type: document.getElementById('new-type').value,
+      title, desc: document.getElementById('new-desc').value,
+      status: 'NEW',
+      priority: document.getElementById('new-priority').value,
+      vehicleId: document.getElementById('new-vehicle').value || null,
+      userId: document.getElementById('new-user').value,
+      contractorId: null,
+      created: new Date().toISOString(),
+      due: document.getElementById('new-due').value || null,
+      comments: [], history: [{ from:null, to:'NEW', time:new Date().toISOString(), who:'u5' }]
+    });
+    showToast('✅ Заявка ' + newNum + ' создана');
+  } else {
+    const t = tickets.find(t => t.id === state.openTicketId);
+    if (t) {
+      const sel = document.getElementById('modal-contractor');
+      if (sel) t.contractorId = sel.value || null;
+    }
+    showToast('✅ Изменения сохранены');
+  }
+  renderKanban();
+  closeModal();
+}
+
+// ══════════════════════════════════════════
+//  PAGES
+// ══════════════════════════════════════════
+function setPage(page) {
+  state.page = page;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  const kanban = document.getElementById('kanban-view');
+  const other  = document.getElementById('other-view');
+  const filterBar = document.getElementById('filter-bar');
+  const statsRow  = document.getElementById('stats-row');
+
+  if (page === 'kanban') {
+    kanban.style.display = 'flex';
+    other.style.display  = 'none';
+    filterBar.style.display = 'flex';
+    statsRow.style.display  = 'flex';
+    document.getElementById('page-title').textContent = 'Заявки';
+    renderKanban();
+  } else if (page === 'fleet') {
+    kanban.style.display = 'none';
+    other.style.display  = 'flex';
+    filterBar.style.display = 'none';
+    statsRow.style.display  = 'none';
+    document.getElementById('page-title').textContent = 'Автопарк';
+    renderFleetPage();
+  } else if (page === 'drivers') {
+    kanban.style.display = 'none';
+    other.style.display  = 'flex';
+    filterBar.style.display = 'none';
+    statsRow.style.display  = 'none';
+    document.getElementById('page-title').textContent = 'Водители';
+    renderDriversPage();
+  } else if (page === 'contractors') {
+    kanban.style.display = 'none';
+    other.style.display  = 'flex';
+    filterBar.style.display = 'none';
+    statsRow.style.display  = 'none';
+    document.getElementById('page-title').textContent = 'Подрядчики';
+    renderContractorsPage();
+  } else if (page === 'bot') {
+    kanban.style.display = 'none';
+    other.style.display  = 'flex';
+    filterBar.style.display = 'none';
+    statsRow.style.display  = 'none';
+    document.getElementById('page-title').textContent = 'Telegram Bot';
+    renderBotPage();
+  } else if (page === 'settings') {
+    kanban.style.display = 'none';
+    other.style.display  = 'flex';
+    filterBar.style.display = 'none';
+    statsRow.style.display  = 'none';
+    document.getElementById('page-title').textContent = 'Настройки';
+    renderSettingsPage();
+  }
+}
+
+// ══════════════════════════════════════════
+//  DRIVERS PAGE
+// ══════════════════════════════════════════
+function renderDriversPage() {
+  const drStatusBadge = (u) => {
+    if (u.status==='active')   return `<span class="ibadge ib-active">На работе</span>`;
+    if (u.status==='vacation') return `<span class="ibadge ib-vacation">В отпуске</span>`;
+    if (u.status==='fired')    return `<span class="ibadge ib-fired">Уволен</span>`;
+    return '';
+  };
+
+  const search = (state.driverSearch||'').toLowerCase();
+  const statusFilter = state.driverStatusFilter || 'all';
+  const today = new Date();
+
+  let filtered = USERS.slice();
+  if (search) {
+    filtered = filtered.filter(u =>
+      u.name.toLowerCase().includes(search) ||
+      (u.phone||'').includes(search) ||
+      (u.telegram||'').toLowerCase().includes(search)
+    );
+  }
+  if (statusFilter !== 'all') {
+    filtered = filtered.filter(u => u.status === statusFilter);
+  }
+
+  const counts = {
+    all: USERS.length,
+    active:   USERS.filter(u=>u.status==='active').length,
+    vacation: USERS.filter(u=>u.status==='vacation').length,
+    fired:    USERS.filter(u=>u.status==='fired').length,
+  };
+
+  const html = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <input type="text" placeholder="🔍 Поиск по имени, телефону, Telegram..."
+        value="${state.driverSearch||''}"
+        oninput="state.driverSearch=this.value;renderDriversPage()"
+        style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+      <select onchange="state.driverStatusFilter=this.value;renderDriversPage()"
+        class="fsel" style="padding:7px 12px;font-size:13px">
+        <option value="all"      ${statusFilter==='all'      ?'selected':''}>Все (${counts.all})</option>
+        <option value="active"   ${statusFilter==='active'   ?'selected':''}>На работе (${counts.active})</option>
+        <option value="vacation" ${statusFilter==='vacation'  ?'selected':''}>В отпуске (${counts.vacation})</option>
+        <option value="fired"    ${statusFilter==='fired'     ?'selected':''}>Уволен (${counts.fired})</option>
+      </select>
+    </div>
+
+    ${filtered.length === 0
+      ? `<div style="text-align:center;color:var(--text-muted);padding:80px 20px;font-size:14px">
+           <div style="font-size:40px;margin-bottom:12px">👤</div>
+           Водители не найдены
+         </div>`
+      : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px">
+          ${filtered.map(u => {
+            const vehicle = VEHICLES.find(v => v.id === u.assigned_vehicle);
+            const activeTickets = tickets.filter(t => t.userId===u.id && t.status!=='DONE' && t.status!=='CANCELLED');
+            const docWarns = [];
+            if (u.license_expires && (new Date(u.license_expires)-today)/86400000 < 60) docWarns.push('⚠ ВУ истекает');
+            if (u.medical_expires && (new Date(u.medical_expires)-today)/86400000 < 30) docWarns.push('⚠ Мед. справка');
+            return `<div class="fleet-card" onclick="openDriverModal('${u.id}')" style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div class="driver-ava-lg" style="background:${u.color}">${u.initials}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+                    <span style="font-weight:700;font-size:14px">${u.name}</span>
+                    ${drStatusBadge(u)}
+                  </div>
+                  <div style="font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.telegram} · ${u.phone}</div>
+                </div>
+              </div>
+              ${docWarns.length>0
+                ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${docWarns.map(w=>`<span style="font-size:11px;background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;padding:2px 8px;border-radius:6px;font-weight:700">${w}</span>`).join('')}</div>`
+                : ''}
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+                <div style="padding:8px;background:var(--bg);border-radius:7px">
+                  <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px">Транспортное средство</div>
+                  <div style="font-weight:600">${vehicle ? vehicle.plate+' · '+vehicle.brand+' '+vehicle.model : '— Без ТС'}</div>
+                </div>
+                <div style="padding:8px;background:var(--bg);border-radius:7px">
+                  <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px">Водительское удостоверение</div>
+                  <div style="font-weight:600">Кат. ${u.license_category} · до ${new Date(u.license_expires).toLocaleDateString('ru',{month:'short',year:'numeric'})}</div>
+                </div>
+                <div style="padding:8px;background:var(--bg);border-radius:7px">
+                  <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px">Стиль вождения</div>
+                  <div style="font-weight:600">⭐ ${u.driving_style}/5 · ${u.fuel_per_100km} л/100км</div>
+                </div>
+                <div style="padding:8px;background:var(--bg);border-radius:7px">
+                  <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px">Активные заявки</div>
+                  <div style="font-weight:600;color:${activeTickets.length>0?'var(--orange)':'var(--green)'}">${activeTickets.length>0?activeTickets.length+' заявок':'Нет заявок'}</div>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`}
+  `;
+  document.getElementById('other-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+//  FLEET PAGE
+// ══════════════════════════════════════════
+function renderFleetPage() {
+  const vTypeLabel = {sedan:'Седан', suv:'Внедорожник/SUV', van:'Микроавтобус/Фургон', truck:'Грузовик'};
+  const statusBadgeHtml = (v) => {
+    const active = tickets.filter(t => t.vehicleId===v.id && t.status!=='DONE' && t.status!=='CANCELLED');
+    const urg    = active.filter(t => t.priority==='URGENT').length;
+    if (v.status==='repair') return `<span class="ibadge ib-repair">🔧 Ремонт</span>`;
+    if (v.status==='idle')   return `<span class="ibadge ib-idle">⏸ Простой</span>`;
+    if (urg>0)  return `<span class="ibadge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5">🚨 ${urg} срочных</span>`;
+    if (active.length>0) return `<span class="ibadge" style="background:#fffbeb;color:#92400e;border:1px solid #fcd34d">${active.length} заявок</span>`;
+    return `<span class="ibadge ib-active">✓ ОК</span>`;
+  };
+
+  const drStatusBadge = (u) => {
+    if (u.status==='active')   return `<span class="ibadge ib-active">На работе</span>`;
+    if (u.status==='vacation') return `<span class="ibadge ib-vacation">В отпуске</span>`;
+    if (u.status==='fired')    return `<span class="ibadge ib-fired">Уволен</span>`;
+    return '';
+  };
+
+  const html = `
+    <h2 style="font-size:15px;font-weight:700;margin-bottom:4px">Автомобили (${VEHICLES.length})</h2>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Нажмите на карточку для просмотра и редактирования</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:32px">
+      ${VEHICLES.map(v => {
+        const driver = USERS.find(u => u.id === v.assigned_user_id);
+        const activeTickets = tickets.filter(t => t.vehicleId===v.id && t.status!=='DONE' && t.status!=='CANCELLED');
+        const typeIcons = {sedan:'🚗', suv:'🚙', van:'🚐', truck:'🚛'};
+        return `<div class="fleet-card" onclick="openVehicleModal('${v.id}')">
+          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
+            <div style="font-size:30px;line-height:1">${typeIcons[v.type]||'🚗'}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:14px">${v.brand} ${v.model} ${v.year}</div>
+              <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-top:1px">${v.plate}</div>
+            </div>
+            ${statusBadgeHtml(v)}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text-muted)">
+            <div>🛣 <strong style="color:var(--text)">${(v.mileage||0).toLocaleString('ru')} км</strong> · До ТО: ${Math.max(0,(v.next_service_km||0)-(v.mileage||0)).toLocaleString('ru')} км</div>
+            <div>📍 ${v.location||'—'}</div>
+            ${driver ? `<div style="display:flex;align-items:center;gap:5px;margin-top:2px">
+              <div style="width:18px;height:18px;border-radius:50%;background:${driver.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700">${driver.initials}</div>
+              ${driver.name}
+            </div>` : ''}
+          </div>
+          ${activeTickets.length>0 ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px">
+            ${activeTickets.map(t=>`<span onclick="event.stopPropagation();openModal('${t.id}')" style="cursor:pointer;display:inline-flex;align-items:center;gap:3px;background:var(--bg);padding:2px 7px;border-radius:6px;font-size:11px;border:1px solid var(--border)">${TICKET_TYPES[t.type]?.icon||'📋'} ${t.num}</span>`).join('')}
+          </div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>
+
+    <h2 style="font-size:15px;font-weight:700;margin-bottom:4px">Водители (${USERS.length})</h2>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Нажмите на карточку для просмотра и редактирования</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${USERS.map(u => {
+        const vehicle = VEHICLES.find(v => v.id === u.assigned_vehicle);
+        const driverTickets = tickets.filter(t => t.userId===u.id && t.status!=='DONE').length;
+        const docWarn = [];
+        const today = new Date();
+        if (u.license_expires && (new Date(u.license_expires)-today)/(86400000)<60) docWarn.push('⚠ ВУ истекает');
+        if (u.medical_expires && (new Date(u.medical_expires)-today)/(86400000)<30) docWarn.push('⚠ Мед. справка');
+        return `<div class="driver-card" onclick="openDriverModal('${u.id}')">
+          <div class="driver-ava-lg" style="background:${u.color}">${u.initials}</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="font-weight:700;font-size:14px">${u.name}</span>
+              ${drStatusBadge(u)}
+              ${docWarn.map(w=>`<span style="font-size:10px;color:#b91c1c;font-weight:700">${w}</span>`).join('')}
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);display:flex;gap:14px;flex-wrap:wrap">
+              ${vehicle ? `<span>🚗 ${vehicle.plate} ${vehicle.brand} ${vehicle.model}</span>` : '<span>Без ТС</span>'}
+              <span>📱 ${u.telegram}</span>
+              <span>ВУ: ${u.license_category}</span>
+              ${driverTickets>0 ? `<span style="color:var(--orange);font-weight:600">${driverTickets} активных заявок</span>` : ''}
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);text-align:right;flex-shrink:0">
+            <div>⭐ ${u.driving_style}/5</div>
+            <div>${u.fuel_per_100km} л/100км</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  document.getElementById('other-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+//  VEHICLE MODAL
+// ══════════════════════════════════════════
+let vModalContext = { type: null, id: null, activeTab: 0 };
+
+function dlBadge(dateStr) {
+  if (!dateStr) return `<span class="dl-badge dl-none">Не указано</span>`;
+  const days = Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+  const label = new Date(dateStr).toLocaleDateString('ru',{day:'2-digit',month:'short',year:'numeric'});
+  if (days < 0)  return `<span class="dl-badge dl-crit">Просрочено</span>`;
+  if (days < 30) return `<span class="dl-badge dl-crit">⚠ ${days} дн.</span>`;
+  if (days < 90) return `<span class="dl-badge dl-warn">${days} дн.</span>`;
+  return `<span class="dl-badge dl-ok">✓ ${days} дн.</span>`;
+}
+
+function dlDate(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('ru',{day:'2-digit',month:'long',year:'numeric'});
+}
+
+function switchTab(idx) {
+  vModalContext.activeTab = idx;
+  document.querySelectorAll('#vm-tabs .tab-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
+  document.querySelectorAll('#vm-body .tab-panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+}
+
+function openVehicleModal(id) {
+  const v = VEHICLES.find(v => v.id === id);
+  if (!v) return;
+  vModalContext = { type:'vehicle', id, activeTab:0 };
+
+  const driver = USERS.find(u => u.id === v.assigned_user_id);
+  const typeIcons = {sedan:'🚗', suv:'🚙', van:'🚐', truck:'🚛'};
+  const vTypeLabel = {sedan:'Седан', suv:'Внедорожник/SUV', van:'Микроавтобус/Фургон', truck:'Грузовик'};
+  const statusLabel = {active:'Активен', repair:'На ремонте', idle:'Простой'};
+  const statusClass = {active:'ib-active', repair:'ib-repair', idle:'ib-idle'};
+  const tlColor = {maintenance:'#3b82f6', repair:'#f97316', tires:'#a855f7', accident:'#ef4444'};
+  const tlLabel = {maintenance:'ТО', repair:'Ремонт', tires:'Шины', accident:'ДТП'};
+
+  document.getElementById('vm-icon-wrap').style.background = v.status==='active'?'#f0fdf4':v.status==='repair'?'#fff7ed':'#f8fafc';
+  document.getElementById('vm-icon').textContent = typeIcons[v.type]||'🚗';
+  document.getElementById('vm-subtitle').textContent = `${v.plate} · VIN: ${v.vin}`;
+  document.getElementById('vm-title').textContent = `${v.brand} ${v.model} ${v.year}`;
+  document.getElementById('vm-status-badge').innerHTML = `<span class="ibadge ${statusClass[v.status]||'ib-idle'}">${statusLabel[v.status]||v.status}</span>`;
+  document.getElementById('vm-footer-info').textContent = `Пробег: ${(v.mileage||0).toLocaleString('ru')} км · TCO: ${(v.tco_monthly||0).toLocaleString('ru')} ₽/мес`;
+
+  const userOptions = USERS.map(u => `<option value="${u.id}" ${v.assigned_user_id===u.id?'selected':''}>${u.name}</option>`).join('');
+
+  const tabs = ['📋 Паспорт','📊 Состояние & Сроки','🔗 Привязки','📜 История','💰 Финансы & Режим'];
+  document.getElementById('vm-tabs').innerHTML = tabs.map((t,i)=>
+    `<div class="tab-btn${i===0?' active':''}" onclick="switchTab(${i})">${t}</div>`).join('');
+
+  document.getElementById('vm-body').innerHTML = `
+    <!-- TAB 0: ПАСПОРТ -->
+    <div class="tab-panel active">
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Марка</div><input class="fg-input" id="v-brand" value="${v.brand}"></div>
+        <div class="fg"><div class="fg-label">Модель</div><input class="fg-input" id="v-model" value="${v.model}"></div>
+      </div>
+      <div class="frow3" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Год выпуска</div><input class="fg-input" id="v-year" value="${v.year}"></div>
+        <div class="fg"><div class="fg-label">Цвет</div><input class="fg-input" id="v-color" value="${v.color}"></div>
+        <div class="fg"><div class="fg-label">Тип кузова</div>
+          <select class="fg-select" id="v-type">
+            <option value="sedan" ${v.type==='sedan'?'selected':''}>Седан</option>
+            <option value="suv"   ${v.type==='suv'?'selected':''}>Внедорожник/SUV</option>
+            <option value="van"   ${v.type==='van'?'selected':''}>Микроавтобус/Фургон</option>
+            <option value="truck" ${v.type==='truck'?'selected':''}>Грузовик</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Госномер</div><input class="fg-input" id="v-plate" value="${v.plate}"></div>
+        <div class="fg"><div class="fg-label">VIN</div><input class="fg-input" id="v-vin" value="${v.vin}" style="font-family:monospace"></div>
+      </div>
+      <div style="background:var(--bg);border-radius:9px;padding:14px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Габариты и масса</div>
+        <div class="frow3">
+          <div class="fg"><div class="fg-label">Длина, мм</div><input class="fg-input" id="v-length" value="${v.length}"></div>
+          <div class="fg"><div class="fg-label">Ширина, мм</div><input class="fg-input" id="v-width" value="${v.width}"></div>
+          <div class="fg"><div class="fg-label">Высота, мм</div><input class="fg-input" id="v-height" value="${v.height}"></div>
+        </div>
+        <div class="fg" style="margin-top:4px"><div class="fg-label">Макс. масса, кг</div><input class="fg-input" id="v-maxmass" value="${v.max_mass}" style="max-width:200px"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><div class="fg-label">Дата покупки / начала лизинга</div><input class="fg-input" type="date" id="v-purchase" value="${v.purchase_date}"></div>
+        <div class="fg"><div class="fg-label">Тип сделки</div>
+          <select class="fg-select" id="v-ptype">
+            <option value="buy"   ${v.purchase_type==='buy'?'selected':''}>Покупка</option>
+            <option value="lease" ${v.purchase_type==='lease'?'selected':''}>Лизинг</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><div class="fg-label">Окончание лизинга</div><input class="fg-input" type="date" id="v-leaseend" value="${v.lease_end||''}"></div>
+    </div>
+
+    <!-- TAB 1: СОСТОЯНИЕ & СРОКИ -->
+    <div class="tab-panel">
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Статус ТС</div>
+          <select class="fg-select" id="v-status">
+            <option value="active"  ${v.status==='active'?'selected':''}>✅ Активен</option>
+            <option value="repair"  ${v.status==='repair'?'selected':''}>🔧 На ремонте</option>
+            <option value="idle"    ${v.status==='idle'?'selected':''}>⏸ Простой</option>
+          </select>
+        </div>
+        <div class="fg"><div class="fg-label">Текущее местоположение</div><input class="fg-input" id="v-location" value="${v.location||''}"></div>
+      </div>
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Пробег, км</div><input class="fg-input" id="v-mileage" type="number" value="${v.mileage}"></div>
+        <div class="fg"><div class="fg-label">Пробег до след. ТО, км</div><input class="fg-input" id="v-nextservicekm" type="number" value="${v.next_service_km}"></div>
+      </div>
+      <div style="margin-top:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Ключевые сроки</div>
+        <div class="dl-row"><span class="dl-label">🔧 Следующее ТО</span><span class="dl-date">${dlDate(v.next_service_date)}</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="v-nextservicedate" value="${v.next_service_date||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(v.next_service_date)}</div></div>
+        <div class="dl-row"><span class="dl-label">🛡 Страховка (ОСАГО)</span><span class="dl-date">${dlDate(v.insurance_until)}</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="v-insurance" value="${v.insurance_until||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(v.insurance_until)}</div></div>
+        <div class="dl-row"><span class="dl-label">🔍 Техосмотр (ТО ГИБДД)</span><span class="dl-date">${dlDate(v.inspection_until)}</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="v-inspection" value="${v.inspection_until||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(v.inspection_until)}</div></div>
+        <div class="dl-row"><span class="dl-label">🛞 Смена резины</span><span class="dl-date">${dlDate(v.tires_change_date)}</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="v-tires" value="${v.tires_change_date||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(v.tires_change_date)}</div></div>
+        ${v.lease_end?`<div class="dl-row"><span class="dl-label">📋 Окончание лизинга</span><span class="dl-date">${dlDate(v.lease_end)}</span>${dlBadge(v.lease_end)}</div>`:''}
+      </div>
+    </div>
+
+    <!-- TAB 2: ПРИВЯЗКИ -->
+    <div class="tab-panel">
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Водитель</div>
+        <div class="fg"><div class="fg-label">Назначенный водитель</div>
+          <select class="fg-select" id="v-driver">
+            <option value="">— Не назначен —</option>
+            ${userOptions}
+          </select>
+        </div>
+        ${driver ? `<div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg);border-radius:9px;margin-top:8px;cursor:pointer" onclick="closeVModal();setTimeout(()=>openDriverModal('${driver.id}'),100)">
+          <div class="driver-ava-lg" style="width:36px;height:36px;font-size:13px;background:${driver.color}">${driver.initials}</div>
+          <div><div style="font-weight:600;font-size:13px">${driver.name}</div><div style="font-size:11px;color:var(--text-muted)">${driver.phone} · ${driver.telegram}</div></div>
+          <span style="margin-left:auto;font-size:12px;color:var(--blue)">Открыть карточку →</span>
+        </div>` : ''}
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Топливная карта</div>
+        <div class="frow">
+          <div class="fg"><div class="fg-label">Номер карты</div><input class="fg-input" id="v-fuelcard" value="${v.fuel_card_number||''}" style="font-family:monospace"></div>
+          <div class="fg"><div class="fg-label">Код у провайдера</div><input class="fg-input" id="v-fuelcode" value="${v.fuel_card_code||''}"></div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Страховой полис</div>
+        <div class="fg"><div class="fg-label">Номер / серия полиса</div><input class="fg-input" id="v-policy" value="${v.insurance_policy||''}"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Телематика / GPS</div>
+        <div class="fg"><div class="fg-label">Устройство / провайдер</div><input class="fg-input" id="v-telematics" value="${v.telematics||''}"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ИСТОРИЯ -->
+    <div class="tab-panel">
+      <div class="timeline">
+        ${(v.history||[]).map((h,i,arr) => `<div class="tl-item">
+          <div class="tl-left">
+            <div class="tl-dot" style="background:${tlColor[h.type]||'#94a3b8'}"></div>
+            ${i<arr.length-1?'<div class="tl-line"></div>':''}
+          </div>
+          <div class="tl-content">
+            <div class="tl-meta">${new Date(h.date).toLocaleDateString('ru',{day:'2-digit',month:'long',year:'numeric'})} · <span style="color:${tlColor[h.type]||'#94a3b8'};font-weight:700">${tlLabel[h.type]||h.type}</span> · ${(h.mileage||0).toLocaleString('ru')} км</div>
+            <div class="tl-desc">${h.desc}</div>
+          </div>
+        </div>`).join('') || '<div style="color:var(--text-muted);font-size:13px;padding:20px 0;text-align:center">История пуста</div>'}
+      </div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px">Добавить запись в историю</div>
+        <div class="frow" style="margin-bottom:8px">
+          <div class="fg"><div class="fg-label">Тип</div>
+            <select class="fg-select" id="h-type">
+              <option value="maintenance">🔧 ТО</option>
+              <option value="repair">🛠 Ремонт</option>
+              <option value="tires">🛞 Шины</option>
+              <option value="accident">🚨 ДТП</option>
+            </select>
+          </div>
+          <div class="fg"><div class="fg-label">Дата</div><input class="fg-input" type="date" id="h-date" value="${new Date().toISOString().split('T')[0]}"></div>
+        </div>
+        <div class="fg"><div class="fg-label">Описание</div><input class="fg-input" id="h-desc" placeholder="Что было сделано..."></div>
+        <div class="fg"><div class="fg-label">Пробег, км</div><input class="fg-input" type="number" id="h-km" value="${v.mileage}"></div>
+        <button class="btn btn-ghost" onclick="addVehicleHistory('${v.id}')" style="margin-top:4px">+ Добавить</button>
+      </div>
+    </div>
+
+    <!-- TAB 4: ФИНАНСЫ & РЕЖИМ -->
+    <div class="tab-panel">
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Финансы (TCO)</div>
+        <div class="fg"><div class="fg-label">Расходы в месяц (TCO), ₽</div><input class="fg-input" type="number" id="v-tco" value="${v.tco_monthly||0}"></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px">
+          ${[['Год',12],['3 года',36],['5 лет',60]].map(([label,mo])=>`
+            <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border)">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">TCO за ${label}</div>
+              <div style="font-size:15px;font-weight:700">${((v.tco_monthly||0)*mo).toLocaleString('ru')} ₽</div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Режим эксплуатации</div>
+        <div class="fg"><div class="fg-label">Тип маршрутизации</div>
+          <select class="fg-select" id="v-opmode">
+            <option value="return"      ${v.operation_mode==='return'?'selected':''}>Возвратный (работник → офис → работник)</option>
+            <option value="distributed" ${v.operation_mode==='distributed'?'selected':''}>Распределённый (хранение на складе/базе)</option>
+          </select>
+        </div>
+        <div class="fg"><div class="fg-label">Место стоянки / хранения</div><input class="fg-input" id="v-parking" value="${v.parking||''}"></div>
+        <div class="fg"><div class="fg-label">Окно доступности (часы работы)</div><input class="fg-input" id="v-window" value="${v.availability_window||''}"></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('vmodal-overlay').classList.add('open');
+}
+
+function addVehicleHistory(vehicleId) {
+  const v = VEHICLES.find(v => v.id === vehicleId);
+  const desc = document.getElementById('h-desc').value.trim();
+  if (!v || !desc) { showToast('⚠ Введите описание'); return; }
+  v.history.unshift({
+    date: document.getElementById('h-date').value,
+    type: document.getElementById('h-type').value,
+    desc, mileage: parseInt(document.getElementById('h-km').value) || v.mileage
+  });
+  showToast('✅ Запись добавлена');
+  openVehicleModal(vehicleId);
+}
+
+// ══════════════════════════════════════════
+//  DRIVER MODAL
+// ══════════════════════════════════════════
+function openDriverModal(id) {
+  const u = USERS.find(u => u.id === id);
+  if (!u) return;
+  vModalContext = { type:'driver', id, activeTab:0 };
+
+  const vehicle = VEHICLES.find(v => v.id === u.assigned_vehicle);
+  const statusLabel = {active:'На работе', vacation:'В отпуске', fired:'Уволен'};
+  const statusClass = {active:'ib-active', vacation:'ib-vacation', fired:'ib-fired'};
+  const driverTickets = tickets.filter(t => t.userId===u.id);
+  const activeTickets = driverTickets.filter(t => t.status!=='DONE' && t.status!=='CANCELLED');
+
+  document.getElementById('vm-icon-wrap').style.background = u.color+'22';
+  document.getElementById('vm-icon').textContent = u.initials;
+  document.getElementById('vm-icon').style.cssText = `font-size:16px;font-weight:700;color:${u.color}`;
+  document.getElementById('vm-subtitle').textContent = `Водитель · ${u.telegram}`;
+  document.getElementById('vm-title').textContent = u.name;
+  document.getElementById('vm-status-badge').innerHTML = `<span class="ibadge ${statusClass[u.status]||'ib-idle'}">${statusLabel[u.status]||u.status}</span>`;
+  document.getElementById('vm-footer-info').textContent = `Заявок всего: ${driverTickets.length} · Активных: ${activeTickets.length}`;
+
+  const vehicleOptions = VEHICLES.map(v => `<option value="${v.id}" ${u.assigned_vehicle===v.id?'selected':''}>${v.plate} · ${v.brand} ${v.model}</option>`).join('');
+
+  const tabs = ['👤 Личные данные','📄 Документы & Допуск','🚗 ТС & История','📊 Поведение & Доступы'];
+  document.getElementById('vm-tabs').innerHTML = tabs.map((t,i)=>
+    `<div class="tab-btn${i===0?' active':''}" onclick="switchTab(${i})">${t}</div>`).join('');
+
+  const scoreColor = (v) => v>=4.5?'#22c55e':v>=3.5?'#f59e0b':'#ef4444';
+
+  document.getElementById('vm-body').innerHTML = `
+    <!-- TAB 0: ЛИЧНЫЕ ДАННЫЕ -->
+    <div class="tab-panel active">
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Имя и фамилия</div><input class="fg-input" id="d-name" value="${u.name}"></div>
+        <div class="fg"><div class="fg-label">Статус</div>
+          <select class="fg-select" id="d-status">
+            <option value="active"   ${u.status==='active'?'selected':''}>✅ На работе</option>
+            <option value="vacation" ${u.status==='vacation'?'selected':''}>🏖 В отпуске</option>
+            <option value="fired"    ${u.status==='fired'?'selected':''}>❌ Уволен</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Телефон</div><input class="fg-input" id="d-phone" value="${u.phone}"></div>
+        <div class="fg"><div class="fg-label">Email</div><input class="fg-input" id="d-email" value="${u.email}"></div>
+      </div>
+      <div class="fg"><div class="fg-label">Telegram</div><input class="fg-input" id="d-telegram" value="${u.telegram}"></div>
+    </div>
+
+    <!-- TAB 1: ДОКУМЕНТЫ & ДОПУСК -->
+    <div class="tab-panel">
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Водительское удостоверение</div>
+        <div class="frow">
+          <div class="fg"><div class="fg-label">Серия и номер</div><input class="fg-input" id="d-licnum" value="${u.license_number}" style="font-family:monospace"></div>
+          <div class="fg"><div class="fg-label">Категории</div><input class="fg-input" id="d-liccat" value="${u.license_category}"></div>
+        </div>
+        <div class="dl-row"><span class="dl-label">📋 Срок действия ВУ</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="d-licexp" value="${u.license_expires||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(u.license_expires)}</div></div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Медицинская справка</div>
+        <div class="dl-row"><span class="dl-label">🏥 Действительна до</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="d-medexp" value="${u.medical_expires||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(u.medical_expires)}</div></div>
+        <div class="dl-row"><span class="dl-label">📅 Последний медосмотр</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="d-meddate" value="${u.medical_date||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"><span class="dl-badge dl-ok">✓</span></div></div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Допуск к работе</div>
+        <div class="dl-row"><span class="dl-label">🛡 Инструктаж</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="d-briefing" value="${u.briefing_date||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"><span class="dl-badge dl-ok">✓</span></div></div>
+        <div class="dl-row"><span class="dl-label">📝 Путевой лист</span>
+          <select id="d-waybill" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+            <option value="1" ${u.has_waybill?'selected':''}>✅ Действующий</option>
+            <option value="0" ${!u.has_waybill?'selected':''}>❌ Нет</option>
+          </select>
+          <span class="dl-badge ${u.has_waybill?'dl-ok':'dl-crit'}">${u.has_waybill?'✓ Есть':'✗ Нет'}</span>
+        </div>
+        <div class="dl-row"><span class="dl-label">📡 Тахограф</span>
+          <select id="d-tacho" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+            <option value="1" ${u.tachograph?'selected':''}>Требуется</option>
+            <option value="0" ${!u.tachograph?'selected':''}>Не требуется</option>
+          </select>
+          <span class="dl-badge ${u.tachograph?'dl-warn':'dl-ok'}">${u.tachograph?'Требуется':'Не нужен'}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: ТС & ИСТОРИЯ -->
+    <div class="tab-panel">
+      <div class="fg" style="margin-bottom:16px">
+        <div class="fg-label">Назначенный автомобиль</div>
+        <select class="fg-select" id="d-vehicle">
+          <option value="">— Без ТС —</option>
+          ${vehicleOptions}
+        </select>
+      </div>
+      ${vehicle ? `<div style="background:var(--bg);border-radius:9px;padding:12px;margin-bottom:16px;cursor:pointer" onclick="closeVModal();setTimeout(()=>openVehicleModal('${vehicle.id}'),100)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:24px">🚗</div>
+          <div><div style="font-weight:700">${vehicle.brand} ${vehicle.model} ${vehicle.year}</div><div style="font-size:12px;color:var(--text-muted)">${vehicle.plate} · ${(vehicle.mileage||0).toLocaleString('ru')} км</div></div>
+          <span style="margin-left:auto;font-size:12px;color:var(--blue)">Открыть карточку →</span>
+        </div>
+      </div>` : ''}
+      <div style="margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Активные заявки (${activeTickets.length})</div>
+        ${activeTickets.length>0 ? activeTickets.map(t=>{
+          const v2=VEHICLES.find(v=>v.id===t.vehicleId);
+          return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;cursor:pointer;border:1px solid var(--border)" onclick="closeVModal();setTimeout(()=>openModal('${t.id}'),100)">
+            <span style="font-size:16px">${TICKET_TYPES[t.type]?.icon||'📋'}</span>
+            <div style="flex:1"><div style="font-size:12px;font-weight:600">${t.num} · ${t.title}</div><div style="font-size:11px;color:var(--text-muted)">${v2?v2.plate:''}</div></div>
+            <span style="font-size:11px;color:var(--blue)">Открыть →</span>
+          </div>`;}).join('')
+        : '<div style="font-size:12px;color:var(--text-muted);padding:12px 0">Активных заявок нет</div>'}
+      </div>
+      <div style="display:flex;gap:16px;padding:12px;background:var(--bg);border-radius:9px;margin-top:12px">
+        <div style="text-align:center;flex:1"><div style="font-size:20px;font-weight:700">${driverTickets.length}</div><div style="font-size:11px;color:var(--text-muted)">Всего заявок</div></div>
+        <div style="text-align:center;flex:1"><div style="font-size:20px;font-weight:700;color:var(--red)">${u.fines_count}</div><div style="font-size:11px;color:var(--text-muted)">Штрафов</div></div>
+        <div style="text-align:center;flex:1"><div style="font-size:20px;font-weight:700;color:var(--orange)">${u.accidents_count}</div><div style="font-size:11px;color:var(--text-muted)">ДТП</div></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ПОВЕДЕНИЕ & ДОСТУПЫ -->
+    <div class="tab-panel">
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Стиль вождения (телематика)</div>
+        <div class="score-wrap">
+          <div class="score-row">
+            <span class="score-label">Общая оценка</span>
+            <div class="score-bar"><div class="score-fill" style="width:${u.driving_style/5*100}%;background:${scoreColor(u.driving_style)}"></div></div>
+            <span class="score-val" style="color:${scoreColor(u.driving_style)}">${u.driving_style}/5</span>
+          </div>
+          <div class="score-row">
+            <span class="score-label">Расход топлива</span>
+            <div class="score-bar"><div class="score-fill" style="width:${Math.min(100,u.fuel_per_100km/20*100)}%;background:#f97316"></div></div>
+            <span class="score-val">${u.fuel_per_100km} л</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <div style="flex:1;background:var(--bg);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border)">
+            <div style="font-size:18px;font-weight:700;color:${scoreColor(u.driving_style)}">${u.driving_style}</div>
+            <div style="font-size:11px;color:var(--text-muted)">Рейтинг вождения</div>
+          </div>
+          <div style="flex:1;background:var(--bg);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border)">
+            <div style="font-size:18px;font-weight:700">${u.fuel_per_100km}</div>
+            <div style="font-size:11px;color:var(--text-muted)">Л/100 км</div>
+          </div>
+          <div style="flex:1;background:var(--bg);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border)">
+            <div style="font-size:18px;font-weight:700;color:var(--red)">${u.fines_count}</div>
+            <div style="font-size:11px;color:var(--text-muted)">Штрафов</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Доступы и инструменты</div>
+        <div class="dl-row"><span class="dl-label">⛽ Топливная карта</span><span style="font-family:monospace;font-size:12px">${u.fuel_card||'—'}</span></div>
+        <div class="dl-row"><span class="dl-label">🛣 Транспондер</span><span style="font-size:12px;color:var(--text-muted)">${u.transponder||'—'}</span></div>
+        <div class="dl-row"><span class="dl-label">📱 Мобильное приложение</span><span class="dl-badge ${u.has_app?'dl-ok':'dl-warn'}">${u.has_app?'✓ Установлено':'Не установлено'}</span></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('vmodal-overlay').classList.add('open');
+}
+
+// ══════════════════════════════════════════
+//  VMODAL SAVE & CLOSE
+// ══════════════════════════════════════════
+function closeVModal() {
+  document.getElementById('vmodal-overlay').classList.remove('open');
+}
+
+function handleVOverlayClick(e) {
+  if (e.target === document.getElementById('vmodal-overlay')) closeVModal();
+}
+
+function saveVModal() {
+  if (vModalContext.type === 'vehicle') {
+    const v = VEHICLES.find(v => v.id === vModalContext.id);
+    if (!v) return;
+    v.brand    = document.getElementById('v-brand')?.value || v.brand;
+    v.model    = document.getElementById('v-model')?.value || v.model;
+    v.year     = parseInt(document.getElementById('v-year')?.value) || v.year;
+    v.color    = document.getElementById('v-color')?.value || v.color;
+    v.type     = document.getElementById('v-type')?.value || v.type;
+    v.plate    = document.getElementById('v-plate')?.value || v.plate;
+    v.vin      = document.getElementById('v-vin')?.value || v.vin;
+    v.length   = parseInt(document.getElementById('v-length')?.value) || v.length;
+    v.width    = parseInt(document.getElementById('v-width')?.value) || v.width;
+    v.height   = parseInt(document.getElementById('v-height')?.value) || v.height;
+    v.max_mass = parseInt(document.getElementById('v-maxmass')?.value) || v.max_mass;
+    v.purchase_date  = document.getElementById('v-purchase')?.value || v.purchase_date;
+    v.purchase_type  = document.getElementById('v-ptype')?.value || v.purchase_type;
+    v.lease_end      = document.getElementById('v-leaseend')?.value || null;
+    v.status         = document.getElementById('v-status')?.value || v.status;
+    v.location       = document.getElementById('v-location')?.value || v.location;
+    v.mileage        = parseInt(document.getElementById('v-mileage')?.value) || v.mileage;
+    v.next_service_km   = parseInt(document.getElementById('v-nextservicekm')?.value) || v.next_service_km;
+    v.next_service_date = document.getElementById('v-nextservicedate')?.value || null;
+    v.insurance_until   = document.getElementById('v-insurance')?.value || null;
+    v.inspection_until  = document.getElementById('v-inspection')?.value || null;
+    v.tires_change_date = document.getElementById('v-tires')?.value || null;
+    v.assigned_user_id  = document.getElementById('v-driver')?.value || null;
+    v.fuel_card_number  = document.getElementById('v-fuelcard')?.value || '';
+    v.fuel_card_code    = document.getElementById('v-fuelcode')?.value || '';
+    v.insurance_policy  = document.getElementById('v-policy')?.value || '';
+    v.telematics        = document.getElementById('v-telematics')?.value || '';
+    v.tco_monthly       = parseInt(document.getElementById('v-tco')?.value) || 0;
+    v.operation_mode    = document.getElementById('v-opmode')?.value || v.operation_mode;
+    v.parking           = document.getElementById('v-parking')?.value || '';
+    v.availability_window = document.getElementById('v-window')?.value || '';
+    showToast('✅ Данные автомобиля сохранены');
+  } else if (vModalContext.type === 'driver') {
+    const u = USERS.find(u => u.id === vModalContext.id);
+    if (!u) return;
+    u.name            = document.getElementById('d-name')?.value || u.name;
+    u.status          = document.getElementById('d-status')?.value || u.status;
+    u.phone           = document.getElementById('d-phone')?.value || u.phone;
+    u.email           = document.getElementById('d-email')?.value || u.email;
+    u.telegram        = document.getElementById('d-telegram')?.value || u.telegram;
+    u.license_number  = document.getElementById('d-licnum')?.value || u.license_number;
+    u.license_category= document.getElementById('d-liccat')?.value || u.license_category;
+    u.license_expires = document.getElementById('d-licexp')?.value || null;
+    u.medical_expires = document.getElementById('d-medexp')?.value || null;
+    u.medical_date    = document.getElementById('d-meddate')?.value || null;
+    u.briefing_date   = document.getElementById('d-briefing')?.value || null;
+    u.has_waybill     = document.getElementById('d-waybill')?.value === '1';
+    u.tachograph      = document.getElementById('d-tacho')?.value === '1';
+    u.assigned_vehicle= document.getElementById('d-vehicle')?.value || null;
+    showToast('✅ Данные водителя сохранены');
+  }
+  renderFleetPage();
+  closeVModal();
+}
+
+// ══════════════════════════════════════════
+//  BOT PAGE
+// ══════════════════════════════════════════
+function renderBotPage() {
+  const botToken    = state.botToken || '';
+  const botUsername = state.botUsername || '';
+  const isActive    = !!botToken;
+  const connectedCount = USERS.filter(u => u.has_app).length;
+
+  const steps = [
+    { n:'1', icon:'🤖', title:'Создать бота', desc:'Напишите @BotFather в Telegram, введите /newbot, придумайте имя и юзернейм. Скопируйте полученный токен.' },
+    { n:'2', icon:'🔑', title:'Вставить токен', desc:'Введите токен ниже и нажмите «Подключить». Бот будет привязан только к вашей компании.' },
+    { n:'3', icon:'📨', title:'Разослать ссылку', desc:'Скопируйте ссылку и отправьте водителям. Они перейдут, нажмут /start и сами заполнят профиль.' },
+  ];
+
+  const html = `
+    <div style="max-width:820px">
+
+      <!-- Header card -->
+      <div style="background:linear-gradient(135deg,#0f172a,#1e40af);border-radius:14px;padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;color:#fff">
+        <div style="width:56px;height:56px;background:rgba(255,255,255,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🤖</div>
+        <div style="flex:1">
+          <div style="font-size:18px;font-weight:800;margin-bottom:4px">Telegram Bot для водителей</div>
+          <div style="font-size:13px;color:#93c5fd">Водители подают заявки, заполняют профиль, получают уведомления — всё через Telegram</div>
+        </div>
+        <div style="background:${isActive?'rgba(34,197,94,.2)':'rgba(239,68,68,.2)'};border:1px solid ${isActive?'rgba(34,197,94,.4)':'rgba(239,68,68,.4)'};padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;color:${isActive?'#86efac':'#fca5a5'};white-space:nowrap">
+          ${isActive ? '✅ Бот активен' : '⚠️ Не настроен'}
+        </div>
+      </div>
+
+      <!-- Config card -->
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px"><span>🔑</span> Подключение бота</div>
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <input type="password" id="bot-token-input" value="${botToken}"
+            placeholder="1234567890:ABCDEFghijklmnop..."
+            onfocus="this.type='text'" onblur="this.type='password'"
+            style="flex:1;padding:9px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:monospace;outline:none;transition:border-color .15s"
+            onfocusin="this.style.borderColor='#3b82f6'">
+          <button class="btn btn-primary" onclick="saveBotToken()">Подключить</button>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted)">
+          Получите токен у <strong>@BotFather</strong> → /newbot → скопируйте токен вида <code style="background:var(--bg);padding:1px 5px;border-radius:4px">123456:ABC...</code>
+        </div>
+        ${isActive ? `
+        <div style="margin-top:16px;padding:14px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px">
+          <div style="font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Ссылка для водителей</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div id="bot-link-box" style="flex:1;padding:8px 12px;background:#fff;border:1px solid #86efac;border-radius:7px;font-size:14px;font-weight:600;color:#1d4ed8;font-family:monospace">
+              https://t.me/${botUsername || 'your_fleet_bot'}
+            </div>
+            <button class="btn btn-ghost" style="border-color:#86efac;color:#15803d" onclick="copyBotLink()">📋 Скопировать</button>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:#15803d">Отправьте эту ссылку водителям — они сами подключатся и заполнят данные</div>
+        </div>
+        ` : ''}
+      </div>
+
+      <!-- How it works -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        ${steps.map(s=>`
+          <div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:18px">
+            <div style="width:28px;height:28px;background:var(--blue);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-bottom:10px">${s.n}</div>
+            <div style="font-size:16px;margin-bottom:6px">${s.icon}</div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px">${s.title}</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.6">${s.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- What driver can do in bot -->
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:14px">📱 Что может сделать водитель в боте</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${[
+            {icon:'📝', title:'Подать заявку', desc:'Выбрать тип (поломка, ТО, шины...), описать проблему, указать ТС — заявка появится в CRM'},
+            {icon:'👤', title:'Заполнить профиль', desc:'Телефон, номер ВУ, категория, срок действия — данные автоматически обновят карточку водителя'},
+            {icon:'📋', title:'Мои заявки', desc:'Список активных заявок с текущим статусом и возможностью добавить комментарий'},
+            {icon:'🔔', title:'Уведомления', desc:'При смене статуса заявки водитель получает мгновенное сообщение с пояснением'},
+          ].map(f=>`
+            <div style="display:flex;gap:12px;padding:12px;background:var(--bg);border-radius:8px">
+              <span style="font-size:22px">${f.icon}</span>
+              <div>
+                <div style="font-weight:600;font-size:13px;margin-bottom:3px">${f.title}</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.5">${f.desc}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Drivers connection status -->
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-weight:700;font-size:14px">Водители</div>
+          <span style="font-size:12px;color:var(--text-muted)">${connectedCount} из ${USERS.length} подключены к боту</span>
+        </div>
+        ${USERS.length === 0
+          ? `<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:13px">Нет водителей. Добавьте их в разделе «Водители».</div>`
+          : USERS.map((u,i) => {
+            const connected = u.has_app;
+            const vehicle = VEHICLES.find(v => v.id === u.assigned_vehicle);
+            const lastItem = i === USERS.length - 1;
+            return `
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;${lastItem?'':'border-bottom:1px solid var(--border)'}">
+                <div class="driver-ava-lg" style="background:${u.color};width:36px;height:36px;font-size:13px">${u.initials}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:13px">${u.name}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">${u.telegram} · ${vehicle ? vehicle.plate+' '+vehicle.brand : 'Без ТС'}</div>
+                </div>
+                <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;${connected?'background:#f0fdf4;color:#15803d;border:1px solid #86efac':'background:#f8fafc;color:#94a3b8;border:1px solid var(--border)'}">
+                  ${connected ? '✅ Подключён' : '⬜ Ожидает'}
+                </span>
+                ${!connected && isActive ? `<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="inviteDriver('${u.id}')">📨 Пригласить</button>` : ''}
+                <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="openDriverModal('${u.id}')">👤</button>
+              </div>
+            `;
+          }).join('')}
+      </div>
+    </div>
+  `;
+  document.getElementById('other-content').innerHTML = html;
+}
+
+async function saveBotToken() {
+  const token = (document.getElementById('bot-token-input')?.value || '').trim();
+  if (!token || token.length < 20) { showToast('⚠️ Введите корректный токен'); return; }
+
+  if (!state.botManagerUrl) {
+    showToast('⚠️ Сначала укажите URL бот-менеджера в ⚙️ Настройки');
+    return;
+  }
+
+  const btn = document.querySelector('[onclick="saveBotToken()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Подключение...'; }
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (state.notifySecret) headers['x-notify-secret'] = state.notifySecret;
+
+    const res = await fetch(`${state.botManagerUrl}/bots/add`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ companyId: state.companyId, token }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+
+    state.botToken = token;
+    const botId = token.split(':')[0];
+    state.botUsername = 'fleet_bot_' + botId;
+
+    // Получаем реальный username у Telegram
+    try {
+      const tgRes = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const tgData = await tgRes.json();
+      if (tgData.ok) state.botUsername = tgData.result.username || state.botUsername;
+    } catch (_) {}
+
+    showToast(`✅ Бот подключён! @${state.botUsername} — активен`);
+    renderBotPage();
+  } catch (err) {
+    showToast(`❌ Ошибка подключения: ${err.message}`);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Подключить'; }
+  }
+}
+
+// ══════════════════════════════════════════
+//  SETTINGS PAGE
+// ══════════════════════════════════════════
+function renderSettingsPage() {
+  const url    = state.botManagerUrl || '';
+  const secret = state.notifySecret  || '';
+  const html = `
+    <div style="padding:24px;max-width:560px">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">⚙️ Настройки</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px">
+        Параметры подключения к бот-менеджеру
+      </p>
+
+      <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">🖥 Бот-менеджер</div>
+
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">URL сервера</label>
+        <input id="set-url" type="url" value="${url}"
+          placeholder="https://api.ваш-домен.ru"
+          style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;margin-bottom:12px;transition:border-color .15s"
+          onfocusin="this.style.borderColor='#3b82f6'" onfocusout="this.style.borderColor=''">
+
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">NOTIFY_SECRET (если задан в .env)</label>
+        <input id="set-secret" type="password" value="${secret}"
+          placeholder="оставьте пустым, если секрет не задан"
+          onfocus="this.type='text'" onblur="this.type='password'"
+          style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;margin-bottom:16px;transition:border-color .15s"
+          onfocusin="this.style.borderColor='#3b82f6'" onfocusout="this.style.borderColor=''">
+
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="saveSettings()">Сохранить</button>
+          <button class="btn" onclick="checkHealth()">Проверить связь</button>
+        </div>
+        <div id="health-result" style="margin-top:10px;font-size:12px;color:var(--text-muted)"></div>
+      </div>
+
+      ${url ? `
+      <div style="background:var(--green-light);border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;font-size:12px;color:#166534">
+        ✅ Бот-менеджер настроен:<br>
+        <code style="font-size:11px">${url}</code>
+      </div>` : `
+      <div style="background:var(--amber-light);border:1px solid var(--amber);border-radius:10px;padding:14px 16px;font-size:12px;color:#92400e">
+        ⚠️ URL бот-менеджера не задан.<br>
+        Укажите адрес вашего сервера — он нужен для подключения ботов.<br>
+        Пример: <code>https://api.ваш-домен.ru</code>
+      </div>`}
+    </div>
+  `;
+  document.getElementById('other-content').innerHTML = html;
+}
+
+function saveSettings() {
+  const url    = (document.getElementById('set-url')?.value    || '').trim().replace(/\/$/, '');
+  const secret = (document.getElementById('set-secret')?.value || '').trim();
+  state.botManagerUrl = url;
+  state.notifySecret  = secret;
+  localStorage.setItem('fleetdesk_bot_manager_url', url);
+  localStorage.setItem('fleetdesk_notify_secret',   secret);
+  showToast('✅ Настройки сохранены');
+  renderSettingsPage();
+}
+
+async function checkHealth() {
+  const url = (document.getElementById('set-url')?.value || '').trim().replace(/\/$/, '');
+  const result = document.getElementById('health-result');
+  if (!url) { result.textContent = '⚠️ Введите URL'; return; }
+  result.textContent = '⏳ Проверяем...';
+  try {
+    const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    result.style.color = '#16a34a';
+    result.textContent = `✅ Сервер доступен — ботов запущено: ${data.bots ?? '?'}`;
+  } catch (err) {
+    result.style.color = '#dc2626';
+    result.textContent = `❌ Не удалось подключиться: ${err.message}`;
+  }
+}
+
+function copyBotLink() {
+  const link = `https://t.me/${state.botUsername || 'your_fleet_bot'}`;
+  if (navigator.clipboard) navigator.clipboard.writeText(link);
+  showToast('📋 Ссылка скопирована в буфер обмена');
+}
+
+function inviteDriver(userId) {
+  const u = USERS.find(u => u.id === userId);
+  if (!u) return;
+  const link = `https://t.me/${state.botUsername || 'your_fleet_bot'}`;
+  showToast(`📨 Ссылка для ${u.name.split(' ')[0]}: ${link} (скопируйте и отправьте в мессенджере)`);
+}
+
+// ══════════════════════════════════════════
+function renderContractorsPage() {
+  const html = `
+    <h2 style="font-size:15px;font-weight:700;margin-bottom:16px">Подрядчики (${CONTRACTORS.length})</h2>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${CONTRACTORS.map(c => {
+        const specs = c.specializations.map(s => TICKET_TYPES[s]?.icon + ' ' + TICKET_TYPES[s]?.name).join(', ');
+        return `<div style="background:#fff;border-radius:10px;padding:16px;box-shadow:var(--shadow);border:1px solid var(--border);display:flex;align-items:center;gap:16px">
+          <div style="width:44px;height:44px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔧</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px;margin-bottom:3px">${c.name}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${specs}</div>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted)">${c.phone}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  document.getElementById('other-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ══════════════════════════════════════════
+//  INIT — show auth screen, hide app
+// ══════════════════════════════════════════
+(function init() {
+  // Hide main app until login
+  document.getElementById('kanban-view').style.display = 'none';
+  document.getElementById('other-view').style.display  = 'none';
+  document.getElementById('filter-bar').style.display  = 'none';
+  document.getElementById('stats-row').style.display   = 'none';
+  // Auth overlay is visible by default (no 'hidden' class)
+})();
+</script>
+</body>
+</html>
