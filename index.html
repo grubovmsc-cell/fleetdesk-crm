@@ -375,9 +375,6 @@ select.fsel:focus { border-color: var(--blue); }
     <div class="nav-item" onclick="setPage('bot')">
       <span class="nav-icon">🤖</span> Telegram Bot
     </div>
-    <div class="nav-item" onclick="setPage('settings')">
-      <span class="nav-icon">⚙️</span> Настройки
-    </div>
   </div>
   <div class="sidebar-user">
     <div class="user-ava" id="sidebar-ava">—</div>
@@ -916,7 +913,6 @@ let state = {
   botUsername: '',
   token: localStorage.getItem('fleetdesk_token') || '',
   botManagerUrl: localStorage.getItem('fleetdesk_bot_manager_url') || DEFAULT_API,
-  notifySecret:  localStorage.getItem('fleetdesk_notify_secret')    || '',
 };
 
 // ══════════════════════════════════════════
@@ -1557,13 +1553,6 @@ function setPage(page) {
     statsRow.style.display  = 'none';
     document.getElementById('page-title').textContent = 'Telegram Bot';
     renderBotPage();
-  } else if (page === 'settings') {
-    kanban.style.display = 'none';
-    other.style.display  = 'flex';
-    filterBar.style.display = 'none';
-    statsRow.style.display  = 'none';
-    document.getElementById('page-title').textContent = 'Настройки';
-    renderSettingsPage();
   }
 }
 
@@ -2352,7 +2341,7 @@ function renderBotPage() {
           </div>
         ` : `
           <div style="font-size:13px;color:var(--text-muted)">
-            ${hasManager ? 'Не удалось получить данные бота с сервера.' : 'Сервер бота не подключён.'} Укажите URL бот-менеджера в разделе ⚙️ Настройки.
+            Не удалось связаться с сервером бота. Обновите страницу — если не поможет, сервер временно недоступен.
           </div>
         `}
       </div>
@@ -2437,88 +2426,6 @@ async function refreshBotInfo() {
     }
   } catch (err) {
     console.warn('[bot-info]', err.message);
-  }
-}
-
-// ══════════════════════════════════════════
-//  SETTINGS PAGE
-// ══════════════════════════════════════════
-function renderSettingsPage() {
-  const url    = state.botManagerUrl || '';
-  const secret = state.notifySecret  || '';
-  const html = `
-    <div style="padding:24px;max-width:560px">
-      <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">⚙️ Настройки</h2>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px">
-        Параметры подключения к бот-менеджеру
-      </p>
-
-      <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:12px">🖥 Бот-менеджер</div>
-
-        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">URL сервера</label>
-        <input id="set-url" type="url" value="${url}"
-          placeholder="https://api.ваш-домен.ru"
-          style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;margin-bottom:12px;transition:border-color .15s"
-          onfocusin="this.style.borderColor='#3b82f6'" onfocusout="this.style.borderColor=''">
-
-        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">NOTIFY_SECRET (если задан в .env)</label>
-        <input id="set-secret" type="password" value="${secret}"
-          placeholder="оставьте пустым, если секрет не задан"
-          onfocus="this.type='text'" onblur="this.type='password'"
-          style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;margin-bottom:16px;transition:border-color .15s"
-          onfocusin="this.style.borderColor='#3b82f6'" onfocusout="this.style.borderColor=''">
-
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-primary" onclick="saveSettings()">Сохранить</button>
-          <button class="btn" onclick="checkHealth()">Проверить связь</button>
-        </div>
-        <div id="health-result" style="margin-top:10px;font-size:12px;color:var(--text-muted)"></div>
-      </div>
-
-      ${url ? `
-      <div style="background:var(--green-light);border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;font-size:12px;color:#166534">
-        ✅ Бот-менеджер настроен:<br>
-        <code style="font-size:11px">${url}</code>
-      </div>` : `
-      <div style="background:var(--amber-light);border:1px solid var(--amber);border-radius:10px;padding:14px 16px;font-size:12px;color:#92400e">
-        ⚠️ URL бот-менеджера не задан.<br>
-        Укажите адрес вашего сервера — он нужен для подключения ботов.<br>
-        Пример: <code>https://api.ваш-домен.ru</code>
-      </div>`}
-    </div>
-  `;
-  document.getElementById('other-content').innerHTML = html;
-}
-
-function saveSettings() {
-  const url    = (document.getElementById('set-url')?.value    || '').trim().replace(/\/$/, '');
-  const secret = (document.getElementById('set-secret')?.value || '').trim();
-  state.botManagerUrl = url;
-  state.notifySecret  = secret;
-  state.botUsername   = ''; // перечитаем у нового сервера
-  localStorage.setItem('fleetdesk_bot_manager_url', url);
-  localStorage.setItem('fleetdesk_notify_secret',   secret);
-  showToast('✅ Настройки сохранены');
-  renderSettingsPage();
-  refreshBotInfo();
-}
-
-async function checkHealth() {
-  const url = (document.getElementById('set-url')?.value || '').trim().replace(/\/$/, '');
-  const result = document.getElementById('health-result');
-  if (!url) { result.textContent = '⚠️ Введите URL'; return; }
-  result.textContent = '⏳ Проверяем...';
-  try {
-    const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(5000) });
-    const data = await res.json();
-    result.style.color = data.active ? '#16a34a' : '#d97706';
-    result.textContent = data.active
-      ? `✅ Сервер доступен — бот @${data.username} активен`
-      : '⚠️ Сервер доступен, но бот не запущен (проверьте BOT_TOKEN на сервере)';
-  } catch (err) {
-    result.style.color = '#dc2626';
-    result.textContent = `❌ Не удалось подключиться: ${err.message}`;
   }
 }
 
