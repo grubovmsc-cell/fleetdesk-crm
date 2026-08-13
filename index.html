@@ -918,7 +918,6 @@ let state = {
   driverStatusFilter: 'all',
   currentAccount: null,
   companyId: null,
-  botToken: '',
   botUsername: '',
   // URL бот-менеджера — устанавливается в ⚙️ Настройки
   botManagerUrl: localStorage.getItem('fleetdesk_bot_manager_url') || '',
@@ -2111,24 +2110,53 @@ function saveVModal() {
     u.tachograph      = document.getElementById('d-tacho')?.value === '1';
     u.assigned_vehicle= document.getElementById('d-vehicle')?.value || null;
     showToast('✅ Данные водителя сохранены');
+    syncDriverToServer(u);
   }
   renderFleetPage();
   closeVModal();
+}
+
+// Отправляет карточку водителя в реальную БД бота (company_id + Telegram-ник),
+// чтобы общий бот мог опознать водителя по нику при первом /start.
+async function syncDriverToServer(u) {
+  if (!state.botManagerUrl || !state.companyId) return;
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (state.notifySecret) headers['x-notify-secret'] = state.notifySecret;
+    const companyName = COMPANIES_LIST.find(c => c.id === state.companyId)?.name || state.companyId;
+    await fetch(`${state.botManagerUrl}/sync/driver`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        companyId: state.companyId,
+        companyName,
+        driver: {
+          name: u.name, email: u.email, phone: u.phone, telegram: u.telegram,
+          license_number: u.license_number, license_category: u.license_category,
+          license_expires: u.license_expires, medical_expires: u.medical_expires,
+          briefing_date: u.briefing_date,
+        },
+      }),
+    });
+  } catch (err) {
+    console.warn('[sync/driver]', err.message);
+  }
 }
 
 // ══════════════════════════════════════════
 //  BOT PAGE
 // ══════════════════════════════════════════
 function renderBotPage() {
-  const botToken    = state.botToken || '';
   const botUsername = state.botUsername || '';
-  const isActive    = !!botToken;
+  const hasManager  = !!state.botManagerUrl;
+  const isActive    = hasManager && !!botUsername;
+  const botLink     = botUsername ? `https://t.me/${botUsername}` : '';
   const connectedCount = USERS.filter(u => u.has_app).length;
 
   const steps = [
-    { n:'1', icon:'🤖', title:'Создать бота', desc:'Напишите @BotFather в Telegram, введите /newbot, придумайте имя и юзернейм. Скопируйте полученный токен.' },
-    { n:'2', icon:'🔑', title:'Вставить токен', desc:'Введите токен ниже и нажмите «Подключить». Бот будет привязан только к вашей компании.' },
-    { n:'3', icon:'📨', title:'Разослать ссылку', desc:'Скопируйте ссылку и отправьте водителям. Они перейдут, нажмут /start и сами заполнят профиль.' },
+    { n:'1', icon:'🪪', title:'Укажите ник в карточке', desc:'На вкладке «Водители» впишите Telegram-ник сотрудника (без @) — поле уже есть в карточке.' },
+    { n:'2', icon:'📨', title:'Отправьте ссылку', desc:'Ссылка одна на все компании — просто перешлите её водителю в любом мессенджере.' },
+    { n:'3', icon:'🤖', title:'Бот узнаёт сам', desc:'Водитель жмёт /start — бот находит его по нику и сразу открывает нужную компанию.' },
   ];
 
   const html = `
@@ -2139,39 +2167,29 @@ function renderBotPage() {
         <div style="width:56px;height:56px;background:rgba(255,255,255,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🤖</div>
         <div style="flex:1">
           <div style="font-size:18px;font-weight:800;margin-bottom:4px">Telegram Bot для водителей</div>
-          <div style="font-size:13px;color:#93c5fd">Водители подают заявки, заполняют профиль, получают уведомления — всё через Telegram</div>
+          <div style="font-size:13px;color:#93c5fd">Один общий бот на все компании — подключать и настраивать ничего не нужно</div>
         </div>
         <div style="background:${isActive?'rgba(34,197,94,.2)':'rgba(239,68,68,.2)'};border:1px solid ${isActive?'rgba(34,197,94,.4)':'rgba(239,68,68,.4)'};padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;color:${isActive?'#86efac':'#fca5a5'};white-space:nowrap">
-          ${isActive ? '✅ Бот активен' : '⚠️ Не настроен'}
+          ${isActive ? '✅ Бот на связи' : (hasManager ? '⏳ Проверяем связь…' : '⚠️ Сервер не настроен')}
         </div>
       </div>
 
-      <!-- Config card -->
+      <!-- Link card -->
       <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:20px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px"><span>🔑</span> Подключение бота</div>
-        <div style="display:flex;gap:10px;margin-bottom:12px">
-          <input type="password" id="bot-token-input" value="${botToken}"
-            placeholder="1234567890:ABCDEFghijklmnop..."
-            onfocus="this.type='text'" onblur="this.type='password'"
-            style="flex:1;padding:9px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:monospace;outline:none;transition:border-color .15s"
-            onfocusin="this.style.borderColor='#3b82f6'">
-          <button class="btn btn-primary" onclick="saveBotToken()">Подключить</button>
-        </div>
-        <div style="font-size:12px;color:var(--text-muted)">
-          Получите токен у <strong>@BotFather</strong> → /newbot → скопируйте токен вида <code style="background:var(--bg);padding:1px 5px;border-radius:4px">123456:ABC...</code>
-        </div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px"><span>📨</span> Ссылка для водителей</div>
         ${isActive ? `
-        <div style="margin-top:16px;padding:14px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px">
-          <div style="font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Ссылка для водителей</div>
           <div style="display:flex;gap:8px;align-items:center">
-            <div id="bot-link-box" style="flex:1;padding:8px 12px;background:#fff;border:1px solid #86efac;border-radius:7px;font-size:14px;font-weight:600;color:#1d4ed8;font-family:monospace">
-              https://t.me/${botUsername || 'your_fleet_bot'}
-            </div>
-            <button class="btn btn-ghost" style="border-color:#86efac;color:#15803d" onclick="copyBotLink()">📋 Скопировать</button>
+            <div id="bot-link-box" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:14px;font-weight:600;color:#1d4ed8;font-family:monospace">${botLink}</div>
+            <button class="btn btn-ghost" onclick="copyBotLink()">📋 Скопировать</button>
           </div>
-          <div style="margin-top:8px;font-size:11px;color:#15803d">Отправьте эту ссылку водителям — они сами подключатся и заполнят данные</div>
-        </div>
-        ` : ''}
+          <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+            Ссылка одна для всех компаний. Бот сам узнаёт водителя — по Telegram-нику из карточки (вкладка «Водители»). Если ника нет или он не совпал, бот один раз попросит рабочий e-mail.
+          </div>
+        ` : `
+          <div style="font-size:13px;color:var(--text-muted)">
+            ${hasManager ? 'Не удалось получить данные бота с сервера.' : 'Сервер бота не подключён.'} Укажите URL бот-менеджера в разделе ⚙️ Настройки.
+          </div>
+        `}
       </div>
 
       <!-- How it works -->
@@ -2238,52 +2256,22 @@ function renderBotPage() {
     </div>
   `;
   document.getElementById('other-content').innerHTML = html;
+  if (state.botManagerUrl && !state.botUsername) refreshBotInfo();
 }
 
-async function saveBotToken() {
-  const token = (document.getElementById('bot-token-input')?.value || '').trim();
-  if (!token || token.length < 20) { showToast('⚠️ Введите корректный токен'); return; }
-
-  if (!state.botManagerUrl) {
-    showToast('⚠️ Сначала укажите URL бот-менеджера в ⚙️ Настройки');
-    return;
-  }
-
-  const btn = document.querySelector('[onclick="saveBotToken()"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'Подключение...'; }
-
+// Спрашивает у бот-менеджера юзернейм общего бота — чтобы показать готовую
+// ссылку-приглашение. Токен нигде в CRM не хранится и не вводится.
+async function refreshBotInfo() {
+  if (!state.botManagerUrl) return;
   try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (state.notifySecret) headers['x-notify-secret'] = state.notifySecret;
-
-    const res = await fetch(`${state.botManagerUrl}/bots/add`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ companyId: state.companyId, token }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `HTTP ${res.status}`);
+    const res = await fetch(`${state.botManagerUrl}/bot-info`, { signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    if (data.username) {
+      state.botUsername = data.username;
+      if (state.page === 'bot') renderBotPage();
     }
-
-    state.botToken = token;
-    const botId = token.split(':')[0];
-    state.botUsername = 'fleet_bot_' + botId;
-
-    // Получаем реальный username у Telegram
-    try {
-      const tgRes = await fetch(`https://api.telegram.org/bot${token}/getMe`);
-      const tgData = await tgRes.json();
-      if (tgData.ok) state.botUsername = tgData.result.username || state.botUsername;
-    } catch (_) {}
-
-    showToast(`✅ Бот подключён! @${state.botUsername} — активен`);
-    renderBotPage();
   } catch (err) {
-    showToast(`❌ Ошибка подключения: ${err.message}`);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Подключить'; }
+    console.warn('[bot-info]', err.message);
   }
 }
 
@@ -2343,10 +2331,12 @@ function saveSettings() {
   const secret = (document.getElementById('set-secret')?.value || '').trim();
   state.botManagerUrl = url;
   state.notifySecret  = secret;
+  state.botUsername   = ''; // перечитаем у нового сервера
   localStorage.setItem('fleetdesk_bot_manager_url', url);
   localStorage.setItem('fleetdesk_notify_secret',   secret);
   showToast('✅ Настройки сохранены');
   renderSettingsPage();
+  refreshBotInfo();
 }
 
 async function checkHealth() {
@@ -2357,8 +2347,10 @@ async function checkHealth() {
   try {
     const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(5000) });
     const data = await res.json();
-    result.style.color = '#16a34a';
-    result.textContent = `✅ Сервер доступен — ботов запущено: ${data.bots ?? '?'}`;
+    result.style.color = data.active ? '#16a34a' : '#d97706';
+    result.textContent = data.active
+      ? `✅ Сервер доступен — бот @${data.username} активен`
+      : '⚠️ Сервер доступен, но бот не запущен (проверьте BOT_TOKEN на сервере)';
   } catch (err) {
     result.style.color = '#dc2626';
     result.textContent = `❌ Не удалось подключиться: ${err.message}`;
