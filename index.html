@@ -317,16 +317,8 @@ select.fsel:focus { border-color: var(--blue); }
           <input class="auth-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
         <button class="auth-btn" onclick="doLogin()">Войти →</button>
-        <div class="auth-demo">
-          <div class="auth-demo-title">🎯 Демо-аккаунты (нажмите для заполнения)</div>
-          <div class="auth-demo-row" onclick="fillDemo('admin@logistics.ru','demo123')">
-            <span class="auth-demo-company">ООО Логистика Плюс</span>
-            <span class="auth-demo-creds">admin@logistics.ru / demo123</span>
-          </div>
-          <div class="auth-demo-row" onclick="fillDemo('admin@express.ru','demo123')">
-            <span class="auth-demo-company">ИП Экспресс Доставка</span>
-            <span class="auth-demo-creds">admin@express.ru / demo123</span>
-          </div>
+        <div style="margin-top:18px;text-align:center;font-size:12px;color:var(--text-muted)">
+          Нет аккаунта? Перейдите на вкладку «Регистрация» —<br>создадим компанию за минуту.
         </div>
       </div>
 
@@ -910,6 +902,9 @@ let ACCOUNTS = [
 // ══════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════
+// Адрес сервера FleetDesk. Можно переопределить в ⚙️ Настройки.
+const DEFAULT_API = 'https://fleetdesk-bot-production.up.railway.app';
+
 let state = {
   statusFilter: 'all',
   openTicketId: null,
@@ -919,10 +914,89 @@ let state = {
   currentAccount: null,
   companyId: null,
   botUsername: '',
-  // URL бот-менеджера — устанавливается в ⚙️ Настройки
-  botManagerUrl: localStorage.getItem('fleetdesk_bot_manager_url') || '',
+  token: localStorage.getItem('fleetdesk_token') || '',
+  botManagerUrl: localStorage.getItem('fleetdesk_bot_manager_url') || DEFAULT_API,
   notifySecret:  localStorage.getItem('fleetdesk_notify_secret')    || '',
 };
+
+// ══════════════════════════════════════════
+//  API
+// ══════════════════════════════════════════
+async function api(path, { method = 'GET', body } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+
+  const res = await fetch(`${state.botManagerUrl}/api${path}`, {
+    method, headers, body: body ? JSON.stringify(body) : undefined,
+  });
+
+  let data = null;
+  try { data = await res.json(); } catch (_) {}
+
+  if (res.status === 401) { forceLogout(); throw new Error('Сессия истекла — войдите заново'); }
+  if (!res.ok) throw new Error((data && data.error) || `Ошибка сервера (${res.status})`);
+  return data;
+}
+
+// ── Приведение серверных полей к формату, который ожидает интерфейс ──
+// Postgres отдаёт DATE как ISO-строку со временем — полям <input type="date">
+// нужен чистый ГГГГ-ММ-ДД
+const dateOnly = (d) => (d ? String(d).slice(0, 10) : null);
+function datesToInput(obj, fields) {
+  const out = { ...obj };
+  fields.forEach(f => { out[f] = dateOnly(obj[f]); });
+  return out;
+}
+
+function fromServerDriver(raw) {
+  const u = datesToInput(raw, ['license_expires', 'medical_expires', 'medical_date', 'briefing_date']);
+  return {
+    ...u,
+    telegram: u.telegram_username ? '@' + u.telegram_username : '',
+    tachograph: !!u.has_tachograph,
+    driving_style:  u.driving_style  != null ? Number(u.driving_style)  : 0,
+    fuel_per_100km: u.fuel_per_100km != null ? Number(u.fuel_per_100km) : 0,
+    has_app: !!u.telegram_id,
+    initials: u.initials || (u.name || '?').slice(0, 2).toUpperCase(),
+    color: u.color || '#94a3b8',
+  };
+}
+
+function fromServerTicket(raw) {
+  const t = datesToInput(raw, ['due']);
+  return {
+    ...t,
+    type: t.type_key,
+    desc: t.description || '',
+    title: t.title || '',
+    vehicleId: t.vehicle_id,
+    userId: t.created_by,
+    contractorId: t.contractor_id,
+    created: t.created_at,
+    comments: Array.isArray(t.comments) ? t.comments : [],
+    history:  Array.isArray(t.history)  ? t.history  : [],
+  };
+}
+
+function fromServerVehicle(raw) {
+  const v = datesToInput(raw, ['purchase_date', 'lease_end', 'next_service_date',
+    'insurance_until', 'inspection_until', 'tires_change_date']);
+  return { ...v, history: Array.isArray(v.history) ? v.history : [] };
+}
+
+function fromServerContractor(c) {
+  return { ...c, specializations: Array.isArray(c.specializations) ? c.specializations : [] };
+}
+
+// Загружает все данные компании и обновляет интерфейс
+async function loadCompanyData() {
+  const data  = await api('/bootstrap');
+  USERS       = data.users.map(fromServerDriver);
+  VEHICLES    = data.vehicles.map(fromServerVehicle);
+  CONTRACTORS = data.contractors.map(fromServerContractor);
+  tickets     = data.tickets.map(fromServerTicket);
+  return data;
+}
 
 // ══════════════════════════════════════════
 //  AUTH
@@ -947,18 +1021,31 @@ function fillDemo(email, password) {
   switchAuthTab('login');
 }
 
-function doLogin() {
+function setAuthBusy(busy, text) {
+  document.querySelectorAll('.auth-btn').forEach(b => {
+    b.disabled = busy;
+    if (busy && text) { b.dataset.prev = b.dataset.prev || b.textContent; b.textContent = text; }
+    else if (b.dataset.prev) { b.textContent = b.dataset.prev; delete b.dataset.prev; }
+  });
+}
+
+async function doLogin() {
   const email    = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   if (!email || !password) { setAuthError('Введите email и пароль'); return; }
 
-  const account = ACCOUNTS.find(a => a.email === email && a.password === password);
-  if (!account) { setAuthError('Неверный email или пароль'); return; }
-
-  _applyLogin(account);
+  setAuthError(''); setAuthBusy(true, 'Вход...');
+  try {
+    const data = await api('/auth/login', { method: 'POST', body: { email, password } });
+    await _applyLogin(data);
+  } catch (err) {
+    setAuthError(err.message);
+  } finally {
+    setAuthBusy(false);
+  }
 }
 
-function doRegister() {
+async function doRegister() {
   const companyName = document.getElementById('reg-company').value.trim();
   const userName    = document.getElementById('reg-name').value.trim();
   const email       = document.getElementById('reg-email').value.trim();
@@ -966,53 +1053,63 @@ function doRegister() {
 
   if (!companyName || !userName || !email || !password) { setAuthError('Заполните все поля'); return; }
   if (password.length < 6) { setAuthError('Пароль минимум 6 символов'); return; }
-  if (ACCOUNTS.find(a => a.email === email)) { setAuthError('Email уже зарегистрирован'); return; }
 
-  const companyId = 'co_' + Date.now();
-  const initials  = userName.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
-  const account   = { id:'acc_'+Date.now(), email, password, companyId, name: userName, initials };
-
-  ACCOUNTS.push(account);
-  COMPANIES_LIST.push({ id: companyId, name: companyName });
-  DB[companyId] = { vehicles: [], users: [], contractors: [], tickets: [] };
-
-  _applyLogin(account);
+  setAuthError(''); setAuthBusy(true, 'Создаём аккаунт...');
+  try {
+    const data = await api('/auth/register', {
+      method: 'POST', body: { companyName, name: userName, email, password },
+    });
+    await _applyLogin(data);
+  } catch (err) {
+    setAuthError(err.message);
+  } finally {
+    setAuthBusy(false);
+  }
 }
 
-function _applyLogin(account) {
-  state.currentAccount = account;
-  state.companyId      = account.companyId;
+// data — ответ /auth/login, /auth/register или /auth/me
+async function _applyLogin(data) {
+  if (data.token) {
+    state.token = data.token;
+    localStorage.setItem('fleetdesk_token', data.token);
+  }
+  state.currentAccount = data.account;
+  state.companyId      = data.company.id;
 
-  // Swap working data to this company's dataset
-  const data = DB[account.companyId];
-  VEHICLES    = data.vehicles;
-  USERS       = data.users;
-  CONTRACTORS = data.contractors;
-  tickets     = data.tickets;
+  try {
+    await loadCompanyData();
+  } catch (err) {
+    setAuthError('Не удалось загрузить данные: ' + err.message);
+    return;
+  }
 
-  // Update sidebar
-  const company = COMPANIES_LIST.find(c => c.id === account.companyId);
-  document.getElementById('sidebar-company').textContent = company ? company.name : '—';
-  document.getElementById('sidebar-ava').textContent     = account.initials;
-  document.getElementById('sidebar-name').textContent    = account.name;
+  document.getElementById('sidebar-company').textContent = data.company.name || '—';
+  document.getElementById('sidebar-ava').textContent     = data.account.initials || '—';
+  document.getElementById('sidebar-name').textContent    = data.account.name || '—';
 
-  // Hide auth, show app, navigate to kanban
   document.getElementById('auth-overlay').classList.add('hidden');
   state.page = 'kanban';
-  // Reset nav active state
   document.querySelectorAll('.nav-item').forEach((el,i) => el.classList.toggle('active', i===0));
   document.getElementById('kanban-view').style.display = 'flex';
   document.getElementById('other-view').style.display  = 'none';
   document.getElementById('filter-bar').style.display  = 'flex';
   document.getElementById('stats-row').style.display   = 'flex';
   document.getElementById('page-title').textContent    = 'Заявки';
+  populateVehicleFilter(true);
   renderKanban();
 }
 
 function doLogout() {
+  api('/auth/logout', { method: 'POST' }).catch(() => {});
+  forceLogout();
+}
+
+function forceLogout() {
   state.currentAccount = null;
   state.companyId      = null;
-  // Clear auth inputs
+  state.token          = '';
+  localStorage.removeItem('fleetdesk_token');
+  USERS = []; VEHICLES = []; CONTRACTORS = []; tickets = [];
   ['login-email','login-password','reg-company','reg-name','reg-email','reg-password'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
@@ -1071,9 +1168,10 @@ function render() {
   renderKanban();
 }
 
-function populateVehicleFilter() {
+function populateVehicleFilter(force) {
   const sel = document.getElementById('filter-vehicle');
-  if (sel.options.length > 1) return;
+  if (force) sel.innerHTML = '<option value="all">Все</option>';
+  else if (sel.options.length > 1) return;
   VEHICLES.forEach(v => {
     const o = document.createElement('option');
     o.value = v.id; o.text = v.plate + ' ' + v.brand + ' ' + v.model;
@@ -1183,7 +1281,8 @@ function openModal(id) {
   }).join('');
 
   const commentsHTML = t.comments.map(c => {
-    const cu = USERS.find(u => u.id === c.userId) || { name:'Система', initials:'СИ', color:'#94a3b8' };
+    const author = c.author ? { name: c.author, initials: c.author.slice(0,2).toUpperCase(), color:'#0f172a' } : null;
+    const cu = USERS.find(u => u.id === c.userId) || author || { name:'Система', initials:'СИ', color:'#94a3b8' };
     const dt = new Date(c.time).toLocaleString('ru', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
     return `<div class="comment">
       <div class="comment-header">
@@ -1289,36 +1388,37 @@ function updateModalTypeIcon(typeKey) {
   if (t) document.getElementById('m-num').textContent = t.num + ' · ' + tp.name;
 }
 
+// Отправляет заявку на сервер и обновляет её в локальном списке
+async function saveTicketToServer(t, successMsg) {
+  try {
+    const saved = await api(`/tickets/${t.id}`, { method: 'PATCH', body: t });
+    Object.assign(t, fromServerTicket(saved));
+    if (successMsg) showToast(successMsg);
+  } catch (err) {
+    showToast('❌ Не сохранено: ' + err.message);
+  }
+  renderKanban();
+  if (state.openTicketId === t.id) openModal(t.id);
+}
+
 function changeStatus(newStatus) {
   const t = tickets.find(t => t.id === state.openTicketId);
   if (!t || t.status === newStatus) return;
-  t.history.push({ from: t.status, to: newStatus, time: new Date().toISOString(), who: 'u5' });
   t.status = newStatus;
-  if (newStatus === 'DONE') t.closed_at = new Date().toISOString();
-  showToast('Статус изменён → ' + { NEW:'Новая', IN_PROGRESS:'В работе', WAITING:'Ожидание', DONE:'Выполнено', CANCELLED:'Отменена' }[newStatus]);
-  openModal(state.openTicketId);
-  renderKanban();
+  saveTicketToServer(t, 'Статус изменён → ' +
+    { NEW:'Новая', IN_PROGRESS:'В работе', WAITING:'Ожидание', DONE:'Выполнено', CANCELLED:'Отменена' }[newStatus]);
 }
 
 function addComment() {
   const t = tickets.find(t => t.id === state.openTicketId);
   const input = document.getElementById('comment-input');
   if (!t || !input.value.trim()) return;
-  t.comments.push({ userId:'u5', text: input.value.trim(), time: new Date().toISOString(), internal: false });
-  openModal(state.openTicketId);
-  showToast('Комментарий добавлен');
-}
-
-function saveModal() {
-  const t = tickets.find(t => t.id === state.openTicketId);
-  if (!t) return;
-  const sel = document.getElementById('modal-contractor');
-  t.contractorId = sel.value || null;
-  const typeSel = document.getElementById('modal-type');
-  if (typeSel && typeSel.value) t.type = typeSel.value;
-  renderKanban();
-  showToast('✅ Изменения сохранены');
-  closeModal();
+  t.comments = [...(t.comments || []), {
+    userId: null, author: state.currentAccount?.name || 'Диспетчер',
+    text: input.value.trim(), time: new Date().toISOString(), internal: false,
+  }];
+  input.value = '';
+  saveTicketToServer(t, 'Комментарий добавлен');
 }
 
 // ══════════════════════════════════════════
@@ -1374,35 +1474,39 @@ function openNewTicketModal() {
   document.getElementById('modal-overlay').classList.add('open');
 }
 
-function saveModal() {
+async function saveModal() {
   if (state.openTicketId === '__new__') {
     const title = document.getElementById('new-title')?.value.trim();
     if (!title) { showToast('⚠️ Введите заголовок'); return; }
-    const newNum = 'TK-' + String(tickets.length + 1).padStart(4,'0');
-    tickets.unshift({
-      id: 't' + Date.now(), num: newNum,
-      type: document.getElementById('new-type').value,
-      title, desc: document.getElementById('new-desc').value,
-      status: 'NEW',
+    const payload = {
+      type:     document.getElementById('new-type').value,
+      title,
+      desc:     document.getElementById('new-desc').value,
       priority: document.getElementById('new-priority').value,
       vehicleId: document.getElementById('new-vehicle').value || null,
-      userId: document.getElementById('new-user').value,
-      contractorId: null,
-      created: new Date().toISOString(),
-      due: document.getElementById('new-due').value || null,
-      comments: [], history: [{ from:null, to:'NEW', time:new Date().toISOString(), who:'u5' }]
-    });
-    showToast('✅ Заявка ' + newNum + ' создана');
-  } else {
-    const t = tickets.find(t => t.id === state.openTicketId);
-    if (t) {
-      const sel = document.getElementById('modal-contractor');
-      if (sel) t.contractorId = sel.value || null;
+      userId:    document.getElementById('new-user').value || null,
+      due:       document.getElementById('new-due').value || null,
+    };
+    closeModal();
+    try {
+      const saved = await api('/tickets', { method: 'POST', body: payload });
+      tickets.unshift(fromServerTicket(saved));
+      showToast('✅ Заявка ' + saved.num + ' создана');
+    } catch (err) {
+      showToast('❌ Не создана: ' + err.message);
     }
-    showToast('✅ Изменения сохранены');
+    renderKanban();
+    return;
   }
-  renderKanban();
+
+  const t = tickets.find(t => t.id === state.openTicketId);
+  if (!t) { closeModal(); return; }
+  const sel     = document.getElementById('modal-contractor');
+  const typeSel = document.getElementById('modal-type');
+  if (sel) t.contractorId = sel.value || null;
+  if (typeSel && typeSel.value) t.type = typeSel.value;
   closeModal();
+  await saveTicketToServer(t, '✅ Изменения сохранены');
 }
 
 // ══════════════════════════════════════════
@@ -1510,6 +1614,7 @@ function renderDriversPage() {
         <option value="vacation" ${statusFilter==='vacation'  ?'selected':''}>В отпуске (${counts.vacation})</option>
         <option value="fired"    ${statusFilter==='fired'     ?'selected':''}>Уволен (${counts.fired})</option>
       </select>
+      <button class="btn btn-primary" onclick="createDriver()">+ Водитель</button>
     </div>
 
     ${filtered.length === 0
@@ -1545,7 +1650,7 @@ function renderDriversPage() {
                 </div>
                 <div style="padding:8px;background:var(--bg);border-radius:7px">
                   <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px">Водительское удостоверение</div>
-                  <div style="font-weight:600">Кат. ${u.license_category} · до ${new Date(u.license_expires).toLocaleDateString('ru',{month:'short',year:'numeric'})}</div>
+                  <div style="font-weight:600">${u.license_category ? 'Кат. ' + u.license_category : 'Не заполнено'}${u.license_expires ? ' · до ' + new Date(u.license_expires).toLocaleDateString('ru',{month:'short',year:'numeric'}) : ''}</div>
                 </div>
                 <div style="padding:8px;background:var(--bg);border-radius:7px">
                   <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px">Стиль вождения</div>
@@ -1586,8 +1691,13 @@ function renderFleetPage() {
   };
 
   const html = `
-    <h2 style="font-size:15px;font-weight:700;margin-bottom:4px">Автомобили (${VEHICLES.length})</h2>
-    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Нажмите на карточку для просмотра и редактирования</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="flex:1">
+        <h2 style="font-size:15px;font-weight:700;margin-bottom:4px">Автомобили (${VEHICLES.length})</h2>
+        <p style="font-size:12px;color:var(--text-muted)">Нажмите на карточку для просмотра и редактирования</p>
+      </div>
+      <button class="btn btn-primary" onclick="createVehicle()">+ Автомобиль</button>
+    </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:32px">
       ${VEHICLES.map(v => {
         const driver = USERS.find(u => u.id === v.assigned_user_id);
@@ -1870,16 +1980,22 @@ function openVehicleModal(id) {
   document.getElementById('vmodal-overlay').classList.add('open');
 }
 
-function addVehicleHistory(vehicleId) {
+async function addVehicleHistory(vehicleId) {
   const v = VEHICLES.find(v => v.id === vehicleId);
   const desc = document.getElementById('h-desc').value.trim();
   if (!v || !desc) { showToast('⚠ Введите описание'); return; }
-  v.history.unshift({
+  v.history = [{
     date: document.getElementById('h-date').value,
     type: document.getElementById('h-type').value,
     desc, mileage: parseInt(document.getElementById('h-km').value) || v.mileage
-  });
-  showToast('✅ Запись добавлена');
+  }, ...(v.history || [])];
+  try {
+    const saved = await api(`/vehicles/${v.id}`, { method: 'PATCH', body: v });
+    Object.assign(v, fromServerVehicle(saved));
+    showToast('✅ Запись добавлена');
+  } catch (err) {
+    showToast('❌ Не сохранено: ' + err.message);
+  }
   openVehicleModal(vehicleId);
 }
 
@@ -2091,7 +2207,7 @@ function saveVModal() {
     v.operation_mode    = document.getElementById('v-opmode')?.value || v.operation_mode;
     v.parking           = document.getElementById('v-parking')?.value || '';
     v.availability_window = document.getElementById('v-window')?.value || '';
-    showToast('✅ Данные автомобиля сохранены');
+    saveVehicleToServer(v);
   } else if (vModalContext.type === 'driver') {
     const u = USERS.find(u => u.id === vModalContext.id);
     if (!u) return;
@@ -2109,38 +2225,87 @@ function saveVModal() {
     u.has_waybill     = document.getElementById('d-waybill')?.value === '1';
     u.tachograph      = document.getElementById('d-tacho')?.value === '1';
     u.assigned_vehicle= document.getElementById('d-vehicle')?.value || null;
-    showToast('✅ Данные водителя сохранены');
-    syncDriverToServer(u);
+    saveDriverToServer(u);
   }
-  renderFleetPage();
   closeVModal();
 }
 
-// Отправляет карточку водителя в реальную БД бота (company_id + Telegram-ник),
-// чтобы общий бот мог опознать водителя по нику при первом /start.
-async function syncDriverToServer(u) {
-  if (!state.botManagerUrl || !state.companyId) return;
+// Перерисовывает тот раздел, который сейчас открыт
+function refreshCurrentPage() {
+  if (state.page === 'fleet')            renderFleetPage();
+  else if (state.page === 'drivers')     renderDriversPage();
+  else if (state.page === 'bot')         renderBotPage();
+  else if (state.page === 'contractors') renderContractorsPage();
+  else                                   renderKanban();
+}
+
+// ── Создание записей ───────────────────────────────────────
+async function createDriver() {
+  const name = prompt('ФИО водителя:');
+  if (!name || !name.trim()) return;
   try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (state.notifySecret) headers['x-notify-secret'] = state.notifySecret;
-    const companyName = COMPANIES_LIST.find(c => c.id === state.companyId)?.name || state.companyId;
-    await fetch(`${state.botManagerUrl}/sync/driver`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        companyId: state.companyId,
-        companyName,
-        driver: {
-          name: u.name, email: u.email, phone: u.phone, telegram: u.telegram,
-          license_number: u.license_number, license_category: u.license_category,
-          license_expires: u.license_expires, medical_expires: u.medical_expires,
-          briefing_date: u.briefing_date,
-        },
-      }),
-    });
+    const saved = await api('/drivers', { method: 'POST', body: { name: name.trim(), status: 'active' } });
+    USERS.push(fromServerDriver(saved));
+    renderDriversPage();
+    openDriverModal(saved.id);
+    showToast('✅ Водитель добавлен — заполните карточку');
   } catch (err) {
-    console.warn('[sync/driver]', err.message);
+    showToast('❌ Не добавлен: ' + err.message);
   }
+}
+
+async function createContractor() {
+  const name = prompt('Название подрядчика:');
+  if (!name || !name.trim()) return;
+  const phone = prompt('Телефон (можно пропустить):') || '';
+  try {
+    const saved = await api('/contractors', { method: 'POST', body: { name: name.trim(), phone } });
+    CONTRACTORS.push(fromServerContractor(saved));
+    renderContractorsPage();
+    showToast('✅ Подрядчик добавлен');
+  } catch (err) {
+    showToast('❌ Не добавлен: ' + err.message);
+  }
+}
+
+async function createVehicle() {
+  const plate = prompt('Гос. номер автомобиля:');
+  if (!plate || !plate.trim()) return;
+  try {
+    const saved = await api('/vehicles', { method: 'POST', body: { plate: plate.trim(), status: 'active' } });
+    VEHICLES.push(fromServerVehicle(saved));
+    renderFleetPage();
+    populateVehicleFilter(true);
+    openVehicleModal(saved.id);
+    showToast('✅ Автомобиль добавлен — заполните карточку');
+  } catch (err) {
+    showToast('❌ Не добавлен: ' + err.message);
+  }
+}
+
+// ── Сохранение на сервер ───────────────────────────────────
+async function saveVehicleToServer(v) {
+  try {
+    const saved = await api(v.id ? `/vehicles/${v.id}` : '/vehicles',
+      { method: v.id ? 'PATCH' : 'POST', body: v });
+    Object.assign(v, fromServerVehicle(saved));
+    showToast('✅ Данные автомобиля сохранены');
+  } catch (err) {
+    showToast('❌ Не сохранено: ' + err.message);
+  }
+  refreshCurrentPage();
+}
+
+async function saveDriverToServer(u) {
+  try {
+    const saved = await api(u.id ? `/drivers/${u.id}` : '/drivers',
+      { method: u.id ? 'PATCH' : 'POST', body: u });
+    Object.assign(u, fromServerDriver(saved));
+    showToast('✅ Данные водителя сохранены');
+  } catch (err) {
+    showToast('❌ Не сохранено: ' + err.message);
+  }
+  refreshCurrentPage();
 }
 
 // ══════════════════════════════════════════
@@ -2373,10 +2538,15 @@ function inviteDriver(userId) {
 // ══════════════════════════════════════════
 function renderContractorsPage() {
   const html = `
-    <h2 style="font-size:15px;font-weight:700;margin-bottom:16px">Подрядчики (${CONTRACTORS.length})</h2>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <h2 style="font-size:15px;font-weight:700;flex:1">Подрядчики (${CONTRACTORS.length})</h2>
+      <button class="btn btn-primary" onclick="createContractor()">+ Подрядчик</button>
+    </div>
+    ${CONTRACTORS.length === 0 ? `<div style="text-align:center;color:var(--text-muted);padding:60px 20px;font-size:13px">
+      <div style="font-size:40px;margin-bottom:12px">🔧</div>Подрядчиков пока нет</div>` : ''}
     <div style="display:flex;flex-direction:column;gap:10px">
       ${CONTRACTORS.map(c => {
-        const specs = c.specializations.map(s => TICKET_TYPES[s]?.icon + ' ' + TICKET_TYPES[s]?.name).join(', ');
+        const specs = (c.specializations || []).map(s => TICKET_TYPES[s]?.icon + ' ' + TICKET_TYPES[s]?.name).join(', ');
         return `<div style="background:#fff;border-radius:10px;padding:16px;box-shadow:var(--shadow);border:1px solid var(--border);display:flex;align-items:center;gap:16px">
           <div style="width:44px;height:44px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔧</div>
           <div style="flex:1">
@@ -2402,13 +2572,23 @@ function showToast(msg) {
 // ══════════════════════════════════════════
 //  INIT — show auth screen, hide app
 // ══════════════════════════════════════════
-(function init() {
-  // Hide main app until login
+(async function init() {
+  // Прячем приложение до входа
   document.getElementById('kanban-view').style.display = 'none';
   document.getElementById('other-view').style.display  = 'none';
   document.getElementById('filter-bar').style.display  = 'none';
   document.getElementById('stats-row').style.display   = 'none';
-  // Auth overlay is visible by default (no 'hidden' class)
+
+  // Если в браузере остался токен — восстанавливаем сессию без повторного входа
+  if (state.token) {
+    try {
+      const me = await api('/auth/me');
+      await _applyLogin(me);
+    } catch (_) {
+      state.token = '';
+      localStorage.removeItem('fleetdesk_token');
+    }
+  }
 })();
 </script>
 </body>
