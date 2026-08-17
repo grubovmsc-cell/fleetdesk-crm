@@ -1363,6 +1363,9 @@ function openModal(id) {
         <option value="">— Не назначен —</option>
         ${contractorOptions}
       </select>
+      <div style="margin-top:7px;font-size:11px;color:var(--text-muted)">
+        После сохранения водитель получит в Telegram контакты исполнителя из его карточки
+      </div>
     </div>
 
     <div class="modal-section">
@@ -2009,6 +2012,142 @@ async function addVehicleHistory(vehicleId) {
 }
 
 // ══════════════════════════════════════════
+//  CONTRACTOR MODAL
+// ══════════════════════════════════════════
+function openContractorModal(id) {
+  const c = CONTRACTORS.find(x => x.id === id);
+  if (!c) return;
+  vModalContext = { type:'contractor', id, activeTab:0 };
+
+  const specs = c.specializations || [];
+  const ctrTickets = tickets.filter(t => t.contractorId === c.id);
+  const activeTickets = ctrTickets.filter(t => t.status !== 'DONE' && t.status !== 'CANCELLED');
+  const esc = (s) => String(s ?? '').replace(/"/g, '&quot;');
+
+  document.getElementById('vm-icon-wrap').style.background = '#eff6ff';
+  document.getElementById('vm-icon').textContent = '🔧';
+  document.getElementById('vm-icon').style.cssText = 'font-size:22px';
+  document.getElementById('vm-subtitle').textContent = 'Подрядчик';
+  document.getElementById('vm-title').textContent = c.name;
+  document.getElementById('vm-status-badge').innerHTML = activeTickets.length
+    ? `<span class="ibadge" style="background:#fffbeb;color:#92400e;border:1px solid #fcd34d">${activeTickets.length} в работе</span>`
+    : `<span class="ibadge ib-active">Свободен</span>`;
+  document.getElementById('vm-footer-info').textContent =
+    `Заявок всего: ${ctrTickets.length} · Активных: ${activeTickets.length}`;
+
+  document.getElementById('vm-tabs').innerHTML =
+    ['🔧 Данные исполнителя','📋 Заявки'].map((t,i) =>
+      `<div class="tab-btn${i===0?' active':''}" onclick="switchTab(${i})">${t}</div>`).join('');
+
+  const specCheckboxes = Object.entries(TICKET_TYPES).map(([key, tp]) => `
+    <label style="display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--bg);border-radius:7px;font-size:12px;cursor:pointer">
+      <input type="checkbox" class="c-spec" value="${key}" ${specs.includes(key)?'checked':''} style="cursor:pointer">
+      ${tp.icon} ${tp.name}
+    </label>`).join('');
+
+  const STATUS_NAMES = { NEW:'Новая', IN_PROGRESS:'В работе', WAITING:'Ожидание', DONE:'Выполнено', CANCELLED:'Отменена' };
+
+  document.getElementById('vm-body').innerHTML = `
+    <!-- TAB 0: ДАННЫЕ -->
+    <div class="tab-panel active">
+      <div class="fg"><div class="fg-label">Название организации</div>
+        <input class="fg-input" id="c-name" value="${esc(c.name)}"></div>
+
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Контактное лицо</div>
+          <input class="fg-input" id="c-contact" value="${esc(c.contact_person)}" placeholder="Иван Петров, мастер-приёмщик"></div>
+        <div class="fg"><div class="fg-label">Телефон</div>
+          <input class="fg-input" id="c-phone" value="${esc(c.phone)}" placeholder="+7 495 000-00-00"></div>
+      </div>
+
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">E-mail</div>
+          <input class="fg-input" id="c-email" value="${esc(c.email)}" placeholder="service@company.ru"></div>
+        <div class="fg"><div class="fg-label">Сайт</div>
+          <input class="fg-input" id="c-website" value="${esc(c.website)}" placeholder="company.ru"></div>
+      </div>
+
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Адрес</div>
+          <input class="fg-input" id="c-address" value="${esc(c.address)}" placeholder="Москва, ул. Промышленная, 12"></div>
+        <div class="fg"><div class="fg-label">Часы работы</div>
+          <input class="fg-input" id="c-hours" value="${esc(c.work_hours)}" placeholder="Пн–Пт 9:00–19:00"></div>
+      </div>
+
+      ${c.website ? `<div style="margin-bottom:14px">
+        <a href="${esc(c.website)}" target="_blank" rel="noopener"
+           style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--blue);text-decoration:none;font-weight:600">
+          🌐 Открыть сайт →
+        </a></div>` : ''}
+
+      <div class="fg">
+        <div class="fg-label">Информация об исполнителе</div>
+        <textarea class="fg-input" id="c-notes" rows="4"
+          placeholder="Условия работы, сроки, расценки, к кому обращаться, особенности — этот текст водитель увидит в Telegram при назначении">${String(c.notes ?? '')}</textarea>
+      </div>
+
+      <div class="fg">
+        <div class="fg-label">Специализация</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${specCheckboxes}</div>
+      </div>
+
+      <div style="margin-top:16px;padding:12px 14px;background:var(--blue-light);border:1px solid #93c5fd;border-radius:9px;font-size:12px;color:#1e40af">
+        💬 При назначении этого подрядчика на заявку водитель получит в Telegram название, контакты и текст из поля «Информация об исполнителе».
+      </div>
+
+      <div style="margin-top:16px">
+        <button class="btn btn-ghost" style="color:#b91c1c;border-color:#fca5a5" onclick="deleteContractor('${c.id}')">🗑 Удалить подрядчика</button>
+      </div>
+    </div>
+
+    <!-- TAB 1: ЗАЯВКИ -->
+    <div class="tab-panel">
+      ${ctrTickets.length === 0
+        ? `<div style="text-align:center;color:var(--text-muted);padding:40px 20px;font-size:13px">Заявок с этим подрядчиком пока нет</div>`
+        : ctrTickets.map(t => {
+            const tp = TICKET_TYPES[t.type] || {};
+            const v  = VEHICLES.find(v => v.id === t.vehicleId);
+            return `<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer"
+                        onclick="closeVModal();setTimeout(()=>openModal('${t.id}'),100)">
+              <span style="font-size:18px">${tp.icon||'📋'}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600">${t.num} · ${t.title||''}</div>
+                <div style="font-size:11px;color:var(--text-muted)">${v?v.plate:'—'} · ${new Date(t.created).toLocaleDateString('ru')}</div>
+              </div>
+              <span style="font-size:11px;color:var(--text-muted);white-space:nowrap">${STATUS_NAMES[t.status]||t.status}</span>
+            </div>`;
+          }).join('')}
+    </div>
+  `;
+
+  document.getElementById('vmodal-overlay').classList.add('open');
+}
+
+async function deleteContractor(id) {
+  if (!confirm('Удалить подрядчика? Он останется в уже созданных заявках.')) return;
+  try {
+    await api(`/contractors/${id}`, { method: 'DELETE' });
+    CONTRACTORS = CONTRACTORS.filter(c => c.id !== id);
+    closeVModal();
+    renderContractorsPage();
+    showToast('Подрядчик удалён');
+  } catch (err) {
+    showToast('❌ Не удалён: ' + err.message);
+  }
+}
+
+async function saveContractorToServer(c) {
+  try {
+    const saved = await api(`/contractors/${c.id}`, { method: 'PATCH', body: c });
+    Object.assign(c, fromServerContractor(saved));
+    showToast('✅ Данные подрядчика сохранены');
+  } catch (err) {
+    showToast('❌ Не сохранено: ' + err.message);
+  }
+  refreshCurrentPage();
+}
+
+// ══════════════════════════════════════════
 //  DRIVER MODAL
 // ══════════════════════════════════════════
 function openDriverModal(id) {
@@ -2235,6 +2374,19 @@ function saveVModal() {
     u.tachograph      = document.getElementById('d-tacho')?.value === '1';
     u.assigned_vehicle= document.getElementById('d-vehicle')?.value || null;
     saveDriverToServer(u);
+  } else if (vModalContext.type === 'contractor') {
+    const c = CONTRACTORS.find(c => c.id === vModalContext.id);
+    if (!c) return;
+    c.name           = document.getElementById('c-name')?.value || c.name;
+    c.contact_person = document.getElementById('c-contact')?.value || '';
+    c.phone          = document.getElementById('c-phone')?.value || '';
+    c.email          = document.getElementById('c-email')?.value || '';
+    c.website        = document.getElementById('c-website')?.value || '';
+    c.address        = document.getElementById('c-address')?.value || '';
+    c.work_hours     = document.getElementById('c-hours')?.value || '';
+    c.notes          = document.getElementById('c-notes')?.value || '';
+    c.specializations = [...document.querySelectorAll('.c-spec:checked')].map(el => el.value);
+    saveContractorToServer(c);
   }
   closeVModal();
 }
@@ -2266,12 +2418,12 @@ async function createDriver() {
 async function createContractor() {
   const name = prompt('Название подрядчика:');
   if (!name || !name.trim()) return;
-  const phone = prompt('Телефон (можно пропустить):') || '';
   try {
-    const saved = await api('/contractors', { method: 'POST', body: { name: name.trim(), phone } });
+    const saved = await api('/contractors', { method: 'POST', body: { name: name.trim() } });
     CONTRACTORS.push(fromServerContractor(saved));
     renderContractorsPage();
-    showToast('✅ Подрядчик добавлен');
+    openContractorModal(saved.id);
+    showToast('✅ Подрядчик добавлен — заполните карточку');
   } catch (err) {
     showToast('❌ Не добавлен: ' + err.message);
   }
@@ -2473,14 +2625,27 @@ function renderContractorsPage() {
       <div style="font-size:40px;margin-bottom:12px">🔧</div>Подрядчиков пока нет</div>` : ''}
     <div style="display:flex;flex-direction:column;gap:10px">
       ${CONTRACTORS.map(c => {
-        const specs = (c.specializations || []).map(s => TICKET_TYPES[s]?.icon + ' ' + TICKET_TYPES[s]?.name).join(', ');
-        return `<div style="background:#fff;border-radius:10px;padding:16px;box-shadow:var(--shadow);border:1px solid var(--border);display:flex;align-items:center;gap:16px">
+        const specs = (c.specializations || [])
+          .map(s => TICKET_TYPES[s] ? TICKET_TYPES[s].icon + ' ' + TICKET_TYPES[s].name : '')
+          .filter(Boolean).join(', ');
+        const activeCount = tickets.filter(t => t.contractorId === c.id
+          && t.status !== 'DONE' && t.status !== 'CANCELLED').length;
+        const contacts = [c.contact_person, c.phone].filter(Boolean).join(' · ');
+        return `<div class="fleet-card" onclick="openContractorModal('${c.id}')"
+                     style="display:flex;align-items:center;gap:16px;padding:16px">
           <div style="width:44px;height:44px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔧</div>
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:14px;margin-bottom:3px">${c.name}</div>
-            <div style="font-size:12px;color:var(--text-muted)">${specs}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+              <span style="font-weight:700;font-size:14px">${c.name}</span>
+              ${activeCount ? `<span class="ibadge" style="background:#fffbeb;color:#92400e;border:1px solid #fcd34d">${activeCount} в работе</span>` : ''}
+            </div>
+            <div style="font-size:12px;color:var(--text-muted)">${specs || 'Специализация не указана'}</div>
+            ${c.notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px">${c.notes}</div>` : ''}
           </div>
-          <div style="font-size:12px;color:var(--text-muted)">${c.phone}</div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:12px;font-weight:600">${contacts || '—'}</div>
+            ${c.website ? `<div style="font-size:11px;color:var(--blue);margin-top:2px">🌐 сайт</div>` : ''}
+          </div>
         </div>`;
       }).join('')}
     </div>`;
