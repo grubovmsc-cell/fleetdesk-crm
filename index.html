@@ -1248,10 +1248,24 @@ function renderCard(t) {
 // ══════════════════════════════════════════
 //  MODAL
 // ══════════════════════════════════════════
+// Подтягивает заявку с сервера — водитель мог ответить из бота
+async function refreshTicket(id) {
+  try {
+    const fresh = await api(`/tickets/${id}`);
+    const t = tickets.find(t => t.id === id);
+    if (!t) return;
+    const before = JSON.stringify(t.comments || []);
+    Object.assign(t, fromServerTicket(fresh));
+    // Перерисовываем, только если что-то изменилось, чтобы не мешать вводу
+    if (state.openTicketId === id && JSON.stringify(t.comments || []) !== before) openModal(id);
+  } catch (_) {}
+}
+
 function openModal(id) {
   state.openTicketId = id;
   const t   = tickets.find(t => t.id === id);
   if (!t) return;
+  refreshTicket(id);
   const u   = USERS.find(u => u.id === t.userId) || {};
   const v   = VEHICLES.find(v => v.id === t.vehicleId) || {};
   const tp  = TICKET_TYPES[t.type] || {};
@@ -1286,6 +1300,7 @@ function openModal(id) {
         <span class="comment-author">${cu.name}</span>
         <span class="comment-time">${dt}</span>
         ${c.internal ? '<span class="comment-internal">внутренний</span>' : ''}
+        ${c.fromDriver ? '<span class="comment-internal" style="color:#1d4ed8;background:#eff6ff">из Telegram</span>' : ''}
       </div>
       <div class="comment-text">${c.text}</div>
     </div>`;
@@ -1354,9 +1369,13 @@ function openModal(id) {
       <div class="modal-section-title">Комментарии (${t.comments.length})</div>
       <div class="comments-list">${commentsHTML || '<div style="font-size:12px;color:var(--text-muted)">Комментариев нет</div>'}</div>
       <div class="comment-input-row">
-        <textarea class="comment-input" id="comment-input" rows="2" placeholder="Написать комментарий..."></textarea>
+        <textarea class="comment-input" id="comment-input" rows="2" placeholder="Написать комментарий — водитель получит его в Telegram..."></textarea>
         <button class="btn btn-primary" onclick="addComment()">Отправить</button>
       </div>
+      <label style="display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px;color:var(--text-muted);cursor:pointer">
+        <input type="checkbox" id="comment-internal" style="cursor:pointer">
+        Внутренняя заметка — не отправлять водителю
+      </label>
     </div>
 
     <div class="modal-section">
@@ -1409,12 +1428,13 @@ function addComment() {
   const t = tickets.find(t => t.id === state.openTicketId);
   const input = document.getElementById('comment-input');
   if (!t || !input.value.trim()) return;
+  const internal = !!document.getElementById('comment-internal')?.checked;
   t.comments = [...(t.comments || []), {
     userId: null, author: state.currentAccount?.name || 'Диспетчер',
-    text: input.value.trim(), time: new Date().toISOString(), internal: false,
+    text: input.value.trim(), time: new Date().toISOString(), internal,
   }];
   input.value = '';
-  saveTicketToServer(t, 'Комментарий добавлен');
+  saveTicketToServer(t, internal ? 'Заметка добавлена' : '💬 Комментарий отправлен водителю');
 }
 
 // ══════════════════════════════════════════
