@@ -991,6 +991,9 @@ async function loadCompanyData() {
   VEHICLES    = data.vehicles.map(fromServerVehicle);
   CONTRACTORS = data.contractors.map(fromServerContractor);
   tickets     = data.tickets.map(fromServerTicket);
+  // Сервер отдаёт последние N заявок — запомним, сколько всего в базе
+  state.ticketsTotal = data.ticketsTotal ?? tickets.length;
+  state.ticketsLimit = data.ticketsLimit ?? tickets.length;
   return data;
 }
 
@@ -1209,7 +1212,10 @@ function renderKanban() {
   document.getElementById('col-cnt-done').textContent = cols.DONE.length;
 
   const total = filtered.length;
-  document.getElementById('tickets-count').textContent = `Показано: ${total} из ${tickets.length}`;
+  const hidden = (state.ticketsTotal || tickets.length) - tickets.length;
+  document.getElementById('tickets-count').textContent =
+    `Показано: ${total} из ${tickets.length}` +
+    (hidden > 0 ? ` (в архиве ещё ${hidden})` : '');
   updateStatChips();
 }
 
