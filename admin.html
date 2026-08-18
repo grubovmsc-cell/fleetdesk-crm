@@ -310,14 +310,16 @@ function closeModal() { document.getElementById('modal-bg').classList.remove('op
 function switchTab(i) { currentTab = i; renderCompany(); }
 
 function renderCompany() {
-  const { company: c, accounts, drivers, vehicles, ticketStats, log } = current;
+  const { company: c, accounts, drivers, vehicles, contractors, tickets, ticketStats, log } = current;
   const labels = overview.actionLabels;
 
   document.getElementById('m-sub').textContent = c.id;
   document.getElementById('m-title').innerHTML =
     esc(c.name) + (c.blocked_at ? ' <span class="badge b-bad">Заблокирована</span>' : '');
 
-  const tabs = ['Обзор', `Аккаунты (${accounts.length})`, `Водители (${drivers.length})`, `Авто (${vehicles.length})`, 'Журнал'];
+  const tabs = ['Обзор', `Аккаунты (${accounts.length})`, `Водители (${drivers.length})`,
+    `Авто (${vehicles.length})`, `Подрядчики (${contractors.length})`,
+    `Заявки (${tickets.length})`, 'Журнал'];
   const openCount = ticketStats.filter(s => !['DONE','CANCELLED'].includes(s.status))
     .reduce((a, s) => a + s.n, 0);
   const allTickets = ticketStats.reduce((a, s) => a + s.n, 0);
@@ -383,42 +385,107 @@ function renderCompany() {
 
   if (currentTab === 2) {
     const st = { active:'На работе', vacation:'В отпуске', fired:'Уволен' };
-    body = `<table>
-      <thead><tr><th>Водитель</th><th>Телефон</th><th>Telegram</th><th>Статус</th><th>Бот</th></tr></thead>
-      <tbody>
-        ${drivers.length === 0
-          ? `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:26px">Водителей нет</td></tr>`
-          : drivers.map(d => `
-          <tr>
-            <td style="font-weight:600">${esc(d.name)}</td>
-            <td>${esc(d.phone)}</td>
-            <td>${d.telegram_username ? '@' + esc(d.telegram_username) : '—'}</td>
-            <td>${esc(st[d.status] || d.status)}</td>
-            <td>${d.telegram_id
-              ? '<span class="badge b-ok">Подключён</span>'
-              : '<span class="badge b-gray">Нет</span>'}</td>
-          </tr>`).join('')}
-      </tbody></table>`;
+    body = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="btn btn-primary btn-sm" onclick="newDriver()">+ Добавить водителя</button>
+      </div>
+      <table>
+        <thead><tr><th>Водитель</th><th>Телефон</th><th>Telegram</th><th>Статус</th><th>Бот</th><th></th></tr></thead>
+        <tbody>
+          ${drivers.length === 0
+            ? `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:26px">Водителей нет</td></tr>`
+            : drivers.map(d => `
+            <tr>
+              <td style="font-weight:600">${esc(d.name)}</td>
+              <td>${esc(d.phone)}</td>
+              <td>${d.telegram_username ? '@' + esc(d.telegram_username) : '—'}</td>
+              <td>${esc(st[d.status] || d.status)}</td>
+              <td>${d.telegram_id
+                ? '<span class="badge b-ok">Подключён</span>'
+                : '<span class="badge b-gray">Нет</span>'}</td>
+              <td style="text-align:right;white-space:nowrap">
+                <button class="btn btn-ghost btn-sm" onclick="editDriver('${d.id}')">✏️</button>
+                <button class="btn btn-ghost btn-sm" style="color:#b91c1c"
+                        onclick="removeItem('drivers','${d.id}','водителя «${esc(d.name)}»')">🗑</button>
+              </td>
+            </tr>`).join('')}
+        </tbody></table>`;
   }
 
   if (currentTab === 3) {
     const st = { active:'В работе', repair:'Ремонт', idle:'Простой' };
+    body = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="btn btn-primary btn-sm" onclick="newVehicle()">+ Добавить автомобиль</button>
+      </div>
+      <table>
+        <thead><tr><th>Гос. номер</th><th>Марка и модель</th><th>Водитель</th><th>Пробег</th><th>Состояние</th><th></th></tr></thead>
+        <tbody>
+          ${vehicles.length === 0
+            ? `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:26px">Автомобилей нет</td></tr>`
+            : vehicles.map(v => `
+            <tr>
+              <td style="font-weight:700">${esc(v.plate)}</td>
+              <td>${esc([v.brand, v.model, v.year].filter(Boolean).join(' '))}</td>
+              <td>${esc(v.driver_name || '—')}</td>
+              <td>${v.mileage ? Number(v.mileage).toLocaleString('ru-RU') + ' км' : '—'}</td>
+              <td>${esc(st[v.status] || v.status)}</td>
+              <td style="text-align:right;white-space:nowrap">
+                <button class="btn btn-ghost btn-sm" onclick="editVehicle('${v.id}')">✏️</button>
+                <button class="btn btn-ghost btn-sm" style="color:#b91c1c"
+                        onclick="removeItem('vehicles','${v.id}','автомобиль ${esc(v.plate)}')">🗑</button>
+              </td>
+            </tr>`).join('')}
+        </tbody></table>`;
+  }
+
+  if (currentTab === 4) {
+    body = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="btn btn-primary btn-sm" onclick="newContractor()">+ Добавить подрядчика</button>
+      </div>
+      <table>
+        <thead><tr><th>Название</th><th>Контактное лицо</th><th>Телефон</th><th></th></tr></thead>
+        <tbody>
+          ${contractors.length === 0
+            ? `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:26px">Подрядчиков нет</td></tr>`
+            : contractors.map(k => `
+            <tr>
+              <td style="font-weight:600">${esc(k.name)}</td>
+              <td>${esc(k.contact_person || '—')}</td>
+              <td>${esc(k.phone || '—')}</td>
+              <td style="text-align:right">
+                <button class="btn btn-ghost btn-sm" style="color:#b91c1c"
+                        onclick="removeItem('contractors','${k.id}','подрядчика «${esc(k.name)}»')">🗑</button>
+              </td>
+            </tr>`).join('')}
+        </tbody></table>`;
+  }
+
+  if (currentTab === 5) {
+    const st = { NEW:'Новая', IN_PROGRESS:'В работе', WAITING:'Ожидание', DONE:'Выполнено', CANCELLED:'Отменена' };
     body = `<table>
-      <thead><tr><th>Гос. номер</th><th>Марка и модель</th><th>Пробег</th><th>Состояние</th></tr></thead>
+      <thead><tr><th>Номер</th><th>Заявка</th><th>Авто</th><th>Автор</th><th>Статус</th><th>Создана</th><th></th></tr></thead>
       <tbody>
-        ${vehicles.length === 0
-          ? `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:26px">Автомобилей нет</td></tr>`
-          : vehicles.map(v => `
+        ${tickets.length === 0
+          ? `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:26px">Заявок нет</td></tr>`
+          : tickets.map(t => `
           <tr>
-            <td style="font-weight:700">${esc(v.plate)}</td>
-            <td>${esc([v.brand, v.model].filter(Boolean).join(' '))}</td>
-            <td>${v.mileage ? Number(v.mileage).toLocaleString('ru-RU') + ' км' : '—'}</td>
-            <td>${esc(st[v.status] || v.status)}</td>
+            <td class="mono">${esc(t.num)}</td>
+            <td>${esc(t.title || '—')}</td>
+            <td>${esc(t.plate || '—')}</td>
+            <td>${esc(t.driver_name || '—')}</td>
+            <td>${esc(st[t.status] || t.status)}</td>
+            <td style="white-space:nowrap">${fmtDate(t.created_at)}</td>
+            <td style="text-align:right">
+              <button class="btn btn-ghost btn-sm" style="color:#b91c1c"
+                      onclick="removeItem('tickets','${t.id}','заявку ${esc(t.num)}')">🗑</button>
+            </td>
           </tr>`).join('')}
       </tbody></table>`;
   }
 
-  if (currentTab === 4) {
+  if (currentTab === 6) {
     body = `<table>
       <thead><tr><th>Время</th><th>Кто</th><th>Действие</th><th>Что</th></tr></thead>
       <tbody>
@@ -510,6 +577,145 @@ async function deleteAccount(id, email) {
   try {
     await api('/accounts/' + id, { method: 'DELETE' });
     showToast('Аккаунт удалён');
+    current = await api('/companies/' + encodeURIComponent(current.company.id));
+    renderCompany();
+    await loadOverview();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+// ── Данные компании ──
+// Небольшая форма прямо в окне: полные карточки живут в CRM
+function dataForm(title, fields, onSave) {
+  window.__saveForm = onSave;
+  document.getElementById('m-title').textContent = title;
+  document.getElementById('m-body').innerHTML = `
+    ${fields.map(f => `
+      <div class="field">
+        <label>${f.label}${f.required ? ' *' : ''}</label>
+        ${f.options
+          ? `<select class="input" id="f-${f.key}">
+              ${f.options.map(o => `<option value="${o.v}" ${o.v === f.value ? 'selected' : ''}>${o.t}</option>`).join('')}
+             </select>`
+          : `<input class="input" id="f-${f.key}" value="${esc(f.value)}" placeholder="${esc(f.hint || '')}">`}
+      </div>`).join('')}
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-ghost" onclick="openCompany('${esc(current.company.id)}')">Отмена</button>
+      <button class="btn btn-primary" id="form-save" onclick="submitForm()">Сохранить</button>
+    </div>`;
+}
+
+async function submitForm() {
+  const btn = document.getElementById('form-save');
+  btn.disabled = true; btn.textContent = 'Сохраняем…';
+  try {
+    await window.__saveForm();
+    showToast('✅ Сохранено');
+    await loadOverview();
+    await openCompany(current.company.id);
+  } catch (e) {
+    showToast('❌ ' + e.message);
+    btn.disabled = false; btn.textContent = 'Сохранить';
+  }
+}
+
+const val = (k) => document.getElementById('f-' + k).value.trim();
+
+const DRIVER_STATUS = [
+  { v:'active', t:'На работе' }, { v:'vacation', t:'В отпуске' }, { v:'fired', t:'Уволен' },
+];
+const VEHICLE_STATUS = [
+  { v:'active', t:'В работе' }, { v:'repair', t:'Ремонт' }, { v:'idle', t:'Простой' },
+];
+
+function newDriver() {
+  dataForm('Новый водитель', [
+    { key:'name', label:'ФИО', value:'', required:true, hint:'Иванов Иван Иванович' },
+    { key:'phone', label:'Телефон', value:'', hint:'+7 916 000-00-00' },
+    { key:'email', label:'E-mail', value:'' },
+    { key:'telegram', label:'Telegram', value:'', hint:'ник без @ — по нему бот узнаёт водителя' },
+    { key:'status', label:'Статус', value:'active', options: DRIVER_STATUS },
+  ], async () => {
+    if (!val('name')) throw new Error('Укажите ФИО');
+    await api(`/companies/${encodeURIComponent(current.company.id)}/drivers`, {
+      method:'POST',
+      body: { name: val('name'), phone: val('phone'), email: val('email'),
+              telegram: val('telegram'), status: val('status') },
+    });
+  });
+}
+
+function editDriver(id) {
+  const d = current.drivers.find(x => x.id === id);
+  if (!d) return;
+  dataForm('Водитель', [
+    { key:'name', label:'ФИО', value: d.name, required:true },
+    { key:'phone', label:'Телефон', value: d.phone || '' },
+    { key:'email', label:'E-mail', value: d.email || '' },
+    { key:'telegram', label:'Telegram', value: d.telegram_username || '' },
+    { key:'status', label:'Статус', value: d.status, options: DRIVER_STATUS },
+  ], async () => {
+    await api('/drivers/' + id, { method:'PATCH', body: {
+      name: val('name'), phone: val('phone'), email: val('email'),
+      telegram: val('telegram'), status: val('status'),
+    }});
+  });
+}
+
+function newVehicle() {
+  dataForm('Новый автомобиль', [
+    { key:'plate', label:'Гос. номер', value:'', required:true, hint:'А123БВ77' },
+    { key:'brand', label:'Марка', value:'', hint:'Toyota' },
+    { key:'model', label:'Модель', value:'', hint:'Camry' },
+    { key:'year', label:'Год выпуска', value:'' },
+    { key:'mileage', label:'Пробег, км', value:'' },
+    { key:'status', label:'Состояние', value:'active', options: VEHICLE_STATUS },
+  ], async () => {
+    if (!val('plate')) throw new Error('Укажите гос. номер');
+    await api(`/companies/${encodeURIComponent(current.company.id)}/vehicles`, {
+      method:'POST',
+      body: { plate: val('plate'), brand: val('brand'), model: val('model'),
+              year: val('year'), mileage: val('mileage'), status: val('status') },
+    });
+  });
+}
+
+function editVehicle(id) {
+  const v = current.vehicles.find(x => x.id === id);
+  if (!v) return;
+  dataForm('Автомобиль', [
+    { key:'plate', label:'Гос. номер', value: v.plate, required:true },
+    { key:'brand', label:'Марка', value: v.brand || '' },
+    { key:'model', label:'Модель', value: v.model || '' },
+    { key:'year', label:'Год выпуска', value: v.year || '' },
+    { key:'mileage', label:'Пробег, км', value: v.mileage || '' },
+    { key:'status', label:'Состояние', value: v.status, options: VEHICLE_STATUS },
+  ], async () => {
+    await api('/vehicles/' + id, { method:'PATCH', body: {
+      plate: val('plate'), brand: val('brand'), model: val('model'),
+      year: val('year'), mileage: val('mileage'), status: val('status'),
+    }});
+  });
+}
+
+function newContractor() {
+  dataForm('Новый подрядчик', [
+    { key:'name', label:'Название', value:'', required:true, hint:'СТО Авторем' },
+    { key:'contact_person', label:'Контактное лицо', value:'' },
+    { key:'phone', label:'Телефон', value:'' },
+  ], async () => {
+    if (!val('name')) throw new Error('Укажите название');
+    await api(`/companies/${encodeURIComponent(current.company.id)}/contractors`, {
+      method:'POST',
+      body: { name: val('name'), contact_person: val('contact_person'), phone: val('phone') },
+    });
+  });
+}
+
+async function removeItem(kind, id, what) {
+  if (!confirm(`Удалить ${what}?`)) return;
+  try {
+    await api(`/${kind}/${id}`, { method: 'DELETE' });
+    showToast('Удалено');
     current = await api('/companies/' + encodeURIComponent(current.company.id));
     renderCompany();
     await loadOverview();
