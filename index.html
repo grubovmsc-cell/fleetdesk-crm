@@ -379,6 +379,9 @@ select.fsel:focus { border-color: var(--blue); }
     <div class="nav-item" onclick="showToast('Раздел в разработке')">
       <span class="nav-icon">📊</span> Отчёты
     </div>
+    <div class="nav-item" onclick="setPage('broadcast')">
+      <span class="nav-icon">📢</span> Рассылка
+    </div>
     <div class="nav-label">Система</div>
     <div class="nav-item" onclick="setPage('bot')">
       <span class="nav-icon">🤖</span> Telegram Bot
@@ -1739,6 +1742,13 @@ function setPage(page) {
     statsRow.style.display  = 'none';
     document.getElementById('page-title').textContent = 'Настройки';
     renderSettingsPage();
+  } else if (page === 'broadcast') {
+    kanban.style.display = 'none';
+    other.style.display  = 'flex';
+    filterBar.style.display = 'none';
+    statsRow.style.display  = 'none';
+    document.getElementById('page-title').textContent = 'Рассылка';
+    renderBroadcastPage();
   }
 }
 
@@ -2697,11 +2707,31 @@ async function createVehicle() {
 }
 
 // ── Сохранение на сервер ───────────────────────────────────
+// Связь водитель↔машина хранится с двух сторон — держим их согласованными
+// и в браузере, чтобы не ждать перезагрузки данных
+function syncAssignmentLocal({ userId, vehicleId }) {
+  if (userId) {
+    VEHICLES.forEach(v => {
+      if (v.assigned_user_id === userId && v.id !== vehicleId) v.assigned_user_id = null;
+    });
+    const u = USERS.find(u => u.id === userId);
+    if (u) u.assigned_vehicle = vehicleId || null;
+  }
+  if (vehicleId) {
+    USERS.forEach(u => {
+      if (u.assigned_vehicle === vehicleId && u.id !== userId) u.assigned_vehicle = null;
+    });
+    const v = VEHICLES.find(v => v.id === vehicleId);
+    if (v) v.assigned_user_id = userId || null;
+  }
+}
+
 async function saveVehicleToServer(v) {
   try {
     const saved = await api(v.id ? `/vehicles/${v.id}` : '/vehicles',
       { method: v.id ? 'PATCH' : 'POST', body: v });
     Object.assign(v, fromServerVehicle(saved));
+    syncAssignmentLocal({ vehicleId: v.id, userId: v.assigned_user_id });
     showToast('✅ Данные автомобиля сохранены');
   } catch (err) {
     showToast('❌ Не сохранено: ' + err.message);
@@ -2714,6 +2744,7 @@ async function saveDriverToServer(u) {
     const saved = await api(u.id ? `/drivers/${u.id}` : '/drivers',
       { method: u.id ? 'PATCH' : 'POST', body: u });
     Object.assign(u, fromServerDriver(saved));
+    syncAssignmentLocal({ userId: u.id, vehicleId: u.assigned_vehicle });
     showToast('✅ Данные водителя сохранены');
   } catch (err) {
     showToast('❌ Не сохранено: ' + err.message);
@@ -3287,6 +3318,144 @@ function renderImportResult(res) {
 }
 
 // ══════════════════════════════════════════
+//  РАССЫЛКА
+// ══════════════════════════════════════════
+let broadcastSelected = null;   // null — все подключённые
+
+async function renderBroadcastPage() {
+  document.getElementById('other-content').innerHTML =
+    `<div style="padding:40px;text-align:center;color:var(--text-muted)">Загружаем список…</div>`;
+
+  let recipients = [];
+  try {
+    recipients = (await api('/broadcast/recipients')).recipients;
+  } catch (err) {
+    document.getElementById('other-content').innerHTML =
+      `<div style="padding:30px;text-align:center;color:#b91c1c">${err.message}</div>`;
+    return;
+  }
+
+  const connected = recipients.filter(r => r.telegram_id || r.max_id);
+  if (broadcastSelected === null) broadcastSelected = new Set(connected.map(r => r.id));
+
+  const channelBadge = (r) => {
+    const list = [];
+    if (r.telegram_id) list.push('Telegram');
+    if (r.max_id) list.push('MAX');
+    return list.length
+      ? `<span class="ibadge ib-active">${list.join(' · ')}</span>`
+      : `<span class="ibadge ib-idle">не подключён</span>`;
+  };
+
+  document.getElementById('other-content').innerHTML = `
+    <div style="max-width:860px">
+      <div style="background:linear-gradient(135deg,#0f172a,#0369a1);border-radius:14px;padding:22px;margin-bottom:20px;color:#fff;display:flex;align-items:center;gap:18px">
+        <div style="width:52px;height:52px;background:rgba(255,255,255,.12);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">📢</div>
+        <div>
+          <div style="font-size:17px;font-weight:800;margin-bottom:3px">Сообщение всем сотрудникам</div>
+          <div style="font-size:13px;color:#bae6fd">Придёт в тот мессенджер, где водитель подключён — Telegram или MAX</div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:16px">
+        <div class="fg">
+          <div class="fg-label">Текст сообщения</div>
+          <textarea class="fg-input" id="bc-text" rows="5" maxlength="3000"
+            placeholder="Например: завтра с 9:00 до 12:00 закрыт въезд на парковку — оставляйте машины на Складе №2"
+            oninput="document.getElementById('bc-count').textContent=this.value.length"></textarea>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+            <span id="bc-count">0</span> / 3000 символов
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="sendBroadcast()" id="bc-send">
+          📤 Отправить <span id="bc-selected">${broadcastSelected.size}</span> получателям
+        </button>
+      </div>
+
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden">
+        <div style="padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px">Получатели</div>
+            <div style="font-size:12px;color:var(--text-muted)">
+              Подключены к боту: ${connected.length} из ${recipients.length}
+            </div>
+          </div>
+          <button class="btn btn-ghost" style="font-size:12px" onclick="toggleAllRecipients(true)">Выбрать всех</button>
+          <button class="btn btn-ghost" style="font-size:12px" onclick="toggleAllRecipients(false)">Снять</button>
+        </div>
+
+        ${recipients.length === 0
+          ? `<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:13px">Водителей пока нет</div>`
+          : recipients.map((r,i) => {
+            const can = !!(r.telegram_id || r.max_id);
+            return `
+            <label style="display:flex;align-items:center;gap:12px;padding:11px 20px;${i===recipients.length-1?'':'border-bottom:1px solid var(--border)'};${can?'cursor:pointer':'opacity:.5'}">
+              <input type="checkbox" class="bc-user" value="${r.id}" ${can?'':'disabled'}
+                     ${broadcastSelected.has(r.id)?'checked':''} onchange="onRecipientToggle(this)"
+                     style="width:16px;height:16px;cursor:inherit">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:13px">${r.name}</div>
+                <div style="font-size:11px;color:var(--text-muted)">${r.phone || 'телефон не указан'}</div>
+              </div>
+              ${channelBadge(r)}
+            </label>`;
+          }).join('')}
+      </div>
+    </div>`;
+}
+
+function onRecipientToggle(el) {
+  if (el.checked) broadcastSelected.add(el.value);
+  else broadcastSelected.delete(el.value);
+  document.getElementById('bc-selected').textContent = broadcastSelected.size;
+}
+
+function toggleAllRecipients(on) {
+  document.querySelectorAll('.bc-user').forEach(el => {
+    if (el.disabled) return;
+    el.checked = on;
+    if (on) broadcastSelected.add(el.value); else broadcastSelected.delete(el.value);
+  });
+  document.getElementById('bc-selected').textContent = broadcastSelected.size;
+}
+
+async function sendBroadcast() {
+  const text = document.getElementById('bc-text').value.trim();
+  if (!text) { showToast('⚠️ Введите текст сообщения'); return; }
+  if (!broadcastSelected.size) { showToast('⚠️ Выберите хотя бы одного получателя'); return; }
+
+  if (!confirm(`Отправить сообщение ${broadcastSelected.size} сотрудникам?\n\nОтменить отправку будет нельзя.`))
+    return;
+
+  const btn = document.getElementById('bc-send');
+  btn.disabled = true; btn.textContent = 'Отправляем…';
+
+  try {
+    const res = await api('/broadcast', { method: 'POST',
+      body: { text, userIds: [...broadcastSelected] } });
+
+    document.getElementById('other-content').innerHTML = `
+      <div style="max-width:560px;background:#fff;border-radius:12px;border:1px solid var(--border);padding:26px">
+        <div style="font-size:40px;margin-bottom:12px">✅</div>
+        <div style="font-size:17px;font-weight:700;margin-bottom:6px">Рассылка отправлена</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:18px">
+          Доставлено ${res.sent} из ${res.total}
+        </div>
+        ${res.failed && res.failed.length ? `
+          <div style="padding:13px 15px;background:var(--amber-light);border:1px solid var(--amber);border-radius:9px;font-size:12px;color:#92400e;margin-bottom:18px">
+            Не доставлено: ${res.failed.join(', ')}.<br>
+            Возможно, эти сотрудники остановили бота.
+          </div>` : ''}
+        <button class="btn btn-primary" onclick="broadcastSelected=null;renderBroadcastPage()">Новая рассылка</button>
+      </div>`;
+  } catch (err) {
+    showToast('❌ ' + err.message);
+    btn.disabled = false;
+    btn.innerHTML = `📤 Отправить <span id="bc-selected">${broadcastSelected.size}</span> получателям`;
+  }
+}
+
+// ══════════════════════════════════════════
 //  НАСТРОЙКИ
 // ══════════════════════════════════════════
 let settingsTab = 0;
@@ -3302,7 +3471,7 @@ const canManageTeam = () => ['owner', 'admin'].includes(state.currentAccount?.ro
 const canEditCompany = () => ['owner', 'admin'].includes(state.currentAccount?.role);
 
 async function renderSettingsPage() {
-  const tabs = ['🏢 Компания', '👤 Мой профиль', '👥 Команда'];
+  const tabs = ['🏢 Компания', '🔔 Уведомления', '👤 Мой профиль', '👥 Команда'];
   document.getElementById('other-content').innerHTML = `
     <div style="max-width:820px">
       <div class="tab-bar" style="margin-bottom:20px">
@@ -3317,6 +3486,9 @@ async function renderSettingsPage() {
       settingsData.company = await api('/settings/company');
       renderCompanySettings();
     } else if (settingsTab === 1) {
+      settingsData.notifications = await api('/settings/notifications');
+      renderNotificationSettings();
+    } else if (settingsTab === 2) {
       renderProfileSettings();
     } else {
       settingsData.team = await api('/settings/team');
@@ -3386,6 +3558,86 @@ async function saveCompanySettings() {
     }});
     document.getElementById('sidebar-company').textContent = settingsData.company.name;
     showToast('✅ Данные компании сохранены');
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  }
+}
+
+// ── Уведомления ──
+function renderNotificationSettings() {
+  const { settings: s, events } = settingsData.notifications;
+  const editable = canEditCompany();
+  const dis = editable ? '' : 'disabled';
+
+  const toggle = (key, name, hint) => `
+    <label style="display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--border);cursor:${editable?'pointer':'default'}">
+      <input type="checkbox" id="n-${key}" ${s[key] !== false ? 'checked' : ''} ${dis}
+             style="margin-top:2px;width:17px;height:17px;cursor:inherit">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">${name}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${hint}</div>
+      </div>
+    </label>`;
+
+  document.getElementById('settings-body').innerHTML = `
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Что отправлять водителю</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">
+        Сообщения приходят в тот мессенджер, где водитель подключён
+      </div>
+      ${events.map(e => toggle(e.key, e.name, e.hint)).join('')}
+
+      <div class="fg" style="margin-top:16px;max-width:280px">
+        <div class="fg-label">За сколько дней напоминать о документах</div>
+        <input class="fg-input" id="n-docs-days" type="number" min="1" max="90"
+               value="${s.docs_days ?? 14}" ${dis}>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px">Тихие часы</div>
+      <label style="display:flex;gap:12px;align-items:flex-start;cursor:${editable?'pointer':'default'}">
+        <input type="checkbox" id="n-quiet" ${s.quiet_enabled ? 'checked' : ''} ${dis}
+               onchange="document.getElementById('quiet-time').style.display=this.checked?'':'none'"
+               style="margin-top:2px;width:17px;height:17px;cursor:inherit">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">Не беспокоить ночью</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+            В указанные часы обычные уведомления не отправляются.
+            Сообщения о срочных заявках приходят всегда.
+          </div>
+        </div>
+      </label>
+      <div id="quiet-time" class="frow" style="margin-top:14px;max-width:340px;${s.quiet_enabled?'':'display:none'}">
+        <div class="fg"><div class="fg-label">С</div>
+          <input class="fg-input" id="n-quiet-from" type="time" value="${s.quiet_from || '21:00'}" ${dis}></div>
+        <div class="fg"><div class="fg-label">До</div>
+          <input class="fg-input" id="n-quiet-to" type="time" value="${s.quiet_to || '08:00'}" ${dis}></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:8px">Время московское</div>
+    </div>
+
+    ${editable
+      ? `<button class="btn btn-primary" onclick="saveNotificationSettings()">💾 Сохранить</button>`
+      : `<div style="padding:13px 15px;background:var(--bg);border-radius:9px;font-size:12px;color:var(--text-muted)">
+           Настраивать уведомления может владелец или администратор компании.
+         </div>`}`;
+}
+
+async function saveNotificationSettings() {
+  const { events } = settingsData.notifications;
+  const body = {
+    docs_days:     document.getElementById('n-docs-days').value,
+    quiet_enabled: document.getElementById('n-quiet').checked,
+    quiet_from:    document.getElementById('n-quiet-from').value,
+    quiet_to:      document.getElementById('n-quiet-to').value,
+  };
+  events.forEach(e => { body[e.key] = document.getElementById('n-' + e.key).checked; });
+
+  try {
+    settingsData.notifications.settings =
+      (await api('/settings/notifications', { method: 'PATCH', body })).settings;
+    showToast('✅ Настройки уведомлений сохранены');
   } catch (err) {
     showToast('❌ ' + err.message);
   }
@@ -3556,7 +3808,7 @@ function showInviteLink(res) {
       <div style="padding:12px 14px;background:var(--blue-light);border:1px solid #93c5fd;border-radius:9px;font-size:12px;color:#1e40af;margin-bottom:16px">
         💡 Когда подключим отправку писем, приглашение будет уходить на почту автоматически.
       </div>
-      <button class="btn btn-primary" onclick="settingsTab=2;renderSettingsPage()">Готово</button>
+      <button class="btn btn-primary" onclick="settingsTab=3;renderSettingsPage()">Готово</button>
     </div>`;
 }
 
@@ -3568,6 +3820,7 @@ async function changeRole(id, role) {
     renderTeamSettings();
   } catch (err) {
     showToast('❌ ' + err.message);
+    settingsData.team = await api('/settings/team').catch(() => settingsData.team);
     renderTeamSettings();
   }
 }
