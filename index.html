@@ -928,6 +928,7 @@ let state = {
   currentAccount: null,
   companyId: null,
   botUsername: '',
+  maxBot: null,
   token: localStorage.getItem('fleetdesk_token') || '',
   botManagerUrl: localStorage.getItem('fleetdesk_bot_manager_url') || DEFAULT_API,
 };
@@ -969,7 +970,7 @@ function fromServerDriver(raw) {
     tachograph: !!u.has_tachograph,
     driving_style:  u.driving_style  != null ? Number(u.driving_style)  : 0,
     fuel_per_100km: u.fuel_per_100km != null ? Number(u.fuel_per_100km) : 0,
-    has_app: !!u.telegram_id,
+    has_app: !!(u.telegram_id || u.max_id),
     initials: u.initials || (u.name || '?').slice(0, 2).toUpperCase(),
     color: u.color || '#94a3b8',
   };
@@ -2219,7 +2220,15 @@ function openDriverModal(id) {
         <div class="fg"><div class="fg-label">Телефон</div><input class="fg-input" id="d-phone" value="${u.phone}"></div>
         <div class="fg"><div class="fg-label">Email</div><input class="fg-input" id="d-email" value="${u.email}"></div>
       </div>
-      <div class="fg"><div class="fg-label">Telegram</div><input class="fg-input" id="d-telegram" value="${u.telegram}"></div>
+      <div class="frow">
+        <div class="fg"><div class="fg-label">Telegram</div>
+          <input class="fg-input" id="d-telegram" value="${u.telegram}" placeholder="ник без @"></div>
+        <div class="fg"><div class="fg-label">MAX</div>
+          <input class="fg-input" id="d-max" value="${u.max_username ? '@' + u.max_username : ''}" placeholder="ник без @"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:-6px">
+        По этим никам бот узнаёт водителя при первом входе. Достаточно заполнить хотя бы один.
+      </div>
     </div>
 
     <!-- TAB 1: ДОКУМЕНТЫ & ДОПУСК -->
@@ -2389,6 +2398,7 @@ function saveVModal() {
     u.phone           = document.getElementById('d-phone')?.value || u.phone;
     u.email           = document.getElementById('d-email')?.value || u.email;
     u.telegram        = document.getElementById('d-telegram')?.value || u.telegram;
+    u.max             = (document.getElementById('d-max')?.value || '').replace(/^@/, '');
     u.license_number  = document.getElementById('d-licnum')?.value || u.license_number;
     u.license_category= document.getElementById('d-liccat')?.value || u.license_category;
     u.license_expires = document.getElementById('d-licexp')?.value || null;
@@ -2527,14 +2537,28 @@ function renderBotPage() {
 
       <!-- Link card -->
       <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:20px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px"><span>📨</span> Ссылка для водителей</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px"><span>📨</span> Ссылки для водителей</div>
         ${isActive ? `
-          <div style="display:flex;gap:8px;align-items:center">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Telegram</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
             <div id="bot-link-box" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:14px;font-weight:600;color:#1d4ed8;font-family:monospace">${botLink}</div>
             <button class="btn btn-ghost" onclick="copyBotLink()">📋 Скопировать</button>
           </div>
-          <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
-            Ссылка одна для всех компаний. Бот сам узнаёт водителя — по Telegram-нику из карточки (вкладка «Водители»). Если ника нет или он не совпал, бот один раз попросит рабочий e-mail.
+
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">MAX</div>
+          ${state.maxBot && state.maxBot.ok ? `
+            <div style="display:flex;gap:8px;align-items:center">
+              <div style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:14px;font-weight:600;color:#1d4ed8;font-family:monospace">${state.maxBot.link}</div>
+              <button class="btn btn-ghost" onclick="copyLink('${state.maxBot.link}')">📋 Скопировать</button>
+            </div>
+          ` : `
+            <div style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-muted)">
+              Бот в MAX пока не подключён — обратитесь к администратору сервиса
+            </div>
+          `}
+
+          <div style="margin-top:14px;font-size:12px;color:var(--text-muted)">
+            Ссылки одни для всех компаний. Бот узнаёт водителя по нику из его карточки (вкладка «Водители») — Telegram или MAX, смотря откуда он пишет. Если ник не заполнен, бот один раз попросит рабочий e-mail.
           </div>
         ` : `
           <div style="font-size:13px;color:var(--text-muted)">
@@ -2617,17 +2641,19 @@ async function refreshBotInfo() {
   try {
     const res = await fetch(`${state.botManagerUrl}/bot-info`, { signal: AbortSignal.timeout(5000) });
     const data = await res.json();
-    if (data.username) {
-      state.botUsername = data.username;
-      if (state.page === 'bot') renderBotPage();
-    }
+    if (data.username) state.botUsername = data.username;
+    state.maxBot = data.max || null;
+    if (state.page === 'bot') renderBotPage();
   } catch (err) {
     console.warn('[bot-info]', err.message);
   }
 }
 
 function copyBotLink() {
-  const link = `https://t.me/${state.botUsername || 'your_fleet_bot'}`;
+  copyLink(`https://t.me/${state.botUsername || 'your_fleet_bot'}`);
+}
+
+function copyLink(link) {
   if (navigator.clipboard) navigator.clipboard.writeText(link);
   showToast('📋 Ссылка скопирована в буфер обмена');
 }
