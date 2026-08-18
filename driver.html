@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>FleetDesk — Мой кабинет</title>
+<style>
+:root {
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --blue: #3b82f6;
+  --blue-light: #eff6ff;
+  --green: #22c55e;
+  --green-light: #f0fdf4;
+  --amber: #f59e0b;
+  --amber-light: #fffbeb;
+  --red: #ef4444;
+  --red-light: #fef2f2;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.wrap { max-width: 560px; margin: 0 auto; padding: 0 14px 40px; }
+
+/* Шапка */
+.header {
+  background: linear-gradient(135deg, #0f172a, #1e40af);
+  color: #fff; padding: 22px 16px 26px;
+  padding-top: calc(22px + env(safe-area-inset-top));
+}
+.header-inner { max-width: 560px; margin: 0 auto; }
+.logo { font-size: 13px; opacity: .75; margin-bottom: 6px; }
+.hello { font-size: 22px; font-weight: 800; letter-spacing: -.3px; }
+.company { font-size: 13px; opacity: .8; margin-top: 3px; }
+
+/* Карточки */
+.card {
+  background: var(--card); border-radius: 14px; padding: 18px;
+  box-shadow: var(--shadow); border: 1px solid var(--border); margin-top: 14px;
+}
+.card-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 12px; }
+
+/* Авто */
+.plate {
+  display: inline-block; font-size: 20px; font-weight: 800; letter-spacing: .5px;
+  background: var(--bg); border: 2px solid var(--border); border-radius: 8px;
+  padding: 6px 14px; margin-bottom: 8px;
+}
+.car-name { font-size: 17px; font-weight: 700; }
+.car-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+.rows { display: flex; flex-direction: column; gap: 1px; background: var(--border); border-radius: 10px; overflow: hidden; margin-top: 14px; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--card); padding: 11px 13px; }
+.row-label { font-size: 13px; color: var(--muted); }
+.row-value { font-size: 14px; font-weight: 600; text-align: right; }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+.b-ok   { background: var(--green-light); color: #15803d; border: 1px solid #86efac; }
+.b-warn { background: var(--amber-light); color: #92400e; border: 1px solid #fcd34d; }
+.b-bad  { background: var(--red-light);   color: #b91c1c; border: 1px solid #fca5a5; }
+.b-gray { background: var(--bg);          color: var(--muted); border: 1px solid var(--border); }
+
+/* Кнопки */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 13px 18px; border-radius: 11px; font-size: 15px; font-weight: 600;
+  border: none; cursor: pointer; width: 100%; font-family: inherit; transition: opacity .15s;
+}
+.btn:active { opacity: .7; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-ghost { background: var(--card); color: var(--text); border: 1.5px solid var(--border); }
+.btn:disabled { opacity: .5; }
+.btn-row { display: flex; gap: 10px; margin-top: 14px; }
+
+/* Поля */
+.field { margin-bottom: 13px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+.input {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 16px; font-family: inherit; color: var(--text); background: var(--card); outline: none;
+}
+.input:focus { border-color: var(--blue); }
+textarea.input { resize: vertical; min-height: 90px; }
+
+/* Заявки */
+.ticket { display: flex; gap: 11px; padding: 13px 0; border-bottom: 1px solid var(--border); }
+.ticket:last-child { border-bottom: none; }
+.ticket-icon { font-size: 20px; flex-shrink: 0; }
+.ticket-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.ticket-meta { font-size: 12px; color: var(--muted); }
+
+/* Служебное */
+.center { text-align: center; padding: 60px 20px; color: var(--muted); }
+.spinner { width: 26px; height: 26px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%) translateY(120px);
+  bottom: 22px; background: #0f172a; color: #fff; padding: 13px 20px; border-radius: 11px;
+  font-size: 14px; font-weight: 500; z-index: 100; opacity: 0; transition: all .3s; max-width: 90vw; text-align: center;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 90; align-items: flex-end; }
+.modal-bg.open { display: flex; }
+.sheet {
+  background: var(--card); width: 100%; border-radius: 18px 18px 0 0; padding: 20px 18px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom)); max-height: 88vh; overflow-y: auto;
+}
+.sheet-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="center"><div class="spinner"></div>Загружаем ваши данные…</div>
+</div>
+
+<div class="modal-bg" id="sheet-bg" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  Кабинет водителя. Вход — по токену из ссылки,
+//  которую выдал бот. Ничего вводить не нужно.
+// ══════════════════════════════════════════
+const API = 'https://fleetdesk-bot-production.up.railway.app';
+
+// Токен держим в адресе после #, чтобы он не попадал в логи сервера
+let token = location.hash.slice(1);
+if (token) {
+  sessionStorage.setItem('fd_driver_token', token);
+  history.replaceState(null, '', location.pathname);
+} else {
+  token = sessionStorage.getItem('fd_driver_token') || '';
+}
+
+let data = null;
+
+// ── Утилиты ──
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('ru-RU') : '—';
+const fmtNum  = (n) => (n || n === 0) ? Number(n).toLocaleString('ru-RU') : '—';
+const daysLeft = (d) => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null;
+
+function deadlineBadge(date) {
+  const left = daysLeft(date);
+  if (left === null) return '<span class="badge b-gray">не указано</span>';
+  if (left < 0)  return `<span class="badge b-bad">просрочено</span>`;
+  if (left < 30) return `<span class="badge b-warn">${left} дн.</span>`;
+  return `<span class="badge b-ok">${fmtDate(date)}</span>`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + '/api/driver' + path, {
+    method: opts.method || 'GET',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  let json = null;
+  try { json = await res.json(); } catch (_) {}
+  if (!res.ok) throw new Error((json && json.error) || 'Ошибка сервера');
+  return json;
+}
+
+// ── Загрузка ──
+async function load() {
+  if (!token) return renderNoAccess('Откройте кабинет через бота — он пришлёт вашу ссылку.');
+  try {
+    data = await api('/me');
+    render();
+  } catch (err) {
+    renderNoAccess(err.message);
+  }
+}
+
+function renderNoAccess(msg) {
+  document.getElementById('app').innerHTML = `
+    <div class="center">
+      <div style="font-size:44px;margin-bottom:14px">🔒</div>
+      <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">Нет доступа</div>
+      <div style="max-width:300px;margin:0 auto">${esc(msg)}</div>
+    </div>`;
+}
+
+// ── Экран ──
+function render() {
+  const { driver: d, vehicle: v, company, tickets } = data;
+  const active = tickets.filter(t => t.status !== 'DONE' && t.status !== 'CANCELLED');
+
+  document.getElementById('app').innerHTML = `
+    <div class="header"><div class="header-inner">
+      <div class="logo">🚗 FleetDesk</div>
+      <div class="hello">${esc(d.name)}</div>
+      <div class="company">${esc(company.name)}</div>
+    </div></div>
+
+    <div class="wrap">
+      ${v ? `
+        <div class="card">
+          <div class="card-title">Мой автомобиль</div>
+          <div class="plate">${esc(v.plate)}</div>
+          <div class="car-name">${esc([v.brand, v.model].filter(Boolean).join(' ')) || '—'}</div>
+          <div class="car-sub">${[v.year, v.color].filter(Boolean).map(esc).join(' · ')}</div>
+
+          <div class="rows">
+            <div class="row"><span class="row-label">Пробег</span>
+              <span class="row-value">${fmtNum(v.mileage)} км</span></div>
+            <div class="row"><span class="row-label">ОСАГО до</span>
+              <span class="row-value">${deadlineBadge(v.insurance_until)}</span></div>
+            <div class="row"><span class="row-label">Техосмотр до</span>
+              <span class="row-value">${deadlineBadge(v.inspection_until)}</span></div>
+            <div class="row"><span class="row-label">Следующее ТО</span>
+              <span class="row-value">${v.next_service_date ? fmtDate(v.next_service_date) : '—'}${v.next_service_km ? ' · ' + fmtNum(v.next_service_km) + ' км' : ''}</span></div>
+            ${v.tires_change_date ? `<div class="row"><span class="row-label">Смена резины</span>
+              <span class="row-value">${fmtDate(v.tires_change_date)}</span></div>` : ''}
+            ${v.location ? `<div class="row"><span class="row-label">Где находится</span>
+              <span class="row-value">${esc(v.location)}</span></div>` : ''}
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="openMileage()">📊 Внести пробег</button>
+          </div>
+        </div>
+      ` : `
+        <div class="card">
+          <div class="card-title">Мой автомобиль</div>
+          <div style="color:var(--muted);font-size:14px">
+            За вами пока не закреплён автомобиль. Обратитесь к диспетчеру.
+          </div>
+        </div>
+      `}
+
+      <div class="card">
+        <div class="card-title">Мои документы</div>
+        <div class="rows">
+          <div class="row"><span class="row-label">Водительское удостоверение</span>
+            <span class="row-value">${deadlineBadge(d.license_expires)}</span></div>
+          <div class="row"><span class="row-label">Медицинская справка</span>
+            <span class="row-value">${deadlineBadge(d.medical_expires)}</span></div>
+          ${d.license_number ? `<div class="row"><span class="row-label">Номер ВУ</span>
+            <span class="row-value">${esc(d.license_number)}</span></div>` : ''}
+          ${d.license_category ? `<div class="row"><span class="row-label">Категории</span>
+            <span class="row-value">${esc(d.license_category)}</span></div>` : ''}
+          ${d.briefing_date ? `<div class="row"><span class="row-label">Инструктаж</span>
+            <span class="row-value">${fmtDate(d.briefing_date)}</span></div>` : ''}
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="openProfile()">✏️ Изменить данные</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Мои заявки${active.length ? ` · ${active.length} в работе` : ''}</div>
+        ${tickets.length === 0
+          ? `<div style="color:var(--muted);font-size:14px">Заявок пока нет</div>`
+          : tickets.slice(0, 10).map(t => renderTicket(t)).join('')}
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="openNewTicket()">📝 Новая заявка</button>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:22px;font-size:12px;color:var(--muted)">
+        Данные обновляются автоматически.<br>Вопросы — вашему диспетчеру.
+      </div>
+    </div>
+  `;
+}
+
+const STATUS = {
+  NEW:         { label: 'Новая',      cls: 'b-warn' },
+  IN_PROGRESS: { label: 'В работе',   cls: 'b-ok'   },
+  WAITING:     { label: 'Ожидание',   cls: 'b-gray' },
+  DONE:        { label: 'Выполнено',  cls: 'b-ok'   },
+  CANCELLED:   { label: 'Отменена',   cls: 'b-gray' },
+};
+
+function renderTicket(t) {
+  const st = STATUS[t.status] || { label: t.status, cls: 'b-gray' };
+  return `
+    <div class="ticket">
+      <div class="ticket-icon">${esc(t.type_icon)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="ticket-title">${esc(t.title || t.type_name)}</div>
+        <div class="ticket-meta">
+          ${esc(t.num)} · ${new Date(t.created_at).toLocaleDateString('ru-RU')}
+          ${t.contractor_name ? ` · 🔧 ${esc(t.contractor_name)}` : ''}
+        </div>
+      </div>
+      <span class="badge ${st.cls}" style="align-self:flex-start">${st.label}</span>
+    </div>`;
+}
+
+// ── Нижние окна ──
+function openSheet(html) {
+  document.getElementById('sheet').innerHTML = html;
+  document.getElementById('sheet-bg').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('sheet-bg').classList.remove('open');
+}
+
+function openMileage() {
+  const v = data.vehicle;
+  openSheet(`
+    <div class="sheet-title">Внести пробег</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">
+      Текущий в системе: <strong>${fmtNum(v.mileage)} км</strong>
+    </div>
+    <div class="field">
+      <label>Пробег на одометре, км</label>
+      <input class="input" id="mileage-input" type="number" inputmode="numeric"
+             placeholder="${v.mileage || 0}" value="">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet()">Отмена</button>
+      <button class="btn btn-primary" id="mileage-save" onclick="saveMileage()">Сохранить</button>
+    </div>
+  `);
+  setTimeout(() => document.getElementById('mileage-input').focus(), 250);
+}
+
+async function saveMileage() {
+  const value = document.getElementById('mileage-input').value;
+  const btn = document.getElementById('mileage-save');
+  btn.disabled = true; btn.textContent = 'Сохраняем…';
+  try {
+    const res = await api('/mileage', { method: 'POST', body: { mileage: value } });
+    data.vehicle.mileage = res.mileage;
+    closeSheet(); render();
+    showToast('✅ Пробег обновлён');
+  } catch (err) {
+    showToast('❌ ' + err.message);
+    btn.disabled = false; btn.textContent = 'Сохранить';
+  }
+}
+
+function openProfile() {
+  const d = data.driver;
+  openSheet(`
+    <div class="sheet-title">Мои данные</div>
+    <div class="field"><label>Телефон</label>
+      <input class="input" id="p-phone" type="tel" value="${esc(d.phone)}"></div>
+    <div class="field"><label>E-mail</label>
+      <input class="input" id="p-email" type="email" value="${esc(d.email)}"></div>
+    <div class="field"><label>Номер водительского удостоверения</label>
+      <input class="input" id="p-licnum" value="${esc(d.license_number)}"></div>
+    <div class="field"><label>Категории</label>
+      <input class="input" id="p-liccat" value="${esc(d.license_category)}" placeholder="B, C"></div>
+    <div class="field"><label>ВУ действует до</label>
+      <input class="input" id="p-licexp" type="date" value="${d.license_expires || ''}"></div>
+    <div class="field"><label>Медсправка до</label>
+      <input class="input" id="p-medexp" type="date" value="${d.medical_expires || ''}"></div>
+    <div class="field"><label>Топливная карта</label>
+      <input class="input" id="p-fuel" value="${esc(d.fuel_card)}"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet()">Отмена</button>
+      <button class="btn btn-primary" id="p-save" onclick="saveProfile()">Сохранить</button>
+    </div>
+  `);
+}
+
+async function saveProfile() {
+  const btn = document.getElementById('p-save');
+  btn.disabled = true; btn.textContent = 'Сохраняем…';
+  const body = {
+    phone:            document.getElementById('p-phone').value,
+    email:            document.getElementById('p-email').value,
+    license_number:   document.getElementById('p-licnum').value,
+    license_category: document.getElementById('p-liccat').value,
+    license_expires:  document.getElementById('p-licexp').value,
+    medical_expires:  document.getElementById('p-medexp').value,
+    fuel_card:        document.getElementById('p-fuel').value,
+  };
+  try {
+    await api('/profile', { method: 'PATCH', body });
+    Object.assign(data.driver, body);
+    closeSheet(); render();
+    showToast('✅ Данные сохранены');
+  } catch (err) {
+    showToast('❌ ' + err.message);
+    btn.disabled = false; btn.textContent = 'Сохранить';
+  }
+}
+
+function openNewTicket() {
+  const options = data.ticketTypes
+    .map(t => `<option value="${esc(t.key)}">${esc(t.icon)} ${esc(t.name)}</option>`).join('');
+  openSheet(`
+    <div class="sheet-title">Новая заявка</div>
+    <div class="field"><label>Тип</label>
+      <select class="input" id="t-type">${options}</select></div>
+    <div class="field"><label>Коротко о проблеме</label>
+      <input class="input" id="t-title" placeholder="Не заводится, стучит подвеска…"></div>
+    <div class="field"><label>Подробности</label>
+      <textarea class="input" id="t-desc" placeholder="Когда началось, что уже проверяли"></textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet()">Отмена</button>
+      <button class="btn btn-primary" id="t-save" onclick="saveTicket()">Отправить</button>
+    </div>
+  `);
+}
+
+async function saveTicket() {
+  const title = document.getElementById('t-title').value.trim();
+  if (!title) { showToast('⚠️ Опишите проблему'); return; }
+  const btn = document.getElementById('t-save');
+  btn.disabled = true; btn.textContent = 'Отправляем…';
+  try {
+    const res = await api('/tickets', { method: 'POST', body: {
+      type: document.getElementById('t-type').value,
+      title,
+      description: document.getElementById('t-desc').value,
+    }});
+    closeSheet();
+    showToast(`✅ Заявка ${res.num} создана`);
+    data = await api('/me');
+    render();
+  } catch (err) {
+    showToast('❌ ' + err.message);
+    btn.disabled = false; btn.textContent = 'Отправить';
+  }
+}
+
+load();
+</script>
+</body>
+</html>
