@@ -377,6 +377,9 @@ select.fsel:focus { border-color: var(--blue); }
     <div class="nav-item" onclick="setPage('bot')">
       <span class="nav-icon">🤖</span> Telegram Bot
     </div>
+    <div class="nav-item" onclick="setPage('maxbot')">
+      <span class="nav-icon">💬</span> MAX Bot
+    </div>
   </div>
   <div class="sidebar-user">
     <div class="user-ava" id="sidebar-ava">—</div>
@@ -1600,6 +1603,13 @@ function setPage(page) {
     statsRow.style.display  = 'none';
     document.getElementById('page-title').textContent = 'Telegram Bot';
     renderBotPage();
+  } else if (page === 'maxbot') {
+    kanban.style.display = 'none';
+    other.style.display  = 'flex';
+    filterBar.style.display = 'none';
+    statsRow.style.display  = 'none';
+    document.getElementById('page-title').textContent = 'MAX Bot';
+    renderMaxBotPage();
   }
 }
 
@@ -2537,28 +2547,14 @@ function renderBotPage() {
 
       <!-- Link card -->
       <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:20px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px"><span>📨</span> Ссылки для водителей</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px"><span>📨</span> Ссылка для водителей</div>
         ${isActive ? `
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Telegram</div>
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+          <div style="display:flex;gap:8px;align-items:center">
             <div id="bot-link-box" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:14px;font-weight:600;color:#1d4ed8;font-family:monospace">${botLink}</div>
             <button class="btn btn-ghost" onclick="copyBotLink()">📋 Скопировать</button>
           </div>
-
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">MAX</div>
-          ${state.maxBot && state.maxBot.ok ? `
-            <div style="display:flex;gap:8px;align-items:center">
-              <div style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:14px;font-weight:600;color:#1d4ed8;font-family:monospace">${state.maxBot.link}</div>
-              <button class="btn btn-ghost" onclick="copyLink('${state.maxBot.link}')">📋 Скопировать</button>
-            </div>
-          ` : `
-            <div style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-muted)">
-              Бот в MAX пока не подключён — обратитесь к администратору сервиса
-            </div>
-          `}
-
-          <div style="margin-top:14px;font-size:12px;color:var(--text-muted)">
-            Ссылки одни для всех компаний. Бот узнаёт водителя по нику из его карточки (вкладка «Водители») — Telegram или MAX, смотря откуда он пишет. Если ник не заполнен, бот один раз попросит рабочий e-mail.
+          <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+            Ссылка одна для всех компаний. Бот сам узнаёт водителя — по Telegram-нику из карточки (вкладка «Водители»). Если ника нет или он не совпал, бот один раз попросит рабочий e-mail.
           </div>
         ` : `
           <div style="font-size:13px;color:var(--text-muted)">
@@ -2606,32 +2602,138 @@ function renderBotPage() {
           <div style="font-weight:700;font-size:14px">Водители</div>
           <span style="font-size:12px;color:var(--text-muted)">${connectedCount} из ${USERS.length} подключены к боту</span>
         </div>
-        ${USERS.length === 0
-          ? `<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:13px">Нет водителей. Добавьте их в разделе «Водители».</div>`
-          : USERS.map((u,i) => {
-            const connected = u.has_app;
-            const vehicle = VEHICLES.find(v => v.id === u.assigned_vehicle);
-            const lastItem = i === USERS.length - 1;
-            return `
-              <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;${lastItem?'':'border-bottom:1px solid var(--border)'}">
-                <div class="driver-ava-lg" style="background:${u.color};width:36px;height:36px;font-size:13px">${u.initials}</div>
-                <div style="flex:1;min-width:0">
-                  <div style="font-weight:600;font-size:13px">${u.name}</div>
-                  <div style="font-size:11px;color:var(--text-muted)">${u.telegram} · ${vehicle ? vehicle.plate+' '+vehicle.brand : 'Без ТС'}</div>
-                </div>
-                <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;${connected?'background:#f0fdf4;color:#15803d;border:1px solid #86efac':'background:#f8fafc;color:#94a3b8;border:1px solid var(--border)'}">
-                  ${connected ? '✅ Подключён' : '⬜ Ожидает'}
-                </span>
-                ${!connected && isActive ? `<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="inviteDriver('${u.id}')">📨 Пригласить</button>` : ''}
-                <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="openDriverModal('${u.id}')">👤</button>
-              </div>
-            `;
-          }).join('')}
+        ${renderDriverConnections('telegram', isActive)}
       </div>
     </div>
   `;
   document.getElementById('other-content').innerHTML = html;
   if (state.botManagerUrl && !state.botUsername) refreshBotInfo();
+}
+
+// Список водителей со статусом подключения к нужному мессенджеру
+function renderDriverConnections(channel, isActive) {
+  if (USERS.length === 0)
+    return `<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:13px">Нет водителей. Добавьте их в разделе «Водители».</div>`;
+
+  return USERS.map((u, i) => {
+    const connected = channel === 'max' ? !!u.max_id : !!u.telegram_id;
+    const nick = channel === 'max'
+      ? (u.max_username ? '@' + u.max_username : 'ник не указан')
+      : (u.telegram || 'ник не указан');
+    const vehicle = VEHICLES.find(v => v.id === u.assigned_vehicle);
+    const last = i === USERS.length - 1;
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;${last?'':'border-bottom:1px solid var(--border)'}">
+        <div class="driver-ava-lg" style="background:${u.color};width:36px;height:36px;font-size:13px">${u.initials}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px">${u.name}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${nick} · ${vehicle ? vehicle.plate+' '+vehicle.brand : 'Без ТС'}</div>
+        </div>
+        <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;${connected?'background:#f0fdf4;color:#15803d;border:1px solid #86efac':'background:#f8fafc;color:#94a3b8;border:1px solid var(--border)'}">
+          ${connected ? '✅ Подключён' : '⬜ Ожидает'}
+        </span>
+        ${!connected && isActive ? `<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="inviteDriver('${u.id}','${channel}')">📨 Пригласить</button>` : ''}
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="openDriverModal('${u.id}')">👤</button>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  MAX BOT PAGE
+// ══════════════════════════════════════════
+function renderMaxBotPage() {
+  const max = state.maxBot || {};
+  const isActive = !!max.ok;
+  const link = max.link || '';        // ссылка есть и когда бот временно не на связи
+  const connectedCount = USERS.filter(u => u.max_id).length;
+  const withNick = USERS.filter(u => u.max_username).length;
+
+  const steps = [
+    { n:'1', icon:'🪪', title:'Укажите ник в карточке', desc:'На вкладке «Водители» заполните поле MAX — ник сотрудника в мессенджере, без @.' },
+    { n:'2', icon:'📨', title:'Отправьте ссылку',       desc:'Ссылка одна на все компании — перешлите её водителю любым удобным способом.' },
+    { n:'3', icon:'💬', title:'Бот узнаёт сам',         desc:'Водитель открывает бота — тот находит его по нику и сразу открывает нужную компанию.' },
+  ];
+
+  const html = `
+    <div style="max-width:820px">
+
+      <div style="background:linear-gradient(135deg,#0f172a,#7c3aed);border-radius:14px;padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;color:#fff">
+        <div style="width:56px;height:56px;background:rgba(255,255,255,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">💬</div>
+        <div style="flex:1">
+          <div style="font-size:18px;font-weight:800;margin-bottom:4px">MAX для водителей</div>
+          <div style="font-size:13px;color:#ddd6fe">Тот же бот, что и в Telegram — заявки, профиль, уведомления. Водитель выбирает удобный мессенджер</div>
+        </div>
+        <div style="background:${isActive?'rgba(34,197,94,.2)':'rgba(239,68,68,.2)'};border:1px solid ${isActive?'rgba(34,197,94,.4)':'rgba(239,68,68,.4)'};padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;color:${isActive?'#86efac':'#fca5a5'};white-space:nowrap">
+          ${isActive ? '✅ Бот на связи' : '⚠️ Не подключён'}
+        </div>
+      </div>
+
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px"><span>📨</span> Ссылка для водителей</div>
+        ${link ? `
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:14px;font-weight:600;color:#7c3aed;font-family:monospace">${link}</div>
+            <button class="btn btn-ghost" onclick="copyLink('${link}')">📋 Скопировать</button>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+            Бот узнаёт водителя по нику MAX из карточки. Если ник не заполнен, бот один раз попросит рабочий e-mail.
+          </div>
+          ${!isActive ? `
+            <div style="margin-top:12px;padding:11px 13px;background:var(--amber-light);border:1px solid var(--amber);border-radius:9px;font-size:12px;color:#92400e">
+              ⚠️ Сейчас сервер не может связаться с MAX, поэтому бот не отвечает.
+              Ссылка рабочая — заработает, как только связь восстановится.
+            </div>` : ''}
+        ` : `
+          <div style="font-size:13px;color:var(--text-muted)">
+            Бот в MAX пока не подключён на сервере. Обратитесь к администратору сервиса — нужно создать бота через @MasterBot и добавить его токен в настройки.
+          </div>
+        `}
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        ${steps.map(s=>`
+          <div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:18px">
+            <div style="width:28px;height:28px;background:#7c3aed;color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-bottom:10px">${s.n}</div>
+            <div style="font-size:16px;margin-bottom:6px">${s.icon}</div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px">${s.title}</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.6">${s.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:14px">📱 Что может сделать водитель</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${[
+            {icon:'📝', title:'Подать заявку', desc:'Выбрать тип, машину и описать проблему — заявка появится в CRM'},
+            {icon:'🚗', title:'Личный кабинет', desc:'Данные своего автомобиля, пробег, сроки документов'},
+            {icon:'📋', title:'Мои заявки', desc:'Список заявок с текущими статусами'},
+            {icon:'🔔', title:'Уведомления', desc:'Смена статуса, комментарии диспетчера, контакты исполнителя'},
+          ].map(f=>`
+            <div style="display:flex;gap:12px;padding:12px;background:var(--bg);border-radius:8px">
+              <span style="font-size:22px">${f.icon}</span>
+              <div>
+                <div style="font-weight:600;font-size:13px;margin-bottom:3px">${f.title}</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.5">${f.desc}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-weight:700;font-size:14px">Водители</div>
+          <span style="font-size:12px;color:var(--text-muted)">
+            ${connectedCount} из ${USERS.length} подключены · ник указан у ${withNick}
+          </span>
+        </div>
+        ${renderDriverConnections('max', isActive)}
+      </div>
+    </div>
+  `;
+  document.getElementById('other-content').innerHTML = html;
+  if (state.botManagerUrl && !state.maxBot) refreshBotInfo();
 }
 
 // Спрашивает у бот-менеджера юзернейм общего бота — чтобы показать готовую
