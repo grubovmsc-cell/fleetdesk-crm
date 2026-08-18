@@ -2,8 +2,8 @@
   "name": "fleetdesk-crm",
   "version": "1.0.0",
   "private": true,
-  "description": "FleetDesk CRM — static dashboard",
+  "description": "FleetDesk CRM — статический сайт: CRM для диспетчера и кабинет водителя",
   "scripts": {
-    "start": "npx --yes serve -s . -l $PORT"
+    "start": "npx --yes serve . -l $PORT"
   }
 }
