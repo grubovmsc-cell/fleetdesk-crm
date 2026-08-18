@@ -99,6 +99,12 @@ select.fsel:focus { border-color: var(--blue); }
 .card { background: var(--card-bg); border-radius: 9px; box-shadow: var(--shadow); padding: 13px 14px; cursor: pointer; transition: all .18s; border: 1px solid var(--border); border-left: 3px solid transparent; }
 .card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .card.urgent { border-left-color: var(--red); }
+/* Заявка без движения дольше 12 часов */
+.card.stale { border: 1px solid #fca5a5; border-left-color: var(--red); background: #fffafa; }
+.stale-note { font-size: 11px; font-weight: 700; color: #b91c1c; background: #fef2f2; border-radius: 6px; padding: 4px 8px; margin-bottom: 8px; }
+/* Перетаскивание */
+.card.dragging { opacity: .45; }
+.col-wrap.drop-target { background: rgba(59,130,246,.10); outline: 2px dashed var(--blue); outline-offset: -4px; }
 .card.high   { border-left-color: var(--orange); }
 .card.medium { border-left-color: var(--blue); }
 .card.low    { border-left-color: #cbd5e1; }
@@ -380,6 +386,9 @@ select.fsel:focus { border-color: var(--blue); }
     <div class="nav-item" onclick="setPage('maxbot')">
       <span class="nav-icon">💬</span> MAX Bot
     </div>
+    <div class="nav-item" onclick="setPage('settings')">
+      <span class="nav-icon">⚙️</span> Настройки
+    </div>
   </div>
   <div class="sidebar-user">
     <div class="user-ava" id="sidebar-ava">—</div>
@@ -451,15 +460,21 @@ select.fsel:focus { border-color: var(--blue); }
   <div class="kanban" id="kanban-view">
     <div class="column col-new">
       <div class="col-header">🆕 Новые <span class="col-count" id="col-cnt-new">0</span></div>
-      <div class="col-wrap" id="col-NEW"></div>
+      <div class="col-wrap" id="col-NEW" data-status="NEW"
+           ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)"
+           ondrop="onColDrop(event,'NEW')"></div>
     </div>
     <div class="column col-wip">
       <div class="col-header">⚙️ В работе <span class="col-count" id="col-cnt-wip">0</span></div>
-      <div class="col-wrap" id="col-IN_PROGRESS"></div>
+      <div class="col-wrap" id="col-IN_PROGRESS" data-status="IN_PROGRESS"
+           ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)"
+           ondrop="onColDrop(event,'IN_PROGRESS')"></div>
     </div>
     <div class="column col-done">
       <div class="col-header">✅ Выполнено <span class="col-count" id="col-cnt-done">0</span></div>
-      <div class="col-wrap" id="col-DONE"></div>
+      <div class="col-wrap" id="col-DONE" data-status="DONE"
+           ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)"
+           ondrop="onColDrop(event,'DONE')"></div>
     </div>
   </div>
 
@@ -1007,7 +1022,8 @@ function fromServerVehicle(raw) {
   return { ...v, history: Array.isArray(v.history) ? v.history : [] };
 }
 
-function fromServerContractor(c) {
+function fromServerContractor(raw) {
+  const c = datesToInput(raw, ['contract_date', 'contract_until']);
   return { ...c, specializations: Array.isArray(c.specializations) ? c.specializations : [] };
 }
 
@@ -1246,6 +1262,75 @@ function renderKanban() {
   updateStatChips();
 }
 
+// ══════════════════════════════════════════
+//  ПЕРЕТАСКИВАНИЕ КАРТОЧЕК
+// ══════════════════════════════════════════
+let draggedTicketId = null;
+
+function onCardDragStart(e, id) {
+  draggedTicketId = id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);   // нужно Firefox
+}
+
+function onCardDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.col-wrap').forEach(el => el.classList.remove('drop-target'));
+}
+
+function onColDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drop-target');
+}
+
+function onColDragLeave(e) {
+  // Уходя на дочерний элемент, событие тоже срабатывает — проверяем границы
+  if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drop-target');
+}
+
+async function onColDrop(e, status) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drop-target');
+
+  const id = draggedTicketId || e.dataTransfer.getData('text/plain');
+  draggedTicketId = null;
+  const t = tickets.find(x => x.id === id);
+  if (!t || t.status === status) return;
+
+  const prev = t.status;
+  t.status = status;                 // показываем сразу, не дожидаясь сервера
+  renderKanban();
+
+  try {
+    const saved = await api(`/tickets/${t.id}`, { method: 'PATCH', body: t });
+    Object.assign(t, fromServerTicket(saved));
+    const names = { NEW:'Новая', IN_PROGRESS:'В работе', DONE:'Выполнено' };
+    showToast(`${t.num} → ${names[status]}`);
+  } catch (err) {
+    t.status = prev;                 // сервер не принял — возвращаем как было
+    showToast('❌ ' + err.message);
+  }
+  renderKanban();
+}
+
+// Заявка «застоялась», если по ней давно не было движения
+const STALE_HOURS = 12;
+
+function lastMovedAt(t) {
+  const times = [t.created, ...(t.history || []).map(h => h.time),
+                 ...(t.comments || []).map(c => c.time)].filter(Boolean);
+  return times.reduce((max, d) => Math.max(max, new Date(d).getTime()), 0);
+}
+
+function staleHours(t) {
+  if (t.status === 'DONE' || t.status === 'CANCELLED') return 0;
+  return Math.floor((Date.now() - lastMovedAt(t)) / 3600000);
+}
+
+const isStale = (t) => staleHours(t) >= STALE_HOURS;
+
 function renderCard(t) {
   const u   = USERS.find(u => u.id === t.userId) || {};
   const v   = VEHICLES.find(v => v.id === t.vehicleId) || {};
@@ -1254,13 +1339,18 @@ function renderCard(t) {
   const pri = t.priority.toLowerCase();
   const priLabel = { urgent:'Срочный', high:'Высокий', medium:'Средний', low:'Низкий' }[pri] || '';
   const dt = new Date(t.created).toLocaleDateString('ru', { day:'2-digit', month:'short' });
+  const stale = isStale(t);
+  const hours = stale ? staleHours(t) : 0;
 
-  return `<div class="card ${pri}" onclick="openModal('${t.id}')">
+  return `<div class="card ${pri}${stale?' stale':''}" onclick="openModal('${t.id}')"
+       draggable="true" data-id="${t.id}"
+       ondragstart="onCardDragStart(event,'${t.id}')" ondragend="onCardDragEnd(event)">
     <div class="card-top">
       <span class="card-type-icon">${tp.icon||'📋'}</span>
       <span class="card-num">${t.num}</span>
       <span class="card-priority pri-${pri}">${priLabel}</span>
     </div>
+    ${stale ? `<div class="stale-note">🔥 Без движения ${hours} ч — требует внимания</div>` : ''}
     <div class="card-title">${t.title}</div>
     <div class="card-meta">
       <div class="card-meta-row">
@@ -1377,7 +1467,15 @@ function openModal(id) {
           <div class="info-val">🚗 ${v.plate||'—'} · ${v.brand||''} ${v.model||''}</div>
         </div>
         <div class="info-item"><div class="info-label">Приоритет</div>
-          <div class="info-val">${PRIORITY_LABELS[t.priority]||t.priority}</div>
+          <div class="info-val" style="margin-top:4px">
+            <select class="contractor-sel" id="modal-priority" style="width:100%"
+                    onchange="changePriority(this.value)">
+              <option value="LOW"    ${t.priority==='LOW'?'selected':''}>⚪ Низкий</option>
+              <option value="MEDIUM" ${t.priority==='MEDIUM'?'selected':''}>🔵 Средний</option>
+              <option value="HIGH"   ${t.priority==='HIGH'?'selected':''}>🟠 Высокий</option>
+              <option value="URGENT" ${t.priority==='URGENT'?'selected':''}>🔴 Срочный</option>
+            </select>
+          </div>
         </div>
         <div class="info-item"><div class="info-label">Создана</div>
           <div class="info-val">${new Date(t.created).toLocaleString('ru',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
@@ -1461,6 +1559,13 @@ async function saveTicketToServer(t, successMsg) {
   }
   renderKanban();
   if (state.openTicketId === t.id) openModal(t.id);
+}
+
+function changePriority(value) {
+  const t = tickets.find(t => t.id === state.openTicketId);
+  if (!t || t.priority === value) return;
+  t.priority = value;
+  saveTicketToServer(t, 'Приоритет: ' + (PRIORITY_LABELS[value] || value));
 }
 
 function changeStatus(newStatus) {
@@ -1627,6 +1732,13 @@ function setPage(page) {
     statsRow.style.display  = 'none';
     document.getElementById('page-title').textContent = 'MAX Bot';
     renderMaxBotPage();
+  } else if (page === 'settings') {
+    kanban.style.display = 'none';
+    other.style.display  = 'flex';
+    filterBar.style.display = 'none';
+    statsRow.style.display  = 'none';
+    document.getElementById('page-title').textContent = 'Настройки';
+    renderSettingsPage();
   }
 }
 
@@ -2089,7 +2201,7 @@ function openContractorModal(id) {
     `Заявок всего: ${ctrTickets.length} · Активных: ${activeTickets.length}`;
 
   document.getElementById('vm-tabs').innerHTML =
-    ['🔧 Данные исполнителя','📋 Заявки'].map((t,i) =>
+    ['🔧 Данные исполнителя','📄 Договор','📋 Заявки'].map((t,i) =>
       `<div class="tab-btn${i===0?' active':''}" onclick="switchTab(${i})">${t}</div>`).join('');
 
   const specCheckboxes = Object.entries(TICKET_TYPES).map(([key, tp]) => `
@@ -2153,7 +2265,49 @@ function openContractorModal(id) {
       </div>
     </div>
 
-    <!-- TAB 1: ЗАЯВКИ -->
+    <!-- TAB 1: ДОГОВОР -->
+    <div class="tab-panel">
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Номер договора</div>
+          <input class="fg-input" id="c-contract-num" value="${esc(c.contract_number)}" placeholder="№ 42/2026"></div>
+        <div class="fg"><div class="fg-label">Дата заключения</div>
+          <input class="fg-input" id="c-contract-date" type="date" value="${c.contract_date || ''}"></div>
+      </div>
+
+      <div class="fg">
+        <div class="fg-label">Действует до</div>
+        <input class="fg-input" id="c-contract-until" type="date" value="${c.contract_until || ''}">
+        ${contractStatus(c)}
+      </div>
+
+      <div class="frow" style="margin-bottom:14px">
+        <div class="fg"><div class="fg-label">Условия оплаты</div>
+          <select class="fg-select" id="c-payment-type" onchange="togglePaymentDays()">
+            <option value=""        ${!c.payment_type?'selected':''}>— не указано —</option>
+            <option value="prepay"  ${c.payment_type==='prepay'?'selected':''}>Предоплата</option>
+            <option value="postpay" ${c.payment_type==='postpay'?'selected':''}>Отсрочка платежа</option>
+            <option value="other"   ${c.payment_type==='other'?'selected':''}>Другое</option>
+          </select>
+        </div>
+        <div class="fg" id="payment-days-wrap" style="${c.payment_type==='postpay'?'':'display:none'}">
+          <div class="fg-label">Отсрочка, дней</div>
+          <input class="fg-input" id="c-payment-days" type="number" min="0" value="${c.payment_days ?? ''}" placeholder="14">
+        </div>
+      </div>
+
+      <div class="fg">
+        <div class="fg-label">Дополнительно об оплате</div>
+        <input class="fg-input" id="c-payment-note" value="${esc(c.payment_note)}"
+               placeholder="Например: оплата по факту подписания акта, лимит 100 000 ₽ в месяц">
+      </div>
+
+      <div style="margin-top:16px;padding:12px 14px;background:var(--bg);border-radius:9px;font-size:12px;color:var(--text-muted)">
+        Эти данные видит только диспетчер — водителю в мессенджер уходят лишь контакты
+        и описание из вкладки «Данные исполнителя».
+      </div>
+    </div>
+
+    <!-- TAB 2: ЗАЯВКИ -->
     <div class="tab-panel">
       ${ctrTickets.length === 0
         ? `<div style="text-align:center;color:var(--text-muted);padding:40px 20px;font-size:13px">Заявок с этим подрядчиком пока нет</div>`
@@ -2174,6 +2328,32 @@ function openContractorModal(id) {
   `;
 
   document.getElementById('vmodal-overlay').classList.add('open');
+}
+
+// Короткая метка о договоре в списке подрядчиков
+function contractBadge(c) {
+  if (!c.contract_until) return '';
+  const days = Math.ceil((new Date(c.contract_until) - new Date()) / 86400000);
+  if (days < 0)  return `<span class="ibadge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5">Договор истёк</span>`;
+  if (days <= 30) return `<span class="ibadge" style="background:#fffbeb;color:#92400e;border:1px solid #fcd34d">Договор ${days} дн.</span>`;
+  return '';
+}
+
+// Подсказка о сроке действия договора прямо под полем
+function contractStatus(c) {
+  if (!c.contract_until) return '';
+  const days = Math.ceil((new Date(c.contract_until) - new Date()) / 86400000);
+  if (days < 0)
+    return `<div style="margin-top:6px;font-size:12px;color:#b91c1c;font-weight:600">⚠️ Договор истёк ${Math.abs(days)} дн. назад</div>`;
+  if (days <= 30)
+    return `<div style="margin-top:6px;font-size:12px;color:#92400e;font-weight:600">⏳ Истекает через ${days} дн. — пора продлевать</div>`;
+  return `<div style="margin-top:6px;font-size:12px;color:#15803d">✅ Действует ещё ${days} дн.</div>`;
+}
+
+function togglePaymentDays() {
+  const type = document.getElementById('c-payment-type')?.value;
+  const wrap = document.getElementById('payment-days-wrap');
+  if (wrap) wrap.style.display = type === 'postpay' ? '' : 'none';
 }
 
 async function deleteContractor(id) {
@@ -2452,6 +2632,12 @@ function saveVModal() {
     c.work_hours     = document.getElementById('c-hours')?.value || '';
     c.notes          = document.getElementById('c-notes')?.value || '';
     c.specializations = [...document.querySelectorAll('.c-spec:checked')].map(el => el.value);
+    c.contract_number = document.getElementById('c-contract-num')?.value || '';
+    c.contract_date   = document.getElementById('c-contract-date')?.value || null;
+    c.contract_until  = document.getElementById('c-contract-until')?.value || null;
+    c.payment_type    = document.getElementById('c-payment-type')?.value || '';
+    c.payment_days    = document.getElementById('c-payment-days')?.value || null;
+    c.payment_note    = document.getElementById('c-payment-note')?.value || '';
     saveContractorToServer(c);
   }
   closeVModal();
@@ -2814,6 +3000,7 @@ function renderContractorsPage() {
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
               <span style="font-weight:700;font-size:14px">${c.name}</span>
               ${activeCount ? `<span class="ibadge" style="background:#fffbeb;color:#92400e;border:1px solid #fcd34d">${activeCount} в работе</span>` : ''}
+              ${contractBadge(c)}
             </div>
             <div style="font-size:12px;color:var(--text-muted)">${specs || 'Специализация не указана'}</div>
             ${c.notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px">${c.notes}</div>` : ''}
@@ -3097,6 +3284,304 @@ function renderImportResult(res) {
       <button class="btn btn-primary" onclick="closeImport()">Закрыть</button>
     </div>
   `;
+}
+
+// ══════════════════════════════════════════
+//  НАСТРОЙКИ
+// ══════════════════════════════════════════
+let settingsTab = 0;
+let settingsData = { company: null, team: null };
+
+const ROLE_NAMES = {
+  owner: 'Владелец', admin: 'Администратор',
+  dispatcher: 'Диспетчер', viewer: 'Наблюдатель',
+};
+
+// Права проверяются и на сервере — здесь только прячем недоступные кнопки
+const canManageTeam = () => ['owner', 'admin'].includes(state.currentAccount?.role);
+const canEditCompany = () => ['owner', 'admin'].includes(state.currentAccount?.role);
+
+async function renderSettingsPage() {
+  const tabs = ['🏢 Компания', '👤 Мой профиль', '👥 Команда'];
+  document.getElementById('other-content').innerHTML = `
+    <div style="max-width:820px">
+      <div class="tab-bar" style="margin-bottom:20px">
+        ${tabs.map((t,i) => `<div class="tab-btn${i===settingsTab?' active':''}"
+          onclick="settingsTab=${i};renderSettingsPage()">${t}</div>`).join('')}
+      </div>
+      <div id="settings-body"><div style="padding:40px;text-align:center;color:var(--text-muted)">Загружаем…</div></div>
+    </div>`;
+
+  try {
+    if (settingsTab === 0) {
+      settingsData.company = await api('/settings/company');
+      renderCompanySettings();
+    } else if (settingsTab === 1) {
+      renderProfileSettings();
+    } else {
+      settingsData.team = await api('/settings/team');
+      renderTeamSettings();
+    }
+  } catch (err) {
+    document.getElementById('settings-body').innerHTML =
+      `<div style="padding:30px;text-align:center;color:#b91c1c">${err.message}</div>`;
+  }
+}
+
+// ── Компания ──
+function renderCompanySettings() {
+  const c = settingsData.company || {};
+  const ro = canEditCompany() ? '' : 'disabled';
+  const field = (id, label, value, hint) => `
+    <div class="fg">
+      <div class="fg-label">${label}</div>
+      <input class="fg-input" id="s-${id}" value="${(value ?? '').toString().replace(/"/g,'&quot;')}"
+             placeholder="${hint || ''}" ${ro}>
+    </div>`;
+
+  document.getElementById('settings-body').innerHTML = `
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:16px">Основное</div>
+      ${field('name', 'Название (как показывать в системе)', c.name, 'Логистика Плюс')}
+      ${field('legal_name', 'Полное юридическое название', c.legal_name, 'ООО «Логистика Плюс»')}
+      <div class="frow3">
+        ${field('inn', 'ИНН', c.inn, '7701234567')}
+        ${field('kpp', 'КПП', c.kpp, '770101001')}
+        ${field('ogrn', 'ОГРН', c.ogrn, '1157746000000')}
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:16px">Адреса</div>
+      ${field('legal_address', 'Юридический адрес', c.legal_address, 'Москва, ул. Ленина, 1, оф. 5')}
+      ${field('office_address', 'Фактический адрес офиса', c.office_address, 'Москва, ул. Промышленная, 12')}
+    </div>
+
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:16px">Контакты</div>
+      <div class="frow">
+        ${field('phone', 'Телефон', c.phone, '+7 495 000-00-00')}
+        ${field('email', 'E-mail', c.email, 'info@company.ru')}
+      </div>
+      <div class="frow">
+        ${field('website', 'Сайт', c.website, 'company.ru')}
+        ${field('director', 'Руководитель', c.director, 'Иванов Иван Иванович')}
+      </div>
+    </div>
+
+    ${canEditCompany()
+      ? `<button class="btn btn-primary" onclick="saveCompanySettings()">💾 Сохранить</button>`
+      : `<div style="padding:13px 15px;background:var(--bg);border-radius:9px;font-size:12px;color:var(--text-muted)">
+           Изменять реквизиты может владелец или администратор компании.
+         </div>`}`;
+}
+
+async function saveCompanySettings() {
+  const val = (id) => document.getElementById('s-' + id)?.value ?? '';
+  try {
+    settingsData.company = await api('/settings/company', { method: 'PATCH', body: {
+      name: val('name'), legal_name: val('legal_name'), inn: val('inn'), kpp: val('kpp'),
+      ogrn: val('ogrn'), legal_address: val('legal_address'), office_address: val('office_address'),
+      phone: val('phone'), email: val('email'), website: val('website'), director: val('director'),
+    }});
+    document.getElementById('sidebar-company').textContent = settingsData.company.name;
+    showToast('✅ Данные компании сохранены');
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  }
+}
+
+// ── Мой профиль ──
+function renderProfileSettings() {
+  const a = state.currentAccount || {};
+  document.getElementById('settings-body').innerHTML = `
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Личные данные</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">
+        Ваша роль: <strong>${ROLE_NAMES[a.role] || a.role || '—'}</strong>
+      </div>
+      <div class="frow">
+        <div class="fg"><div class="fg-label">Имя</div>
+          <input class="fg-input" id="p-name" value="${(a.name||'').replace(/"/g,'&quot;')}"></div>
+        <div class="fg"><div class="fg-label">E-mail (логин)</div>
+          <input class="fg-input" id="p-email" value="${(a.email||'').replace(/"/g,'&quot;')}"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveProfileSettings()">💾 Сохранить</button>
+    </div>
+
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:22px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:16px">Смена пароля</div>
+      <div class="fg"><div class="fg-label">Текущий пароль</div>
+        <input class="fg-input" id="p-old" type="password" autocomplete="current-password"></div>
+      <div class="frow">
+        <div class="fg"><div class="fg-label">Новый пароль</div>
+          <input class="fg-input" id="p-new" type="password" autocomplete="new-password" placeholder="Минимум 6 символов"></div>
+        <div class="fg"><div class="fg-label">Повторите новый</div>
+          <input class="fg-input" id="p-new2" type="password" autocomplete="new-password"></div>
+      </div>
+      <button class="btn btn-primary" onclick="changePassword()">🔑 Сменить пароль</button>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:8px">
+        После смены на других устройствах потребуется войти заново.
+      </div>
+    </div>`;
+}
+
+async function saveProfileSettings() {
+  const name  = document.getElementById('p-name').value.trim();
+  const email = document.getElementById('p-email').value.trim();
+  if (!name || !email) { showToast('⚠️ Заполните имя и e-mail'); return; }
+  try {
+    const saved = await api('/settings/profile', { method: 'PATCH', body: { name, email } });
+    Object.assign(state.currentAccount, saved);
+    document.getElementById('sidebar-name').textContent = saved.name;
+    document.getElementById('sidebar-ava').textContent  = saved.initials;
+    showToast('✅ Данные сохранены');
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  }
+}
+
+async function changePassword() {
+  const oldP = document.getElementById('p-old').value;
+  const nw   = document.getElementById('p-new').value;
+  const nw2  = document.getElementById('p-new2').value;
+  if (!oldP || !nw) { showToast('⚠️ Заполните все поля'); return; }
+  if (nw !== nw2)   { showToast('⚠️ Новые пароли не совпадают'); return; }
+  try {
+    await api('/settings/password', { method: 'POST', body: { currentPassword: oldP, newPassword: nw } });
+    ['p-old','p-new','p-new2'].forEach(id => document.getElementById(id).value = '');
+    showToast('✅ Пароль изменён');
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  }
+}
+
+// ── Команда ──
+function renderTeamSettings() {
+  const { team, roles } = settingsData.team;
+  const manage = canManageTeam();
+
+  document.getElementById('settings-body').innerHTML = `
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:16px">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px">Сотрудники (${team.length})</div>
+          <div style="font-size:12px;color:var(--text-muted)">Доступ в CRM этой компании</div>
+        </div>
+        ${manage ? `<button class="btn btn-primary" onclick="inviteColleague()">+ Пригласить</button>` : ''}
+      </div>
+      ${team.map((m,i) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:13px 20px;${i===team.length-1?'':'border-bottom:1px solid var(--border)'}">
+          <div class="driver-ava-lg" style="background:${m.role==='owner'?'#0f172a':'#3b82f6'};width:36px;height:36px;font-size:13px">${m.initials||'—'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13px">
+              ${m.name}${m.id===state.currentAccount.id?' <span style="color:var(--text-muted);font-weight:400">— это вы</span>':''}
+            </div>
+            <div style="font-size:11px;color:var(--text-muted)">${m.email}</div>
+          </div>
+          ${m.pending
+            ? `<span class="ibadge" style="background:var(--amber-light);color:#92400e;border:1px solid #fcd34d">Приглашён</span>`
+            : `<span style="font-size:11px;color:var(--text-muted)">${m.last_login ? 'был ' + new Date(m.last_login).toLocaleDateString('ru-RU') : 'ещё не входил'}</span>`}
+          ${manage && m.role !== 'owner' && m.id !== state.currentAccount.id
+            ? `<select class="fsel" style="font-size:12px" onchange="changeRole('${m.id}', this.value)">
+                 ${Object.values(roles).filter(r => r.key !== 'owner').map(r =>
+                   `<option value="${r.key}" ${m.role===r.key?'selected':''}>${r.name}</option>`).join('')}
+               </select>`
+            : `<span class="ibadge ib-idle">${ROLE_NAMES[m.role] || m.role}</span>`}
+          ${manage && m.role !== 'owner' && m.id !== state.currentAccount.id ? `
+            ${m.pending ? `<button class="btn btn-ghost" style="font-size:11px;padding:5px 9px" onclick="reinvite('${m.id}')">🔗 Ссылка</button>` : ''}
+            <button class="btn btn-ghost" style="font-size:11px;padding:5px 9px;color:#b91c1c" onclick="removeColleague('${m.id}','${m.email}')">🗑</button>
+          ` : ''}
+        </div>`).join('')}
+    </div>
+
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:20px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px">Что может каждая роль</div>
+      ${Object.values(roles).map(r => `
+        <div style="display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)">
+          <div style="min-width:130px;font-weight:600;font-size:13px">${r.name}</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.5">${r.hint}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function inviteColleague() {
+  const name = prompt('Имя сотрудника:');
+  if (!name || !name.trim()) return;
+  const email = prompt('E-mail — он будет логином:');
+  if (!email || !email.trim()) return;
+
+  const roleList = Object.values(settingsData.team.roles).filter(r => r.key !== 'owner');
+  const roleInput = prompt(
+    'Роль:\n' + roleList.map((r,i) => `${i+1} — ${r.name}`).join('\n'),
+    '2'
+  );
+  if (roleInput === null) return;
+  const role = (roleList[parseInt(roleInput,10) - 1] || roleList[1]).key;
+
+  try {
+    const res = await api('/settings/team/invite', { method: 'POST',
+      body: { name: name.trim(), email: email.trim(), role } });
+    showInviteLink(res);
+    settingsData.team = await api('/settings/team');
+    renderTeamSettings();
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  }
+}
+
+async function reinvite(id) {
+  try {
+    const res = await api(`/settings/team/${id}/reinvite`, { method: 'POST' });
+    showInviteLink(res);
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  }
+}
+
+// Пока письма не подключены — отдаём ссылку, её отправляет администратор
+function showInviteLink(res) {
+  const link = res.inviteLink;
+  document.getElementById('settings-body').innerHTML = `
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:24px;max-width:640px">
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px">Приглашение готово</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:18px">
+        Отправьте ссылку сотруднику ${res.email} любым способом — он задаст себе пароль и войдёт.
+        Ссылка действует ${res.expiresInDays || 7} дней.
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+        <div style="flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:monospace;word-break:break-all">${link}</div>
+        <button class="btn btn-ghost" onclick="copyLink('${link}')">📋 Копировать</button>
+      </div>
+      <div style="padding:12px 14px;background:var(--blue-light);border:1px solid #93c5fd;border-radius:9px;font-size:12px;color:#1e40af;margin-bottom:16px">
+        💡 Когда подключим отправку писем, приглашение будет уходить на почту автоматически.
+      </div>
+      <button class="btn btn-primary" onclick="settingsTab=2;renderSettingsPage()">Готово</button>
+    </div>`;
+}
+
+async function changeRole(id, role) {
+  try {
+    await api(`/settings/team/${id}`, { method: 'PATCH', body: { role } });
+    showToast('✅ Роль изменена');
+    settingsData.team = await api('/settings/team');
+    renderTeamSettings();
+  } catch (err) {
+    showToast('❌ ' + err.message);
+    renderTeamSettings();
+  }
+}
+
+async function removeColleague(id, email) {
+  if (!confirm(`Удалить доступ для ${email}?`)) return;
+  try {
+    await api(`/settings/team/${id}`, { method: 'DELETE' });
+    showToast('Доступ удалён');
+    settingsData.team = await api('/settings/team');
+    renderTeamSettings();
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  }
 }
 
 // ══════════════════════════════════════════
