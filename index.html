@@ -289,6 +289,8 @@ select.fsel:focus { border-color: var(--blue); }
 .logout-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #64748b; font-size: 16px; padding: 4px; border-radius: 5px; transition: color .15s; flex-shrink: 0; }
 .logout-btn:hover { color: #ef4444; }
 </style>
+<!-- Чтение и запись файлов Excel в браузере -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -507,6 +509,21 @@ select.fsel:focus { border-color: var(--blue); }
         <button class="btn btn-primary" onclick="saveVModal()">💾 Сохранить</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ── ИМПОРТ ДАННЫХ ── -->
+<div class="overlay" id="import-overlay" onclick="if(event.target===this)closeImport()">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-type-icon">📥</div>
+      <div class="modal-title-block">
+        <div class="modal-num" id="import-sub">Загрузка данных</div>
+        <div class="modal-title" id="import-title">Загрузка</div>
+      </div>
+      <button class="modal-close" onclick="closeImport()">✕</button>
+    </div>
+    <div class="modal-body" id="import-body"></div>
   </div>
 </div>
 
@@ -1632,6 +1649,7 @@ function renderDriversPage() {
         <option value="vacation" ${statusFilter==='vacation'  ?'selected':''}>В отпуске (${counts.vacation})</option>
         <option value="fired"    ${statusFilter==='fired'     ?'selected':''}>Уволен (${counts.fired})</option>
       </select>
+      <button class="btn btn-ghost" onclick="openImport('drivers')">📥 Загрузить данные</button>
       <button class="btn btn-primary" onclick="createDriver()">+ Водитель</button>
     </div>
 
@@ -1714,6 +1732,7 @@ function renderFleetPage() {
         <h2 style="font-size:15px;font-weight:700;margin-bottom:4px">Автомобили (${VEHICLES.length})</h2>
         <p style="font-size:12px;color:var(--text-muted)">Нажмите на карточку для просмотра и редактирования</p>
       </div>
+      <button class="btn btn-ghost" onclick="openImport('vehicles')">📥 Загрузить данные</button>
       <button class="btn btn-primary" onclick="createVehicle()">+ Автомобиль</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:32px">
@@ -2656,6 +2675,277 @@ function renderContractorsPage() {
       }).join('')}
     </div>`;
   document.getElementById('other-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+//  ИМПОРТ ДАННЫХ ИЗ EXCEL
+// ══════════════════════════════════════════
+let importState = { kind: null, columns: null, rows: null };
+
+const IMPORT_LABELS = {
+  drivers:  { title: 'Загрузка водителей',   file: 'FleetDesk_водители',   sheet: 'Водители' },
+  vehicles: { title: 'Загрузка автомобилей', file: 'FleetDesk_автомобили', sheet: 'Автомобили' },
+};
+
+async function openImport(kind) {
+  importState = { kind, columns: null, rows: null };
+  const label = IMPORT_LABELS[kind];
+  document.getElementById('import-title').textContent = label.title;
+  document.getElementById('import-sub').textContent = 'Шаг 1 — скачайте шаблон';
+  document.getElementById('import-overlay').classList.add('open');
+  renderImportStart();
+
+  try {
+    const cols = await api('/import/columns');
+    importState.columns = cols[kind];
+  } catch (err) {
+    document.getElementById('import-body').innerHTML =
+      `<div style="padding:20px;color:#b91c1c">Не удалось загрузить описание колонок: ${err.message}</div>`;
+  }
+}
+
+function closeImport() {
+  document.getElementById('import-overlay').classList.remove('open');
+  importState = { kind: null, columns: null, rows: null };
+}
+
+function renderImportStart() {
+  const kind = importState.kind;
+  const what = kind === 'drivers' ? 'водителей' : 'автомобилей';
+  const existing = kind === 'drivers' ? USERS.length : VEHICLES.length;
+
+  document.getElementById('import-body').innerHTML = `
+    <div style="display:flex;gap:14px;margin-bottom:18px">
+      <div style="flex:1;background:var(--bg);border-radius:10px;padding:16px">
+        <div style="font-size:22px;margin-bottom:8px">1️⃣</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px">Скачайте шаблон</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:12px">
+          Excel-файл с нужными колонками и подсказками.
+          ${existing ? `Текущие ${what} (${existing}) уже внутри — можно править прямо в них.` : ''}
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="downloadTemplate()">⬇️ Скачать шаблон</button>
+      </div>
+      <div style="flex:1;background:var(--bg);border-radius:10px;padding:16px">
+        <div style="font-size:22px;margin-bottom:8px">2️⃣</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px">Заполните и загрузите</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:12px">
+          Откройте в Excel, заполните строки, сохраните и выберите файл здесь.
+        </div>
+        <label class="btn btn-primary" style="width:100%;justify-content:center;cursor:pointer">
+          ⬆️ Выбрать файл
+          <input type="file" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this)">
+        </label>
+      </div>
+    </div>
+
+    <div style="background:var(--blue-light);border:1px solid #93c5fd;border-radius:9px;padding:13px 15px;font-size:12px;color:#1e40af;line-height:1.6">
+      <strong>Как это работает:</strong> ${kind === 'drivers'
+        ? 'водителей ищем по телефону, затем по почте, затем по ФИО. Совпал — обновляем карточку, нет — создаём новую. Чтобы закрепить машину, укажите её госномер.'
+        : 'автомобили ищем по госномеру. Совпал — обновляем карточку, нет — создаём новую. Чтобы закрепить водителя, укажите его телефон.'}
+      <br>Пустые ячейки при обновлении ничего не стирают.
+    </div>
+  `;
+}
+
+// ── Шаблон ──
+function downloadTemplate() {
+  if (!importState.columns) { showToast('⏳ Описание колонок ещё грузится'); return; }
+  const { kind, columns } = importState;
+  const label = IMPORT_LABELS[kind];
+
+  const header = columns.map(c => c.title);
+  const hints  = columns.map(c => c.hint);
+  const rows   = (kind === 'drivers' ? driverRowsForExport() : vehicleRowsForExport());
+
+  const data = [header, hints, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+
+  ws['!cols'] = columns.map(c => ({ wch: Math.max(14, Math.min(34, c.title.length + 6)) }));
+  ws['!freeze'] = { xSplit: 0, ySplit: 2 };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, label.sheet);
+  XLSX.writeFile(wb, `${label.file}.xlsx`);
+  showToast('⬇️ Шаблон скачан — заполните и загрузите обратно');
+}
+
+const asDate = (d) => d ? new Date(d).toLocaleDateString('ru-RU') : '';
+const asBool = (v) => v ? 'Да' : 'Нет';
+
+function driverRowsForExport() {
+  const statusRu = { active:'На работе', vacation:'В отпуске', fired:'Уволен' };
+  return USERS.map(u => {
+    const veh = VEHICLES.find(v => v.id === u.assigned_vehicle);
+    return [
+      u.name || '', u.phone || '', u.email || '',
+      (u.telegram || '').replace(/^@/, ''),
+      statusRu[u.status] || 'На работе',
+      u.license_number || '', u.license_category || '',
+      asDate(u.license_expires), asDate(u.medical_expires), asDate(u.briefing_date),
+      asBool(u.tachograph), asBool(u.has_waybill),
+      u.fuel_card || '', veh ? veh.plate : '',
+    ];
+  });
+}
+
+function vehicleRowsForExport() {
+  const typeRu   = { sedan:'Седан', suv:'Внедорожник', van:'Фургон', truck:'Грузовик' };
+  const statusRu = { active:'В работе', repair:'Ремонт', idle:'Простой' };
+  return VEHICLES.map(v => {
+    const drv = USERS.find(u => u.id === v.assigned_user_id);
+    return [
+      v.plate || '', v.brand || '', v.model || '', v.year || '',
+      typeRu[v.type] || 'Седан', statusRu[v.status] || 'В работе',
+      v.vin || '', v.color || '', v.mileage || '', v.location || '',
+      asDate(v.insurance_until), asDate(v.inspection_until),
+      asDate(v.next_service_date), v.next_service_km || '',
+      asDate(v.tires_change_date), v.fuel_card_number || '', v.insurance_policy || '',
+      drv ? (drv.phone || '') : '',
+    ];
+  });
+}
+
+// ── Чтение файла ──
+function handleImportFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb    = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const table = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false, raw: false });
+
+      if (table.length < 2) { showToast('⚠️ В файле нет строк с данными'); return; }
+
+      // Сопоставляем колонки по заголовку — порядок в файле может отличаться
+      const header = table[0].map(h => String(h || '').trim().toLowerCase());
+      const index  = {};
+      importState.columns.forEach(col => {
+        const pos = header.indexOf(col.title.toLowerCase());
+        if (pos >= 0) index[col.key] = pos;
+      });
+
+      const missing = importState.columns.filter(c => c.required && index[c.key] === undefined);
+      if (missing.length) {
+        showToast(`⚠️ В файле нет колонки «${missing[0].title}» — скачайте шаблон заново`);
+        return;
+      }
+
+      // Вторая строка шаблона — подсказки, её пропускаем
+      const isHintRow = (row) => importState.columns.some(c =>
+        index[c.key] !== undefined && String(row[index[c.key]] || '').trim() === c.hint);
+
+      const rows = [];
+      for (let i = 1; i < table.length; i++) {
+        const row = table[i];
+        if (!row || !row.length) continue;
+        if (i === 1 && isHintRow(row)) continue;
+        if (row.every(cell => String(cell ?? '').trim() === '')) continue;
+
+        const obj = {};
+        importState.columns.forEach(col => {
+          obj[col.key] = index[col.key] !== undefined ? row[index[col.key]] : '';
+        });
+        rows.push(obj);
+      }
+
+      if (!rows.length) { showToast('⚠️ Заполненных строк не найдено'); return; }
+
+      importState.rows = rows;
+      renderImportPreview();
+    } catch (err) {
+      console.error('[import]', err);
+      showToast('❌ Не удалось прочитать файл: ' + err.message);
+    } finally {
+      input.value = '';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderImportPreview() {
+  const { kind, columns, rows } = importState;
+  const preview = rows.slice(0, 5);
+  const keyCols = columns.slice(0, 4);
+
+  document.getElementById('import-sub').textContent = 'Шаг 2 — проверьте и загрузите';
+  document.getElementById('import-body').innerHTML = `
+    <div style="margin-bottom:14px;font-size:13px">
+      Прочитано строк: <strong>${rows.length}</strong>. Первые ${preview.length} для проверки:
+    </div>
+    <div style="border:1px solid var(--border);border-radius:9px;overflow:auto;margin-bottom:16px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:var(--bg)">
+          ${keyCols.map(c => `<th style="text-align:left;padding:8px 10px;font-weight:700;white-space:nowrap">${c.title}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${preview.map(r => `<tr style="border-top:1px solid var(--border)">
+            ${keyCols.map(c => `<td style="padding:7px 10px">${String(r[c.key] ?? '')}</td>`).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="renderImportStart();document.getElementById('import-sub').textContent='Шаг 1 — скачайте шаблон'">Назад</button>
+      <button class="btn btn-primary" id="import-run" onclick="runImport()">Загрузить ${rows.length} ${kind === 'drivers' ? 'водителей' : 'автомобилей'}</button>
+    </div>
+  `;
+}
+
+async function runImport() {
+  const btn = document.getElementById('import-run');
+  if (btn) { btn.disabled = true; btn.textContent = 'Загружаем...'; }
+  try {
+    const res = await api(`/import/${importState.kind}`, {
+      method: 'POST', body: { rows: importState.rows },
+    });
+    await loadCompanyData();
+    refreshCurrentPage();
+    populateVehicleFilter(true);
+    renderImportResult(res);
+  } catch (err) {
+    showToast('❌ ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Повторить'; }
+  }
+}
+
+function renderImportResult(res) {
+  document.getElementById('import-sub').textContent = 'Готово';
+  const box = (n, label, color) => `
+    <div style="flex:1;text-align:center;padding:14px;background:${color}1a;border:1px solid ${color}55;border-radius:9px">
+      <div style="font-size:24px;font-weight:800;color:${color}">${n}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${label}</div>
+    </div>`;
+
+  document.getElementById('import-body').innerHTML = `
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      ${box(res.created, 'создано', '#22c55e')}
+      ${box(res.updated, 'обновлено', '#3b82f6')}
+      ${box(res.skipped, 'пропущено', '#94a3b8')}
+    </div>
+
+    ${res.errors && res.errors.length ? `
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">Замечания по строкам</div>
+      <div style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:9px">
+        ${res.errors.map(e => `
+          <div style="padding:9px 12px;border-bottom:1px solid var(--border);font-size:12px">
+            <span style="font-weight:600">Строка ${e.line}${e.name ? ' · ' + e.name : ''}</span>
+            <div style="color:var(--text-muted);margin-top:2px">${e.messages.join('; ')}</div>
+          </div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:8px">
+        Исправьте эти строки в файле и загрузите его повторно — остальные записи не пострадают.
+      </div>
+    ` : `<div style="padding:14px;background:var(--green-light);border:1px solid #bbf7d0;border-radius:9px;font-size:13px;color:#166534">
+        ✅ Все строки загружены без ошибок
+      </div>`}
+
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-primary" onclick="closeImport()">Закрыть</button>
+    </div>
+  `;
 }
 
 // ══════════════════════════════════════════
