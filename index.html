@@ -979,6 +979,12 @@ function fromServerDriver(raw) {
   };
 }
 
+// Название канала, из которого пришла заявка — туда же уйдут ответы
+const CHANNEL_NAMES = {
+  telegram: 'Telegram', max: 'MAX', cabinet: 'личный кабинет', crm: 'CRM',
+};
+const channelName = (key) => CHANNEL_NAMES[key] || key || 'мессенджер';
+
 function fromServerTicket(raw) {
   const t = datesToInput(raw, ['due']);
   return {
@@ -1275,6 +1281,14 @@ function renderCard(t) {
 // ══════════════════════════════════════════
 //  MODAL
 // ══════════════════════════════════════════
+// Заявка из бота — отвечаем туда же. Из CRM или кабинета — доставим,
+// куда сможем: в тот мессенджер, где водитель подключён.
+function replyChannelHint(t, base) {
+  const ch = t.channel;
+  if (ch === 'telegram' || ch === 'max') return `${base} в ${channelName(ch)}`;
+  return `${base} в мессенджер, к которому он подключён`;
+}
+
 // Подтягивает заявку с сервера — водитель мог ответить из бота
 async function refreshTicket(id) {
   try {
@@ -1366,7 +1380,9 @@ function openModal(id) {
           <div class="info-val">${PRIORITY_LABELS[t.priority]||t.priority}</div>
         </div>
         <div class="info-item"><div class="info-label">Создана</div>
-          <div class="info-val">${new Date(t.created).toLocaleString('ru',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+          <div class="info-val">${new Date(t.created).toLocaleString('ru',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
+            <span style="font-size:11px;color:var(--text-muted)">· из ${channelName(t.channel)}</span>
+          </div>
         </div>
         ${t.due ? `<div class="info-item"><div class="info-label">Срок</div><div class="info-val">📅 ${new Date(t.due).toLocaleDateString('ru',{day:'2-digit',month:'long'})}</div></div>` : ''}
       </div>
@@ -1391,7 +1407,7 @@ function openModal(id) {
         ${contractorOptions}
       </select>
       <div style="margin-top:7px;font-size:11px;color:var(--text-muted)">
-        После сохранения водитель получит в Telegram контакты исполнителя из его карточки
+        ${replyChannelHint(t, 'После сохранения водитель получит контакты исполнителя из его карточки')}
       </div>
     </div>
 
@@ -1399,7 +1415,8 @@ function openModal(id) {
       <div class="modal-section-title">Комментарии (${t.comments.length})</div>
       <div class="comments-list">${commentsHTML || '<div style="font-size:12px;color:var(--text-muted)">Комментариев нет</div>'}</div>
       <div class="comment-input-row">
-        <textarea class="comment-input" id="comment-input" rows="2" placeholder="Написать комментарий — водитель получит его в Telegram..."></textarea>
+        <textarea class="comment-input" id="comment-input" rows="2"
+          placeholder="Написать комментарий — водитель получит его в ${channelName(t.channel)}..."></textarea>
         <button class="btn btn-primary" onclick="addComment()">Отправить</button>
       </div>
       <label style="display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px;color:var(--text-muted);cursor:pointer">
