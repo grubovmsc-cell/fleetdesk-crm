@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FleetDesk — Администрирование</title>
+<style>
+:root {
+  --bg: #f1f5f9; --card: #fff; --border: #e2e8f0;
+  --text: #0f172a; --muted: #64748b;
+  --blue: #3b82f6; --blue-light: #eff6ff;
+  --green: #22c55e; --green-light: #f0fdf4;
+  --amber: #f59e0b; --amber-light: #fffbeb;
+  --red: #ef4444; --red-light: #fef2f2;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+/* Вход */
+.login-bg { position: fixed; inset: 0; background: linear-gradient(135deg,#0f172a,#334155); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.login-card { background: #fff; border-radius: 16px; width: 380px; max-width: 92vw; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,.4); }
+.login-head { background: linear-gradient(135deg,#0f172a,#1e293b); color: #fff; padding: 26px 30px; }
+.login-head h1 { font-size: 20px; font-weight: 800; }
+.login-head p { font-size: 12px; opacity: .7; margin-top: 3px; }
+.login-body { padding: 26px 30px 30px; }
+
+/* Шапка */
+.top { background: #0f172a; color: #fff; padding: 0 24px; height: 58px; display: flex; align-items: center; gap: 16px; }
+.top-logo { font-weight: 800; font-size: 15px; }
+.top-badge { font-size: 11px; background: rgba(255,255,255,.14); padding: 3px 9px; border-radius: 20px; }
+.spacer { flex: 1; }
+.top-user { font-size: 12px; opacity: .8; }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding: 22px 24px 60px; }
+
+/* Общее */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+.card-pad { padding: 18px 20px; }
+h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.sub { font-size: 12px; color: var(--muted); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit,minmax(132px,1fr)); gap: 12px; margin-bottom: 20px; }
+.stat { background: var(--card); border: 1px solid var(--border); border-radius: 11px; padding: 14px 16px; }
+.stat-n { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+.stat-l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--border); font-weight: 700; white-space: nowrap; }
+td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tbody tr.click { cursor: pointer; }
+tbody tr.click:hover { background: var(--blue-light); }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+.b-ok { background: var(--green-light); color: #15803d; border: 1px solid #86efac; }
+.b-warn { background: var(--amber-light); color: #92400e; border: 1px solid #fcd34d; }
+.b-bad { background: var(--red-light); color: #b91c1c; border: 1px solid #fca5a5; }
+.b-gray { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 15px; border-radius: 9px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; transition: opacity .15s; }
+.btn:hover { opacity: .88; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-ghost { background: #fff; color: var(--text); border: 1.5px solid var(--border); }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-sm { padding: 6px 11px; font-size: 12px; }
+.btn-block { width: 100%; }
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+.input { width: 100%; padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 14px; font-family: inherit; outline: none; color: var(--text); }
+.input:focus { border-color: var(--blue); }
+
+.err { background: var(--red-light); border: 1px solid #fca5a5; color: #b91c1c; border-radius: 9px; padding: 10px 13px; font-size: 13px; margin-bottom: 14px; display: none; }
+.err.show { display: block; }
+
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 60; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
+.overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 14px; width: 100%; max-width: 720px; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,.28); overflow: hidden; }
+.modal-head { padding: 17px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.modal-body { padding: 20px 22px; max-height: 70vh; overflow-y: auto; }
+.x { width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--bg); cursor: pointer; font-size: 15px; color: var(--muted); }
+
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 16px; }
+.tab { padding: 9px 15px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+.pwd { background: #0f172a; color: #4ade80; font-family: ui-monospace, Menlo, monospace; font-size: 17px; padding: 13px 16px; border-radius: 9px; text-align: center; letter-spacing: 1px; margin: 12px 0; user-select: all; }
+.center { text-align: center; padding: 50px 20px; color: var(--muted); }
+.toast { position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 13px; z-index: 100; transform: translateY(90px); opacity: 0; transition: all .3s; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- Вход -->
+<div class="login-bg" id="login">
+  <div class="login-card">
+    <div class="login-head">
+      <h1>🛠 FleetDesk</h1>
+      <p>Панель администратора сервиса</p>
+    </div>
+    <div class="login-body">
+      <div class="err" id="login-err"></div>
+      <div class="field"><label>Email</label>
+        <input class="input" id="l-email" type="email" autocomplete="username"></div>
+      <div class="field"><label>Пароль</label>
+        <input class="input" id="l-pass" type="password" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn btn-primary btn-block" id="l-btn" onclick="doLogin()">Войти</button>
+    </div>
+  </div>
+</div>
+
+<!-- Приложение -->
+<div id="app" style="display:none">
+  <div class="top">
+    <span class="top-logo">🛠 FleetDesk</span>
+    <span class="top-badge">Администрирование</span>
+    <span class="spacer"></span>
+    <span class="top-user" id="admin-name"></span>
+    <button class="btn btn-sm btn-ghost" onclick="doLogout()">Выйти</button>
+  </div>
+  <div class="wrap" id="content"><div class="center">Загружаем…</div></div>
+</div>
+
+<div class="overlay" id="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div style="flex:1">
+        <div class="sub" id="m-sub"></div>
+        <div style="font-size:16px;font-weight:700" id="m-title"></div>
+      </div>
+      <button class="x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://fleetdesk-bot-production.up.railway.app/api/admin';
+let token = localStorage.getItem('fd_admin_token') || '';
+let overview = null, current = null, currentTab = 0;
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('ru-RU') : '—';
+const fmtTime = (d) => d ? new Date(d).toLocaleString('ru-RU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    method: opts.method || 'GET',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  let json = null;
+  try { json = await res.json(); } catch (_) {}
+  if (res.status === 401) { logoutLocal(); throw new Error('Войдите заново'); }
+  if (!res.ok) throw new Error((json && json.error) || 'Ошибка сервера');
+  return json;
+}
+
+// ── Вход ──
+async function doLogin() {
+  const email = document.getElementById('l-email').value.trim();
+  const pass  = document.getElementById('l-pass').value;
+  const err   = document.getElementById('login-err');
+  const btn   = document.getElementById('l-btn');
+  if (!email || !pass) { err.textContent = 'Введите email и пароль'; err.classList.add('show'); return; }
+
+  err.classList.remove('show');
+  btn.disabled = true; btn.textContent = 'Входим…';
+  try {
+    const res = await fetch(API + '/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Не удалось войти');
+    token = data.token;
+    localStorage.setItem('fd_admin_token', token);
+    document.getElementById('admin-name').textContent = data.admin.name || data.admin.email;
+    enterApp();
+  } catch (e) {
+    err.textContent = e.message; err.classList.add('show');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Войти';
+  }
+}
+
+function logoutLocal() {
+  token = ''; localStorage.removeItem('fd_admin_token');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login').style.display = 'flex';
+}
+
+async function doLogout() { try { await api('/logout', { method: 'POST' }); } catch (_) {} logoutLocal(); }
+
+async function enterApp() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  await loadOverview();
+}
+
+// ── Сводка ──
+async function loadOverview() {
+  try {
+    overview = await api('/overview');
+    renderOverview();
+  } catch (e) {
+    document.getElementById('content').innerHTML = `<div class="center">${esc(e.message)}</div>`;
+  }
+}
+
+function renderOverview() {
+  const { companies, totals, recent, actionLabels } = overview;
+  const stat = (n, l) => `<div class="stat"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`;
+
+  document.getElementById('content').innerHTML = `
+    <div class="stats">
+      ${stat(totals.companies, 'Компаний')}
+      ${stat(totals.accounts, 'Аккаунтов')}
+      ${stat(totals.drivers, 'Водителей')}
+      ${stat(totals.drivers_in_bot, 'Из них в боте')}
+      ${stat(totals.vehicles, 'Автомобилей')}
+      ${stat(totals.tickets, 'Заявок')}
+      ${stat(totals.logins_week, 'Входов за неделю')}
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-pad" style="border-bottom:1px solid var(--border)">
+        <h2>Компании</h2>
+        <div class="sub">Нажмите на строку, чтобы открыть карточку</div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Компания</th><th>Аккаунты</th><th>Водители</th><th>Авто</th>
+          <th>Заявки</th><th>Последний вход</th><th>Статус</th>
+        </tr></thead>
+        <tbody>
+          ${companies.length === 0
+            ? `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Компаний пока нет</td></tr>`
+            : companies.map(c => `
+            <tr class="click" onclick="openCompany('${esc(c.id)}')">
+              <td>
+                <div style="font-weight:600">${esc(c.name)}</div>
+                <div class="mono">${esc(c.id)}</div>
+              </td>
+              <td>${c.accounts}</td>
+              <td>${c.drivers}</td>
+              <td>${c.vehicles}</td>
+              <td>${c.tickets}${c.tickets_open ? ` <span style="color:var(--amber)">(${c.tickets_open} откр.)</span>` : ''}</td>
+              <td>${fmtTime(c.last_login)}</td>
+              <td>${c.blocked_at
+                ? '<span class="badge b-bad">Заблокирована</span>'
+                : '<span class="badge b-ok">Активна</span>'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-pad" style="border-bottom:1px solid var(--border);display:flex;align-items:center">
+        <div style="flex:1"><h2>Последние действия</h2>
+          <div class="sub">По всем компаниям</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="openActivity()">Весь журнал</button>
+      </div>
+      <table>
+        <thead><tr><th>Время</th><th>Кто</th><th>Действие</th><th>Что</th></tr></thead>
+        <tbody>
+          ${recent.length === 0
+            ? `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:30px">Пока пусто</td></tr>`
+            : recent.map(r => `
+            <tr>
+              <td style="white-space:nowrap">${fmtTime(r.created_at)}</td>
+              <td>${esc(r.actor || '—')}</td>
+              <td>${esc(actionLabels[r.action] || r.action)}</td>
+              <td style="color:var(--muted)">${esc(r.details || '')}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ── Карточка компании ──
+async function openCompany(id) {
+  currentTab = 0;
+  document.getElementById('modal-bg').classList.add('open');
+  document.getElementById('m-body').innerHTML = '<div class="center">Загружаем…</div>';
+  try {
+    current = await api('/companies/' + encodeURIComponent(id));
+    renderCompany();
+  } catch (e) {
+    document.getElementById('m-body').innerHTML = `<div class="center">${esc(e.message)}</div>`;
+  }
+}
+
+function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
+function switchTab(i) { currentTab = i; renderCompany(); }
+
+function renderCompany() {
+  const { company: c, accounts, drivers, vehicles, ticketStats, log } = current;
+  const labels = overview.actionLabels;
+
+  document.getElementById('m-sub').textContent = c.id;
+  document.getElementById('m-title').innerHTML =
+    esc(c.name) + (c.blocked_at ? ' <span class="badge b-bad">Заблокирована</span>' : '');
+
+  const tabs = ['Обзор', `Аккаунты (${accounts.length})`, `Водители (${drivers.length})`, `Авто (${vehicles.length})`, 'Журнал'];
+  const openCount = ticketStats.filter(s => !['DONE','CANCELLED'].includes(s.status))
+    .reduce((a, s) => a + s.n, 0);
+  const allTickets = ticketStats.reduce((a, s) => a + s.n, 0);
+
+  let body = '';
+
+  if (currentTab === 0) {
+    body = `
+      <div class="stats" style="margin-bottom:18px">
+        <div class="stat"><div class="stat-n">${accounts.length}</div><div class="stat-l">Аккаунтов</div></div>
+        <div class="stat"><div class="stat-n">${drivers.length}</div><div class="stat-l">Водителей</div></div>
+        <div class="stat"><div class="stat-n">${vehicles.length}</div><div class="stat-l">Авто</div></div>
+        <div class="stat"><div class="stat-n">${allTickets}</div><div class="stat-l">Заявок</div></div>
+        <div class="stat"><div class="stat-n">${openCount}</div><div class="stat-l">Открыто</div></div>
+      </div>
+
+      <div class="field"><label>Название компании</label>
+        <input class="input" id="c-name" value="${esc(c.name)}"></div>
+      <div class="field"><label>Заметка администратора</label>
+        <input class="input" id="c-note" value="${esc(c.note)}" placeholder="Тариф, контакт, договорённости"></div>
+      <button class="btn btn-primary btn-sm" onclick="saveCompany()">Сохранить</button>
+
+      <div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px">Управление доступом</div>
+        <div class="sub" style="margin-bottom:12px">
+          ${c.blocked_at
+            ? `Заблокирована ${fmtTime(c.blocked_at)}. Сотрудники не могут войти, данные сохранены.`
+            : 'Блокировка закрывает вход сотрудникам, но сохраняет все данные — действие обратимо.'}
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-sm ${c.blocked_at ? 'btn-primary' : 'btn-ghost'}" onclick="toggleBlock(${c.blocked_at ? 'false' : 'true'})">
+            ${c.blocked_at ? '✅ Разблокировать' : '⛔ Заблокировать'}
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCompany()">🗑 Удалить компанию</button>
+        </div>
+      </div>`;
+  }
+
+  if (currentTab === 1) {
+    body = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="btn btn-primary btn-sm" onclick="newAccount()">+ Создать аккаунт</button>
+      </div>
+      <table>
+        <thead><tr><th>Имя</th><th>Email</th><th>Последний вход</th><th>Действий</th><th></th></tr></thead>
+        <tbody>
+          ${accounts.length === 0
+            ? `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:26px">Аккаунтов нет</td></tr>`
+            : accounts.map(a => `
+            <tr>
+              <td style="font-weight:600">${esc(a.name)}</td>
+              <td>${esc(a.email)}</td>
+              <td>${fmtTime(a.last_login)}</td>
+              <td>${a.actions}</td>
+              <td style="text-align:right;white-space:nowrap">
+                <button class="btn btn-ghost btn-sm" onclick="resetPassword('${a.id}')">🔑 Сбросить пароль</button>
+                <button class="btn btn-ghost btn-sm" style="color:#b91c1c" onclick="deleteAccount('${a.id}','${esc(a.email)}')">🗑</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  if (currentTab === 2) {
+    const st = { active:'На работе', vacation:'В отпуске', fired:'Уволен' };
+    body = `<table>
+      <thead><tr><th>Водитель</th><th>Телефон</th><th>Telegram</th><th>Статус</th><th>Бот</th></tr></thead>
+      <tbody>
+        ${drivers.length === 0
+          ? `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:26px">Водителей нет</td></tr>`
+          : drivers.map(d => `
+          <tr>
+            <td style="font-weight:600">${esc(d.name)}</td>
+            <td>${esc(d.phone)}</td>
+            <td>${d.telegram_username ? '@' + esc(d.telegram_username) : '—'}</td>
+            <td>${esc(st[d.status] || d.status)}</td>
+            <td>${d.telegram_id
+              ? '<span class="badge b-ok">Подключён</span>'
+              : '<span class="badge b-gray">Нет</span>'}</td>
+          </tr>`).join('')}
+      </tbody></table>`;
+  }
+
+  if (currentTab === 3) {
+    const st = { active:'В работе', repair:'Ремонт', idle:'Простой' };
+    body = `<table>
+      <thead><tr><th>Гос. номер</th><th>Марка и модель</th><th>Пробег</th><th>Состояние</th></tr></thead>
+      <tbody>
+        ${vehicles.length === 0
+          ? `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:26px">Автомобилей нет</td></tr>`
+          : vehicles.map(v => `
+          <tr>
+            <td style="font-weight:700">${esc(v.plate)}</td>
+            <td>${esc([v.brand, v.model].filter(Boolean).join(' '))}</td>
+            <td>${v.mileage ? Number(v.mileage).toLocaleString('ru-RU') + ' км' : '—'}</td>
+            <td>${esc(st[v.status] || v.status)}</td>
+          </tr>`).join('')}
+      </tbody></table>`;
+  }
+
+  if (currentTab === 4) {
+    body = `<table>
+      <thead><tr><th>Время</th><th>Кто</th><th>Действие</th><th>Что</th></tr></thead>
+      <tbody>
+        ${log.length === 0
+          ? `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:26px">Действий пока нет</td></tr>`
+          : log.map(r => `
+          <tr>
+            <td style="white-space:nowrap">${fmtTime(r.created_at)}</td>
+            <td>${esc(r.actor || '—')}</td>
+            <td>${esc(labels[r.action] || r.action)}</td>
+            <td style="color:var(--muted)">${esc(r.details || '')}</td>
+          </tr>`).join('')}
+      </tbody></table>`;
+  }
+
+  document.getElementById('m-body').innerHTML = `
+    <div class="tabs">
+      ${tabs.map((t,i) => `<div class="tab${i===currentTab?' active':''}" onclick="switchTab(${i})">${t}</div>`).join('')}
+    </div>
+    ${body}`;
+}
+
+// ── Действия по компании ──
+async function saveCompany() {
+  try {
+    await api('/companies/' + encodeURIComponent(current.company.id), {
+      method: 'PATCH',
+      body: { name: document.getElementById('c-name').value, note: document.getElementById('c-note').value },
+    });
+    showToast('✅ Сохранено');
+    await loadOverview();
+    await openCompany(current.company.id);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function toggleBlock(block) {
+  const c = current.company;
+  if (block && !confirm(`Заблокировать «${c.name}»?\n\nСотрудники не смогут войти, данные сохранятся.`)) return;
+  try {
+    await api(`/companies/${encodeURIComponent(c.id)}/block`, { method: 'POST', body: { block } });
+    showToast(block ? '⛔ Компания заблокирована' : '✅ Доступ восстановлен');
+    await loadOverview();
+    await openCompany(c.id);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function deleteCompany() {
+  const c = current.company;
+  const typed = prompt(
+    `Удаление «${c.name}» безвозвратно сотрёт все её данные:\n` +
+    `аккаунты, водителей, автомобили, заявки и историю.\n\n` +
+    `Для подтверждения введите: ${c.id}`
+  );
+  if (typed !== c.id) { if (typed !== null) showToast('Удаление отменено'); return; }
+  try {
+    await api('/companies/' + encodeURIComponent(c.id), { method: 'DELETE', body: { confirm: c.id } });
+    closeModal();
+    showToast('Компания удалена');
+    await loadOverview();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+// ── Аккаунты ──
+async function newAccount() {
+  const name = prompt('Имя сотрудника:');
+  if (!name || !name.trim()) return;
+  const email = prompt('Email для входа:');
+  if (!email || !email.trim()) return;
+  try {
+    const res = await api(`/companies/${encodeURIComponent(current.company.id)}/accounts`, {
+      method: 'POST', body: { name: name.trim(), email: email.trim() },
+    });
+    showPassword('Аккаунт создан', res.name, res.email, res.password);
+    current = await api('/companies/' + encodeURIComponent(current.company.id));
+    await loadOverview();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function resetPassword(id) {
+  if (!confirm('Сбросить пароль?\n\nСтарый перестанет работать, активные сессии закроются.')) return;
+  try {
+    const res = await api(`/accounts/${id}/reset-password`, { method: 'POST' });
+    showPassword('Новый пароль', res.name, res.email, res.password);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function deleteAccount(id, email) {
+  if (!confirm(`Удалить аккаунт ${email}?`)) return;
+  try {
+    await api('/accounts/' + id, { method: 'DELETE' });
+    showToast('Аккаунт удалён');
+    current = await api('/companies/' + encodeURIComponent(current.company.id));
+    renderCompany();
+    await loadOverview();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+// Пароль показываем один раз — в базе хранится только его хеш
+function showPassword(title, name, email, password) {
+  document.getElementById('m-sub').textContent = esc(email);
+  document.getElementById('m-title').textContent = title;
+  document.getElementById('m-body').innerHTML = `
+    <div style="font-size:14px;margin-bottom:6px">${esc(name)}</div>
+    <div class="sub" style="margin-bottom:14px">Передайте эти данные сотруднику. Пароль показывается один раз.</div>
+    <div class="field"><label>Логин</label><div class="pwd" style="color:#93c5fd">${esc(email)}</div></div>
+    <div class="field"><label>Пароль</label><div class="pwd" id="pwd-box">${esc(password)}</div></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="copyPwd('${esc(password)}')">📋 Скопировать пароль</button>
+      <button class="btn btn-primary" onclick="openCompany('${esc(current.company.id)}')">Готово</button>
+    </div>`;
+}
+
+function copyPwd(p) {
+  if (navigator.clipboard) navigator.clipboard.writeText(p);
+  showToast('📋 Пароль скопирован');
+}
+
+// ── Журнал целиком ──
+async function openActivity() {
+  document.getElementById('modal-bg').classList.add('open');
+  document.getElementById('m-sub').textContent = 'Все компании';
+  document.getElementById('m-title').textContent = 'Журнал действий';
+  document.getElementById('m-body').innerHTML = '<div class="center">Загружаем…</div>';
+  try {
+    const { items, actionLabels } = await api('/activity?limit=300');
+    document.getElementById('m-body').innerHTML = `
+      <table>
+        <thead><tr><th>Время</th><th>Компания</th><th>Кто</th><th>Действие</th><th>Что</th></tr></thead>
+        <tbody>
+          ${items.length === 0
+            ? `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:26px">Пусто</td></tr>`
+            : items.map(r => `
+            <tr>
+              <td style="white-space:nowrap">${fmtTime(r.created_at)}</td>
+              <td>${esc(r.company_name || '—')}</td>
+              <td>${esc(r.actor || '—')}</td>
+              <td>${esc(actionLabels[r.action] || r.action)}</td>
+              <td style="color:var(--muted)">${esc(r.details || '')}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch (e) {
+    document.getElementById('m-body').innerHTML = `<div class="center">${esc(e.message)}</div>`;
+  }
+}
+
+// ── Старт ──
+(async function () {
+  if (!token) return;
+  try {
+    const me = await api('/me');
+    document.getElementById('admin-name').textContent = me.admin.name || me.admin.email;
+    enterApp();
+  } catch (_) { logoutLocal(); }
+})();
+</script>
+</body>
+</html>
