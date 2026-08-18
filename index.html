@@ -2236,8 +2236,10 @@ function openDriverModal(id) {
         <div class="fg"><div class="fg-label">MAX</div>
           <input class="fg-input" id="d-max" value="${u.max_username ? '@' + u.max_username : ''}" placeholder="ник без @"></div>
       </div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:-6px">
-        По этим никам бот узнаёт водителя при первом входе. Достаточно заполнить хотя бы один.
+      <div style="font-size:11px;color:var(--text-muted);margin-top:-6px;line-height:1.6">
+        <strong>Telegram:</strong> бот узнаёт водителя по нику.<br>
+        <strong>MAX:</strong> ник нужен не всегда — там водитель подтверждает себя номером телефона
+        из этой карточки, нажав в боте «Поделиться номером». Главное, чтобы телефон был указан верно.
       </div>
     </div>
 
@@ -2407,8 +2409,10 @@ function saveVModal() {
     u.status          = document.getElementById('d-status')?.value || u.status;
     u.phone           = document.getElementById('d-phone')?.value || u.phone;
     u.email           = document.getElementById('d-email')?.value || u.email;
-    u.telegram        = document.getElementById('d-telegram')?.value || u.telegram;
-    u.max             = (document.getElementById('d-max')?.value || '').replace(/^@/, '');
+    // Ники читаем как есть: пустое поле должно стирать значение, а не
+    // подставлять прежнее
+    u.telegram        = (document.getElementById('d-telegram')?.value ?? u.telegram ?? '').trim();
+    u.max             = (document.getElementById('d-max')?.value ?? '').replace(/^@/, '').trim();
     u.license_number  = document.getElementById('d-licnum')?.value || u.license_number;
     u.license_category= document.getElementById('d-liccat')?.value || u.license_category;
     u.license_expires = document.getElementById('d-licexp')?.value || null;
@@ -2617,8 +2621,9 @@ function renderDriverConnections(channel, isActive) {
 
   return USERS.map((u, i) => {
     const connected = channel === 'max' ? !!u.max_id : !!u.telegram_id;
+    // В MAX опознание идёт по телефону, поэтому и показываем его
     const nick = channel === 'max'
-      ? (u.max_username ? '@' + u.max_username : 'ник не указан')
+      ? (u.phone || 'телефон не указан')
       : (u.telegram || 'ник не указан');
     const vehicle = VEHICLES.find(v => v.id === u.assigned_vehicle);
     const last = i === USERS.length - 1;
@@ -2646,12 +2651,12 @@ function renderMaxBotPage() {
   const isActive = !!max.ok;
   const link = max.link || '';        // ссылка есть и когда бот временно не на связи
   const connectedCount = USERS.filter(u => u.max_id).length;
-  const withNick = USERS.filter(u => u.max_username).length;
+  const withPhone = USERS.filter(u => (u.phone || '').replace(/\D/g, '').length >= 10).length;
 
   const steps = [
-    { n:'1', icon:'🪪', title:'Укажите ник в карточке', desc:'На вкладке «Водители» заполните поле MAX — ник сотрудника в мессенджере, без @.' },
-    { n:'2', icon:'📨', title:'Отправьте ссылку',       desc:'Ссылка одна на все компании — перешлите её водителю любым удобным способом.' },
-    { n:'3', icon:'💬', title:'Бот узнаёт сам',         desc:'Водитель открывает бота — тот находит его по нику и сразу открывает нужную компанию.' },
+    { n:'1', icon:'📞', title:'Проверьте телефон',  desc:'На вкладке «Водители» укажите номер сотрудника — именно по нему бот его опознает.' },
+    { n:'2', icon:'📨', title:'Отправьте ссылку',   desc:'Ссылка одна на все компании — перешлите её водителю любым удобным способом.' },
+    { n:'3', icon:'📱', title:'Водитель жмёт кнопку', desc:'В боте — «Поделиться номером». MAX подтверждает номер сам, вводить ничего не нужно.' },
   ];
 
   const html = `
@@ -2676,7 +2681,8 @@ function renderMaxBotPage() {
             <button class="btn btn-ghost" onclick="copyLink('${link}')">📋 Скопировать</button>
           </div>
           <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
-            Бот узнаёт водителя по нику MAX из карточки. Если ник не заполнен, бот один раз попросит рабочий e-mail.
+            Водитель открывает бота и нажимает «Поделиться номером» — MAX подтверждает номер сам,
+            бот сверяет его с телефоном из карточки. Ник в MAX заполнять не обязательно.
           </div>
           ${!isActive ? `
             <div style="margin-top:12px;padding:11px 13px;background:var(--amber-light);border:1px solid var(--amber);border-radius:9px;font-size:12px;color:#92400e">
@@ -2725,7 +2731,7 @@ function renderMaxBotPage() {
         <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
           <div style="font-weight:700;font-size:14px">Водители</div>
           <span style="font-size:12px;color:var(--text-muted)">
-            ${connectedCount} из ${USERS.length} подключены · ник указан у ${withNick}
+            ${connectedCount} из ${USERS.length} подключены · телефон указан у ${withPhone}
           </span>
         </div>
         ${renderDriverConnections('max', isActive)}
