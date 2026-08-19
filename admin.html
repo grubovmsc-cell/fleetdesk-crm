@@ -269,6 +269,23 @@ function renderOverview() {
       </table>
     </div>
 
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-pad" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:260px">
+          <h2>Резервная копия</h2>
+          <div class="sub">
+            Полный слепок данных всех компаний в одном файле. Скачивайте регулярно —
+            это страховка на случай потери базы.
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="downloadBackup()" id="backup-btn">⬇️ Скачать копию</button>
+        <label class="btn btn-ghost" style="cursor:pointer">
+          ⬆️ Восстановить
+          <input type="file" accept=".json" style="display:none" onchange="restoreBackup(this)">
+        </label>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-pad" style="border-bottom:1px solid var(--border);display:flex;align-items:center">
         <div style="flex:1"><h2>Последние действия</h2>
@@ -740,6 +757,78 @@ function showPassword(title, name, email, password) {
 function copyPwd(p) {
   if (navigator.clipboard) navigator.clipboard.writeText(p);
   showToast('📋 Пароль скопирован');
+}
+
+// ── Резервное копирование ──
+// Выгрузка идёт через fetch, а не прямой ссылкой: нужен заголовок с токеном
+async function downloadBackup() {
+  const btn = document.getElementById('backup-btn');
+  btn.disabled = true; btn.textContent = 'Готовим файл…';
+  try {
+    const res = await fetch(API + '/backup/export', {
+      headers: { 'Authorization': 'Bearer ' + token },
+    });
+    if (!res.ok) throw new Error('Сервер вернул ошибку ' + res.status);
+
+    const blob = await res.blob();
+    const stamp = new Date().toISOString().slice(0, 10);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `fleetdesk-backup-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+
+    showToast('✅ Копия скачана — сохраните её вне компьютера');
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '⬇️ Скачать копию';
+  }
+}
+
+function restoreBackup(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    let data;
+    try {
+      data = JSON.parse(e.target.result);
+    } catch (_) {
+      return showToast('❌ Файл повреждён или это не резервная копия');
+    }
+    if (data.format !== 'fleetdesk-backup')
+      return showToast('❌ Это не резервная копия FleetDesk');
+
+    const counts = Object.entries(data.summary || {})
+      .filter(([, n]) => n).map(([t, n]) => `${t}: ${n}`).join(', ');
+
+    const mode = confirm(
+      `Копия от ${new Date(data.created_at).toLocaleString('ru-RU')}\n${counts}\n\n` +
+      `OK — заменить все данные копией (текущие будут удалены).\n` +
+      `Отмена — только дописать недостающие записи.`
+    ) ? 'replace' : 'merge';
+
+    if (mode === 'replace' &&
+        !confirm('Точно заменить ВСЕ данные? Текущее состояние будет потеряно.'))
+      return;
+
+    try {
+      const res = await api('/backup/import', { method: 'POST',
+        body: { data, mode, confirm: mode === 'replace' ? 'REPLACE' : undefined } });
+
+      const restored = Object.entries(res.restored)
+        .filter(([, n]) => n).map(([t, n]) => `${t}: ${n}`).join(', ');
+      alert(`Восстановление завершено.\n\nЗаписей добавлено — ${restored || 'нет новых'}.\n\n` +
+            `Всем пользователям потребуется войти заново.`);
+      await loadOverview();
+    } catch (err) {
+      showToast('❌ ' + err.message);
+    }
+  };
+  reader.readAsText(file);
 }
 
 // ── Журнал целиком ──
