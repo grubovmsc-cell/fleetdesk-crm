@@ -137,7 +137,7 @@ async function submit() {
 
     // Кладём сессию туда же, где её ищет CRM — и сразу открываем её
     localStorage.setItem('fleetdesk_token', data.token);
-    location.href = '/';
+    location.href = '/app.html';
   } catch (err) {
     showErr(err.message);
     btn.disabled = false; btn.textContent = 'Войти в FleetDesk →';

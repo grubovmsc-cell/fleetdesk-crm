@@ -56,6 +56,7 @@ tbody tr.click:hover { background: var(--blue-light); }
 .b-ok { background: var(--green-light); color: #15803d; border: 1px solid #86efac; }
 .b-warn { background: var(--amber-light); color: #92400e; border: 1px solid #fcd34d; }
 .b-bad { background: var(--red-light); color: #b91c1c; border: 1px solid #fca5a5; }
+.b-mute { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 .b-gray { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
 
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 15px; border-radius: 9px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; transition: opacity .15s; }
@@ -145,6 +146,7 @@ tbody tr.click:hover { background: var(--blue-light); }
 const API = 'https://fleetdesk-bot-production.up.railway.app/api/admin';
 let token = localStorage.getItem('fd_admin_token') || '';
 let overview = null, current = null, currentTab = 0;
+let leads = null, leadFilter = 'all';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c =>
   ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -216,6 +218,7 @@ async function enterApp() {
 async function loadOverview() {
   try {
     overview = await api('/overview');
+    try { leads = await api('/leads?limit=300'); } catch (_) { leads = null; }
     renderOverview();
   } catch (e) {
     document.getElementById('content').innerHTML = `<div class="center">${esc(e.message)}</div>`;
@@ -235,7 +238,10 @@ function renderOverview() {
       ${stat(totals.vehicles, 'Автомобилей')}
       ${stat(totals.tickets, 'Заявок')}
       ${stat(totals.logins_week, 'Входов за неделю')}
+      ${stat(leads && leads.counts ? leads.counts.new_count : 0, 'Заявок с сайта')}
     </div>
+
+    <div id="leads-card" style="margin-bottom:20px">${renderLeadsCard()}</div>
 
     <div class="card" style="margin-bottom:20px">
       <div class="card-pad" style="border-bottom:1px solid var(--border)">
@@ -308,6 +314,123 @@ function renderOverview() {
       </table>
     </div>
   `;
+}
+
+// ── Заявки с сайта ──
+// Приходят с лендинга: запись на вебинар и обратная связь.
+// К компаниям не относятся — это будущие клиенты.
+const LEAD_KINDS = { webinar: '🎓 Вебинар', feedback: '✉️ Обратная связь' };
+const LEAD_STATUSES = {
+  new:     { label: 'Новая',      badge: 'b-warn' },
+  in_work: { label: 'В работе',   badge: 'b-ok'   },
+  done:    { label: 'Обработана', badge: 'b-mute' },
+  spam:    { label: 'Спам',       badge: 'b-bad'  },
+};
+
+function filteredLeads() {
+  const items = (leads && leads.items) || [];
+  if (leadFilter === 'all') return items;
+  if (leadFilter === 'webinar' || leadFilter === 'feedback')
+    return items.filter(l => l.kind === leadFilter);
+  return items.filter(l => l.status === leadFilter);
+}
+
+function renderLeadsCard() {
+  if (!leads) {
+    return `<div class="card"><div class="card-pad">
+      <h2>Заявки с сайта</h2>
+      <div class="sub">Не удалось загрузить — обновите страницу</div></div></div>`;
+  }
+
+  const items = filteredLeads();
+  const c = leads.counts || {};
+  const chip = (key, label) => `<button class="btn btn-sm ${leadFilter === key ? 'btn-primary' : 'btn-ghost'}"
+      onclick="setLeadFilter('${key}')">${label}</button>`;
+
+  return `
+  <div class="card">
+    <div class="card-pad" style="border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <h2>Заявки с сайта</h2>
+        <div class="sub">Запись на вебинар и обратная связь с лендинга</div>
+      </div>
+      ${chip('all', `Все · ${c.total || 0}`)}
+      ${chip('new', `Новые · ${c.new_count || 0}`)}
+      ${chip('webinar', `Вебинар · ${c.webinar || 0}`)}
+      ${chip('feedback', `Обратная связь · ${c.feedback || 0}`)}
+    </div>
+    <table>
+      <thead><tr>
+        <th style="white-space:nowrap">Когда</th><th>Тип</th><th>Кто</th>
+        <th>Контакты</th><th>Сообщение</th><th>Статус</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${items.length === 0
+          ? `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Заявок нет</td></tr>`
+          : items.map(l => {
+            const contacts = [l.phone, l.email].filter(Boolean).map(esc).join('<br>') || '—';
+            const st = LEAD_STATUSES[l.status] || LEAD_STATUSES.new;
+            return `
+            <tr>
+              <td style="white-space:nowrap">${fmtTime(l.created_at)}</td>
+              <td style="white-space:nowrap">${LEAD_KINDS[l.kind] || esc(l.kind)}</td>
+              <td>
+                <div style="font-weight:600">${esc(l.name || '—')}</div>
+                ${l.company ? `<div class="sub">${esc(l.company)}</div>` : ''}
+                ${l.slot ? `<div class="sub">🕑 ${esc(l.slot)}</div>` : ''}
+              </td>
+              <td style="white-space:nowrap">${contacts}</td>
+              <td style="max-width:340px;color:var(--muted)">${esc(l.message || '—')}</td>
+              <td>
+                <span class="badge ${st.badge}" style="margin-bottom:5px">${st.label}</span>
+                <select class="input" style="padding:4px 7px;font-size:12px"
+                        onchange="setLeadStatus('${l.id}', this.value)">
+                  ${Object.entries(LEAD_STATUSES).map(([key, s]) =>
+                    `<option value="${key}" ${l.status === key ? 'selected' : ''}>${s.label}</option>`).join('')}
+                </select>
+              </td>
+              <td><button class="btn btn-sm btn-ghost" onclick="deleteLead('${l.id}')" title="Удалить">🗑</button></td>
+            </tr>`;
+          }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function setLeadFilter(key) {
+  leadFilter = key;
+  document.getElementById('leads-card').innerHTML = renderLeadsCard();
+}
+
+async function refreshLeads() {
+  try {
+    leads = await api('/leads?limit=300');
+    const box = document.getElementById('leads-card');
+    if (box) box.innerHTML = renderLeadsCard();
+  } catch (e) {
+    showToast(e.message);
+  }
+}
+
+async function setLeadStatus(id, status) {
+  try {
+    await api('/leads/' + id, { method: 'PATCH', body: { status } });
+    showToast('Статус обновлён');
+    await refreshLeads();
+  } catch (e) {
+    showToast(e.message);
+  }
+}
+
+async function deleteLead(id) {
+  if (!confirm('Удалить заявку? Отменить это нельзя.')) return;
+  try {
+    await api('/leads/' + id, { method: 'DELETE' });
+    showToast('Заявка удалена');
+    await refreshLeads();
+  } catch (e) {
+    showToast(e.message);
+  }
 }
 
 // ── Карточка компании ──
