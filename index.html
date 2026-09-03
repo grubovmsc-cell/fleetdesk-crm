@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FleetDesk — CRM для корпоративного автопарка</title>
 <meta name="description" content="FleetDesk — система управления корпоративным автопарком: заявки от водителей из Telegram и MAX, карточки машин, водителей и подрядчиков, контроль документов и ТО.">
+<meta name="theme-color" content="#FAF7F3">
 
 <!--
   ════════════════════════════════════════════════════════════════════
@@ -15,14 +16,15 @@
   Меняйте текст прямо между тегами, вёрстка не поедет.
 
   Что где:
-    ТЕКСТ: первый экран      — заголовок, подзаголовок, кнопки
-    ТЕКСТ: возможности       — плитки «что умеет система»
-    ТЕКСТ: преимущества      — три причины, почему это удобно
-    ТЕКСТ: как начать        — инструкция по работе, шаги 1–4
-    ТЕКСТ: вопросы           — короткий FAQ
-    ТЕКСТ: вебинар           — приглашение и варианты времени
-    ТЕКСТ: обратная связь    — приглашение написать
-    ТЕКСТ: подвал            — контакты и реквизиты
+    ТЕКСТ: первый экран        — заголовок, подзаголовок, кнопки, цифры
+    ТЕКСТ: польза компании     — что даёт CRM автопарку
+    ТЕКСТ: польза водителю     — что даёт CRM человеку за рулём
+    ТЕКСТ: возможности         — плитки «что умеет система»
+    ТЕКСТ: как начать          — инструкция по работе, шаги 1–4
+    ТЕКСТ: вопросы             — короткий FAQ
+    ТЕКСТ: вебинар             — приглашение и варианты времени
+    ТЕКСТ: обратная связь      — приглашение написать
+    ТЕКСТ: подвал              — контакты и разделы
 
   Формы отправляют заявки на сервер FleetDesk, а оттуда они попадают
   в админку в раздел «Заявки с сайта». Адрес сервера — в константе API
@@ -31,199 +33,283 @@
 -->
 
 <style>
+/* ══════════════════════════════════════════════════════════════════
+   ДИЗАЙН-СИСТЕМА
+   Тёплая основа вместо белой: экран не «светит», читать спокойнее.
+   Цвет появляется только там, где он что-то значит.
+   ══════════════════════════════════════════════════════════════════ */
 :root {
-  --ink: #0f172a;
-  --ink-soft: #334155;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --bg: #ffffff;
-  --surface: #f8fafc;
-  --blue: #3b82f6;
-  --blue-dark: #2563eb;
-  --blue-light: #eff6ff;
-  --green: #22c55e;
-  --amber: #f59e0b;
-  --radius: 14px;
-  --shadow: 0 1px 3px rgba(15,23,42,.07), 0 8px 30px rgba(15,23,42,.06);
-  --shadow-lg: 0 20px 60px rgba(15,23,42,.16);
+  --ground:       #FAF7F3;
+  --ground-warm:  #FDF6EE;
+  --surface:      #FFFFFF;
+  --sunk:         #F5F0EA;
+  --line:         #EAE2D9;
+  --line-soft:    #F2EBE3;
+
+  --ink:   #211D19;
+  --ink-2: #4B443D;
+  --ink-3: #877D73;
+
+  --accent:       #4F46E5;
+  --accent-hover: #4338CA;
+  --accent-soft:  #EEEBFF;
+  --amber:        #B26A08;
+  --amber-soft:   #FCF2E1;
+  --green:        #2E7D4F;
+  --green-soft:   #E7F4EC;
+  --red:          #BE3A2F;
+  --red-soft:     #FBEDEB;
+
+  --espresso: #241F1B;
+
+  --r-sm: 10px;
+  --r:    16px;
+  --r-lg: 22px;
+
+  --sh-xs: 0 1px 2px rgba(33,29,25,.05);
+  --sh:    0 1px 2px rgba(33,29,25,.04), 0 8px 24px -10px rgba(33,29,25,.16);
+  --sh-lg: 0 2px 6px rgba(33,29,25,.05), 0 30px 60px -24px rgba(33,29,25,.30);
 }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: var(--ink); background: var(--bg); font-size: 16px; line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
+  background: var(--ground); color: var(--ink-2);
+  font-size: 17px; line-height: 1.65;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
 }
 img { max-width: 100%; }
 a { color: inherit; }
-.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+::selection { background: var(--accent-soft); color: var(--ink); }
+
+.wrap { max-width: 1140px; margin: 0 auto; padding: 0 26px; }
+
+h1, h2, h3, h4 { color: var(--ink); font-weight: 780; letter-spacing: -.022em; line-height: 1.14; }
+h1 { font-size: clamp(36px, 5.2vw, 56px); letter-spacing: -.03em; line-height: 1.06; }
+h2 { font-size: clamp(28px, 3.4vw, 38px); }
+h3 { font-size: 19px; letter-spacing: -.015em; line-height: 1.3; }
+
+/* ── КНОПКИ ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  padding: 13px 24px; border-radius: 999px; border: 1px solid transparent; cursor: pointer;
+  font-family: inherit; font-size: 16px; font-weight: 650; text-decoration: none;
+  transition: transform .14s ease, box-shadow .14s ease, background .14s ease, border-color .14s ease;
+  white-space: nowrap;
+}
+.btn:hover  { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 6px 18px -8px rgba(79,70,229,.9); }
+.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 12px 26px -10px rgba(79,70,229,.95); }
+.btn-quiet { background: var(--surface); color: var(--ink); border-color: var(--line); box-shadow: var(--sh-xs); }
+.btn-quiet:hover { border-color: #DCD1C4; }
+.btn-sm { padding: 10px 19px; font-size: 15px; }
+.btn-lg { padding: 16px 30px; font-size: 17px; }
 
 /* ── ШАПКА ── */
 .nav {
-  position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.86);
-  backdrop-filter: blur(12px); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 60;
+  background: rgba(250,247,243,.82); backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid transparent; transition: border-color .2s;
 }
-.nav-inner { display: flex; align-items: center; gap: 28px; height: 64px; }
-.logo { font-size: 19px; font-weight: 800; letter-spacing: -.4px; white-space: nowrap; }
-.nav-links { display: flex; gap: 24px; margin-left: auto; }
-.nav-links a { font-size: 14px; color: var(--muted); text-decoration: none; font-weight: 500; }
+.nav.stuck { border-bottom-color: var(--line); }
+.nav-inner { display: flex; align-items: center; gap: 30px; height: 72px; }
+.logo { display: flex; align-items: center; gap: 9px; font-size: 19px; font-weight: 800; color: var(--ink); letter-spacing: -.03em; white-space: nowrap; }
+.logo-dot {
+  width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0;
+  background: linear-gradient(140deg, var(--accent), #7C6BF0);
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+}
+.beta {
+  font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--amber); background: var(--amber-soft); border: 1px solid #EFD9B4;
+  padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+}
+.beta-note {
+  display: flex; gap: 13px; align-items: flex-start;
+  background: var(--amber-soft); border: 1px solid #EFD9B4; border-radius: var(--r);
+  padding: 16px 20px; font-size: 15.5px; color: #7A4B08; margin-top: 30px; max-width: 545px;
+}
+.beta-note b { color: #5E3A06; }
+.nav-links { display: flex; gap: 26px; margin-left: auto; }
+.nav-links a { font-size: 15px; color: var(--ink-3); text-decoration: none; font-weight: 550; transition: color .15s; }
 .nav-links a:hover { color: var(--ink); }
 
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 11px 20px; border-radius: 10px; border: none; cursor: pointer;
-  font-family: inherit; font-size: 14px; font-weight: 650; text-decoration: none;
-  transition: transform .12s, box-shadow .12s, background .12s; white-space: nowrap;
-}
-.btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--blue); color: #fff; }
-.btn-primary:hover { background: var(--blue-dark); box-shadow: 0 6px 20px rgba(59,130,246,.35); }
-.btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
-.btn-ghost:hover { border-color: #94a3b8; }
-.btn-white { background: #fff; color: var(--ink); }
-.btn-white:hover { box-shadow: 0 6px 20px rgba(0,0,0,.25); }
-.btn-outline-light { background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.3); }
-.btn-outline-light:hover { background: rgba(255,255,255,.16); }
-.btn-lg { padding: 14px 26px; font-size: 15px; }
-
 /* ── ПЕРВЫЙ ЭКРАН ── */
-.hero { background: linear-gradient(150deg, #0f172a 0%, #172554 55%, #1e3a5f 100%); color: #fff; overflow: hidden; }
-.hero-inner { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; padding: 84px 0 92px; }
-.badge {
-  display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600;
-  background: rgba(59,130,246,.18); color: #93c5fd; border: 1px solid rgba(147,197,253,.28);
-  padding: 6px 13px; border-radius: 20px; margin-bottom: 22px;
+.hero { position: relative; overflow: hidden; background: linear-gradient(178deg, var(--ground-warm) 0%, var(--ground) 62%); }
+.hero::before {
+  content: ''; position: absolute; top: -320px; right: -180px; width: 780px; height: 780px;
+  background: radial-gradient(circle, rgba(124,107,240,.13), transparent 66%); pointer-events: none;
 }
-.hero h1 { font-size: 46px; line-height: 1.13; letter-spacing: -1.2px; font-weight: 800; margin-bottom: 20px; }
-.hero p.lead { font-size: 17.5px; color: #cbd5e1; margin-bottom: 30px; max-width: 540px; }
+.hero-inner { position: relative; display: grid; grid-template-columns: 1.02fr .98fr; gap: 60px; align-items: center; padding: 76px 0 96px; }
+.eyebrow-pill {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
+  background: var(--surface); color: var(--ink-2); border: 1px solid var(--line);
+  padding: 7px 15px 7px 9px; border-radius: 999px; margin-bottom: 26px; box-shadow: var(--sh-xs);
+}
+.hero p.lead { font-size: 19px; color: var(--ink-2); margin: 22px 0 34px; max-width: 545px; }
 .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
-.hero-facts { display: flex; gap: 34px; margin-top: 40px; flex-wrap: wrap; }
-.fact-num { font-size: 24px; font-weight: 800; color: #fff; }
-.fact-label { font-size: 12.5px; color: #94a3b8; }
+.hero-note { margin-top: 18px; font-size: 14.5px; color: var(--ink-3); }
 
-/* Мини-макет доски заявок */
-.shot { background: #fff; border-radius: 16px; box-shadow: var(--shadow-lg); overflow: hidden; color: var(--ink); }
-.shot-bar { display: flex; align-items: center; gap: 7px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.facts { display: flex; gap: 40px; margin-top: 46px; flex-wrap: wrap; }
+.fact-num { font-size: 27px; font-weight: 800; color: var(--ink); letter-spacing: -.03em; }
+.fact-label { font-size: 14px; color: var(--ink-3); margin-top: 1px; }
+
+/* Мини-макет доски — вёрстка, а не картинка */
+.shot { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--sh-lg); overflow: hidden; border: 1px solid var(--line-soft); }
+.shot-bar { display: flex; align-items: center; gap: 7px; padding: 14px 18px; background: var(--sunk); border-bottom: 1px solid var(--line-soft); }
 .dot { width: 10px; height: 10px; border-radius: 50%; }
-.shot-title { font-size: 11.5px; color: var(--muted); margin-left: 8px; font-weight: 600; }
-.shot-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 14px; background: #f1f5f9; }
-.shot-col-h { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
-.mini { background: #fff; border-radius: 9px; padding: 10px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(15,23,42,.08); border-left: 3px solid var(--blue); }
-.mini.red { border-left-color: #ef4444; }
+.shot-title { font-size: 12.5px; color: var(--ink-3); margin-left: 9px; font-weight: 600; }
+.shot-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; background: var(--ground); }
+.shot-col-h { font-size: 11px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px; }
+.mini { background: var(--surface); border-radius: 12px; padding: 12px; margin-bottom: 9px; box-shadow: var(--sh-xs); border: 1px solid var(--line-soft); border-left: 3px solid var(--accent); }
+.mini.red   { border-left-color: var(--red); }
 .mini.amber { border-left-color: var(--amber); }
 .mini.green { border-left-color: var(--green); }
-.mini-top { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); margin-bottom: 4px; }
-.mini-title { font-size: 11.5px; font-weight: 650; line-height: 1.35; }
-.mini-foot { font-size: 10px; color: var(--muted); margin-top: 5px; }
+.mini-top { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-3); margin-bottom: 5px; }
+.mini-title { font-size: 12.5px; font-weight: 650; line-height: 1.4; color: var(--ink); }
+.mini-foot { font-size: 11px; color: var(--ink-3); margin-top: 6px; }
 
 /* ── СЕКЦИИ ── */
-section { padding: 88px 0; }
-section.tint { background: var(--surface); }
-.sec-head { max-width: 700px; margin-bottom: 46px; }
-.eyebrow { font-size: 12.5px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .09em; margin-bottom: 12px; }
-h2 { font-size: 33px; line-height: 1.18; letter-spacing: -.7px; font-weight: 800; margin-bottom: 14px; }
-.sec-head p { font-size: 16.5px; color: var(--muted); }
+section { padding: 96px 0; }
+section.on-white { background: var(--surface); }
+.sec-head { max-width: 720px; margin-bottom: 52px; }
+.sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+.eyebrow { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px; }
+.sec-head p { font-size: 18px; color: var(--ink-3); margin-top: 14px; }
 
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-.card {
-  background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 26px; transition: transform .15s, box-shadow .15s;
+/* ── ДВА АДРЕСАТА ── */
+.audience { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.aud-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  padding: 38px 36px; box-shadow: var(--sh); position: relative; overflow: hidden;
 }
-.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-.card .ico { font-size: 26px; margin-bottom: 14px; display: block; }
-.card h3 { font-size: 16.5px; font-weight: 700; margin-bottom: 8px; }
-.card p { font-size: 14.5px; color: var(--muted); }
-
-.adv { display: flex; gap: 18px; align-items: flex-start; }
-.adv-ico {
-  flex-shrink: 0; width: 46px; height: 46px; border-radius: 12px; background: var(--blue-light);
-  display: flex; align-items: center; justify-content: center; font-size: 21px;
+.aud-card.warm { background: linear-gradient(168deg, #FFFBF5, var(--surface) 55%); }
+.aud-head { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.aud-icon {
+  width: 50px; height: 50px; border-radius: 15px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+  background: var(--accent-soft);
 }
-.adv h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
-.adv p { font-size: 14.5px; color: var(--muted); }
+.aud-card.warm .aud-icon { background: var(--amber-soft); }
+.aud-card h3 { font-size: 23px; }
+.aud-for { font-size: 13.5px; color: var(--ink-3); font-weight: 600; }
+.aud-lead { font-size: 16px; color: var(--ink-3); margin: 14px 0 24px; }
+.aud-list { list-style: none; display: flex; flex-direction: column; gap: 17px; }
+.aud-list li { display: flex; gap: 13px; font-size: 16px; }
+.aud-list b { color: var(--ink); font-weight: 650; }
+.tick {
+  flex-shrink: 0; width: 23px; height: 23px; border-radius: 8px; margin-top: 2px;
+  background: var(--accent-soft); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800;
+}
+.aud-card.warm .tick { background: var(--amber-soft); color: var(--amber); }
 
-/* ── ИНСТРУКЦИЯ ── */
-.steps { counter-reset: step; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-.step { position: relative; padding-top: 52px; }
+/* ── ПЛИТКИ ── */
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.tile {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 30px 28px; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.tile:hover { transform: translateY(-3px); box-shadow: var(--sh); border-color: #DFD5C9; }
+section.on-white .tile { background: var(--ground); }
+.tile .ico { font-size: 25px; margin-bottom: 16px; display: block; }
+.tile h3 { margin-bottom: 9px; }
+.tile p { font-size: 16px; color: var(--ink-3); }
+
+/* ── ШАГИ ── */
+.steps { counter-reset: step; display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px; }
+.step { position: relative; padding-top: 58px; }
 .step::before {
   counter-increment: step; content: counter(step);
-  position: absolute; top: 0; left: 0; width: 38px; height: 38px; border-radius: 11px;
-  background: var(--ink); color: #fff; font-weight: 800; font-size: 16px;
+  position: absolute; top: 0; left: 0; width: 42px; height: 42px; border-radius: 14px;
+  background: var(--espresso); color: #FDF6EE; font-weight: 800; font-size: 17px;
   display: flex; align-items: center; justify-content: center;
 }
-.step h3 { font-size: 16px; font-weight: 700; margin-bottom: 7px; }
-.step p { font-size: 14.5px; color: var(--muted); }
+.step h3 { margin-bottom: 9px; }
+.step p { font-size: 16px; color: var(--ink-3); }
 
-details.faq { border-bottom: 1px solid var(--line); padding: 18px 0; }
-details.faq summary { cursor: pointer; font-weight: 650; font-size: 15.5px; list-style: none; display: flex; align-items: center; gap: 10px; }
+details.faq { border-bottom: 1px solid var(--line); padding: 22px 0; }
+details.faq summary { cursor: pointer; font-weight: 650; font-size: 17.5px; color: var(--ink); list-style: none; display: flex; align-items: flex-start; gap: 13px; }
 details.faq summary::-webkit-details-marker { display: none; }
-details.faq summary::before { content: '+'; color: var(--blue); font-weight: 800; font-size: 19px; width: 16px; }
+details.faq summary::before { content: '+'; color: var(--accent); font-weight: 700; font-size: 22px; line-height: 1.1; width: 18px; flex-shrink: 0; }
 details.faq[open] summary::before { content: '−'; }
-details.faq p { font-size: 14.5px; color: var(--muted); padding: 12px 0 0 26px; }
+details.faq p { font-size: 16.5px; color: var(--ink-3); padding: 14px 0 0 31px; }
 
 /* ── ФОРМЫ ── */
-.form-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 30px; box-shadow: var(--shadow); }
-.field { margin-bottom: 15px; }
-.field label { display: block; font-size: 12.5px; font-weight: 650; color: var(--ink-soft); margin-bottom: 6px; }
+.form-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 34px; box-shadow: var(--sh); }
+section.on-white .form-card { background: var(--ground); }
+.field { margin-bottom: 17px; }
+.field label { display: block; font-size: 13.5px; font-weight: 650; color: var(--ink-2); margin-bottom: 7px; }
 .field input, .field select, .field textarea {
-  width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 9px;
-  font-family: inherit; font-size: 14.5px; color: var(--ink); background: #fff; transition: border-color .12s, box-shadow .12s;
+  width: 100%; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px;
+  font-family: inherit; font-size: 16px; color: var(--ink); background: var(--surface);
+  transition: border-color .14s, box-shadow .14s;
 }
+section.on-white .field input, section.on-white .field select, section.on-white .field textarea { background: var(--surface); }
+.field input::placeholder, .field textarea::placeholder { color: #B6ADA3; }
 .field input:focus, .field select:focus, .field textarea:focus {
-  outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79,70,229,.13);
 }
-.field textarea { resize: vertical; min-height: 104px; }
-.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.consent { display: flex; gap: 9px; align-items: flex-start; font-size: 12px; color: var(--muted); margin: 4px 0 16px; }
-.consent input { margin-top: 2px; flex-shrink: 0; }
+.field textarea { resize: vertical; min-height: 112px; }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.consent { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--ink-3); margin: 6px 0 20px; cursor: pointer; }
+.consent input { margin-top: 3px; flex-shrink: 0; accent-color: var(--accent); }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
-.form-msg { font-size: 13.5px; padding: 12px 14px; border-radius: 9px; margin-bottom: 14px; display: none; }
+.form-msg { font-size: 15px; padding: 14px 16px; border-radius: 12px; margin-bottom: 16px; display: none; }
 .form-msg.show { display: block; }
-.form-msg.ok  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
-.form-msg.err { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+.form-msg.ok  { background: var(--green-soft); border: 1px solid #BFE0CB; color: var(--green); }
+.form-msg.err { background: var(--red-soft);   border: 1px solid #F0C7C2; color: var(--red); }
+.form-hint { font-size: 13.5px; color: var(--ink-3); text-align: center; margin-top: 14px; }
+
+.checklist { list-style: none; font-size: 16.5px; color: var(--ink-2); }
+.checklist li { display: flex; gap: 12px; margin-bottom: 14px; }
 
 /* ── ПОДВАЛ ── */
-footer { background: var(--ink); color: #94a3b8; padding: 54px 0 34px; font-size: 14px; }
-footer .logo { color: #fff; margin-bottom: 12px; }
-footer a { color: #cbd5e1; text-decoration: none; }
+footer { background: var(--espresso); color: #B4A99E; padding: 62px 0 36px; font-size: 16px; }
+footer .logo { color: #FDF6EE; margin-bottom: 16px; }
+footer a { color: #D9CFC5; text-decoration: none; transition: color .15s; }
 footer a:hover { color: #fff; }
-.foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 34px; margin-bottom: 34px; }
-.foot-grid h4 { color: #fff; font-size: 13px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .06em; }
-.foot-grid li { list-style: none; margin-bottom: 8px; }
-.foot-bottom { border-top: 1px solid rgba(255,255,255,.1); padding-top: 22px; font-size: 12.5px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.foot-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.foot-grid h4 { color: #FDF6EE; font-size: 13px; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; letter-spacing: .09em; }
+.foot-grid li { list-style: none; margin-bottom: 10px; }
+.foot-bottom { border-top: 1px solid rgba(253,246,238,.13); padding-top: 26px; font-size: 14px; display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
 
-@media (max-width: 940px) {
-  .hero-inner { grid-template-columns: 1fr; gap: 44px; padding: 60px 0 68px; }
-  .hero h1 { font-size: 36px; }
-  .grid-3, .steps { grid-template-columns: repeat(2, 1fr); }
-  .foot-grid { grid-template-columns: 1fr 1fr; }
-  section { padding: 62px 0; }
-  h2 { font-size: 27px; }
+@media (max-width: 980px) {
+  body { font-size: 16px; }
+  .hero-inner { grid-template-columns: 1fr; gap: 50px; padding: 54px 0 72px; }
+  .audience, .grid-3, .steps { grid-template-columns: 1fr 1fr; }
+  section { padding: 68px 0; }
+  .sec-head { margin-bottom: 40px; }
 }
-@media (max-width: 620px) {
+@media (max-width: 680px) {
   .nav-links { display: none; }
-  .grid-3, .grid-2, .steps, .row-2, .foot-grid { grid-template-columns: 1fr; }
-  .hero h1 { font-size: 30px; }
-  .hero p.lead { font-size: 16px; }
+  .nav-inner { height: 64px; gap: 14px; }
+  .audience, .grid-3, .steps, .row-2, .foot-grid { grid-template-columns: 1fr; }
   .shot-cols { grid-template-columns: 1fr; }
+  .aud-card { padding: 28px 24px; }
+  .form-card { padding: 26px 22px; }
+  .facts { gap: 26px; }
+  .btn { width: 100%; }
+  .nav .btn { width: auto; }
 }
 </style>
 </head>
 <body>
 
 <!-- ══ ШАПКА ══ -->
-<header class="nav">
+<header class="nav" id="nav">
   <div class="wrap nav-inner">
-    <div class="logo">🚗 FleetDesk</div>
+    <div class="logo"><span class="logo-dot">🚗</span> FleetDesk <span class="beta">Бета</span></div>
     <nav class="nav-links">
+      <a href="#value">Кому и зачем</a>
       <a href="#features">Возможности</a>
-      <a href="#benefits">Преимущества</a>
       <a href="#how">Как начать</a>
       <a href="#webinar">Вебинар</a>
       <a href="#contact">Связаться</a>
     </nav>
-    <a class="btn btn-primary" href="/app.html">Войти</a>
+    <a class="btn btn-primary btn-sm" href="/app.html">Войти</a>
   </div>
 </header>
 
@@ -232,7 +318,7 @@ footer a:hover { color: #fff; }
   <div class="wrap hero-inner">
     <div>
       <!-- ТЕКСТ: первый экран -->
-      <div class="badge">🤖 Заявки приходят из Telegram и MAX</div>
+      <div class="eyebrow-pill"><span class="logo-dot" style="width:22px;height:22px;border-radius:7px;font-size:12px">🤖</span> Заявки приходят из Telegram и MAX</div>
       <h1>Автопарк, который сам рассказывает, что с ним происходит</h1>
       <p class="lead">
         FleetDesk — CRM для корпоративного автопарка. Водитель пишет боту, заявка сразу
@@ -240,11 +326,21 @@ footer a:hover { color: #fff; }
         в аккуратных карточках, а не в переписке и таблицах.
       </p>
       <div class="hero-cta">
-        <a class="btn btn-white btn-lg" href="#webinar">Записаться на вебинар</a>
-        <a class="btn btn-outline-light btn-lg" href="/app.html">Войти в систему</a>
+        <a class="btn btn-primary btn-lg" href="#webinar">Записаться на вебинар</a>
+        <a class="btn btn-quiet btn-lg" href="/app.html">Войти в систему</a>
       </div>
+      <div class="hero-note">Работает в браузере. Водителю ставить ничего не нужно.</div>
 
-      <div class="hero-facts">
+      <!-- ТЕКСТ: предупреждение о бета-версии -->
+      <div class="beta-note">
+        <span style="font-size:19px;line-height:1">🧪</span>
+        <span><b>Сейчас это бета-версия.</b> Системой уже можно пользоваться каждый день,
+        но какие-то разделы будут меняться, а что-то может работать не так, как задумано.
+        Напишите нам, если заметите — чиним быстро.</span>
+      </div>
+      <!-- /ТЕКСТ -->
+
+      <div class="facts">
         <div>
           <div class="fact-num">2 мессенджера</div>
           <div class="fact-label">Telegram и MAX из коробки</div>
@@ -254,20 +350,19 @@ footer a:hover { color: #fff; }
           <div class="fact-label">все заявки автопарка</div>
         </div>
         <div>
-          <div class="fact-num">0 установок</div>
-          <div class="fact-label">работает в браузере</div>
+          <div class="fact-num">3 касания</div>
+          <div class="fact-label">чтобы создать заявку</div>
         </div>
       </div>
       <!-- /ТЕКСТ -->
     </div>
 
-    <!-- Мини-макет доски: это не картинка, а вёрстка — правится вместе со стилем -->
     <div class="shot" aria-hidden="true">
       <div class="shot-bar">
-        <span class="dot" style="background:#ef4444"></span>
-        <span class="dot" style="background:#f59e0b"></span>
-        <span class="dot" style="background:#22c55e"></span>
-        <span class="shot-title">FleetDesk CRM — Заявки</span>
+        <span class="dot" style="background:#E5867A"></span>
+        <span class="dot" style="background:#E8B463"></span>
+        <span class="dot" style="background:#84C09B"></span>
+        <span class="shot-title">FleetDesk — Заявки</span>
       </div>
       <div class="shot-cols">
         <div>
@@ -275,7 +370,7 @@ footer a:hover { color: #fff; }
           <div class="mini red">
             <div class="mini-top">🔴 TK-0042 · срочный</div>
             <div class="mini-title">Не заводится, стоит у офиса</div>
-            <div class="mini-foot">🚗 А123БВ77 · Иванов А.</div>
+            <div class="mini-foot">А123БВ77 · Иванов А.</div>
           </div>
           <div class="mini amber">
             <div class="mini-top">🛞 TK-0041</div>
@@ -288,7 +383,7 @@ footer a:hover { color: #fff; }
           <div class="mini">
             <div class="mini-top">🔧 TK-0038</div>
             <div class="mini-title">Плановое ТО-60000</div>
-            <div class="mini-foot">🔧 СТО Авторем</div>
+            <div class="mini-foot">СТО Авторем</div>
           </div>
         </div>
         <div>
@@ -296,7 +391,7 @@ footer a:hover { color: #fff; }
           <div class="mini green">
             <div class="mini-top">🚿 TK-0035</div>
             <div class="mini-title">Мойка перед выездом</div>
-            <div class="mini-foot">✅ вчера в 18:20</div>
+            <div class="mini-foot">вчера в 18:20</div>
           </div>
         </div>
       </div>
@@ -304,8 +399,63 @@ footer a:hover { color: #fff; }
   </div>
 </div>
 
+<!-- ══ ДВА АДРЕСАТА ══ -->
+<section id="value">
+  <div class="wrap">
+    <div class="sec-head center">
+      <div class="eyebrow">Кому и зачем</div>
+      <h2>У системы два пользователя — и обоим должно стать легче</h2>
+      <p>Диспетчер перестаёт собирать информацию по чатам, водитель перестаёт звонить и объяснять.</p>
+    </div>
+
+    <div class="audience">
+      <!-- ТЕКСТ: польза компании -->
+      <div class="aud-card">
+        <div class="aud-head">
+          <div class="aud-icon">🏢</div>
+          <div>
+            <div class="aud-for">Для компании</div>
+            <h3>Автопарк перестаёт быть чёрным ящиком</h3>
+          </div>
+        </div>
+        <p class="aud-lead">Что получает бизнес, у которого машины — рабочий инструмент, а не хобби.</p>
+        <ul class="aud-list">
+          <li><span class="tick">✓</span><span><b>Ни одна заявка не теряется.</b> У каждой есть номер, статус, срок и исполнитель. Видно, кто и когда что сделал.</span></li>
+          <li><span class="tick">✓</span><span><b>Сроки не подкрадываются.</b> ОСАГО, техосмотр, медсправка, права, ТО по пробегу — напоминание приходит заранее, а не в день, когда машина уже не выехала.</span></li>
+          <li><span class="tick">✓</span><span><b>Понятно, куда уходят деньги.</b> История работ по каждой машине, подрядчики с условиями договора и сроками оплаты — в одном месте.</span></li>
+          <li><span class="tick">✓</span><span><b>Меньше простоя.</b> Заявка без движения сама помечается срочной и всплывает наверх, а не тонет в переписке.</span></li>
+          <li><span class="tick">✓</span><span><b>Данные остаются в компании.</b> Водитель уволился — карточки, документы и история обслуживания на месте, а не в его телефоне.</span></li>
+          <li><span class="tick">✓</span><span><b>Диспетчер успевает больше.</b> Один экран вместо пяти чатов, таблицы и стопки путевых листов.</span></li>
+        </ul>
+      </div>
+      <!-- /ТЕКСТ -->
+
+      <!-- ТЕКСТ: польза водителю -->
+      <div class="aud-card warm">
+        <div class="aud-head">
+          <div class="aud-icon">🚚</div>
+          <div>
+            <div class="aud-for">Для водителя</div>
+            <h3>Сообщить о проблеме — дело одной минуты</h3>
+          </div>
+        </div>
+        <p class="aud-lead">Тот, кто за рулём, работает в привычном мессенджере и ничему не учится заново.</p>
+        <ul class="aud-list">
+          <li><span class="tick">✓</span><span><b>Ставить ничего не нужно.</b> Заявка создаётся в Telegram или MAX, которые уже стоят в телефоне. Ни логинов, ни паролей.</span></li>
+          <li><span class="tick">✓</span><span><b>Три касания.</b> Выбрать тип заявки, машину, описать проблему — бот ведёт по шагам и сам подставляет закреплённый автомобиль.</span></li>
+          <li><span class="tick">✓</span><span><b>Фото и видео прямо с камеры.</b> Показать вмятину проще, чем описать словами, — и подрядчик сразу знает, что везти.</span></li>
+          <li><span class="tick">✓</span><span><b>Не надо звонить и ждать.</b> Статус меняется — приходит уведомление в тот же чат, и там же можно ответить диспетчеру.</span></li>
+          <li><span class="tick">✓</span><span><b>Свои документы под рукой.</b> Сроки прав, медсправки и техосмотра видны в личном кабинете, напоминание приходит заранее.</span></li>
+          <li><span class="tick">✓</span><span><b>Пробег — за десять секунд.</b> С телефона, без бумажек и без поездки в офис.</span></li>
+        </ul>
+      </div>
+      <!-- /ТЕКСТ -->
+    </div>
+  </div>
+</section>
+
 <!-- ══ ВОЗМОЖНОСТИ ══ -->
-<section id="features">
+<section id="features" class="on-white">
   <div class="wrap">
     <div class="sec-head">
       <!-- ТЕКСТ: возможности -->
@@ -315,107 +465,59 @@ footer a:hover { color: #fff; }
     </div>
 
     <div class="grid-3">
-      <div class="card">
+      <div class="tile">
         <span class="ico">📋</span>
         <h3>Доска заявок</h3>
         <p>Новые, в работе, выполненные. Перетаскиванием меняется статус, приоритет виден по цвету,
            заявка без движения сама помечается срочной.</p>
       </div>
-      <div class="card">
+      <div class="tile">
         <span class="ico">🤖</span>
         <h3>Бот в Telegram и MAX</h3>
         <p>Водитель выбирает тип заявки, машину, описывает проблему и прикладывает фото или видео.
            Ответ диспетчера приходит туда же, откуда пришла заявка.</p>
       </div>
-      <div class="card">
+      <div class="tile">
         <span class="ico">🚗</span>
         <h3>Карточки автомобилей</h3>
         <p>Пробег, ОСАГО, техосмотр, ТО, смена резины, топливная карта, история обслуживания
            и закреплённый водитель.</p>
       </div>
-      <div class="card">
+      <div class="tile">
         <span class="ico">👤</span>
         <h3>Карточки водителей</h3>
         <p>Права и их срок, медсправка, инструктаж, тахограф, путевой лист.
            Личный кабинет — водитель сам вносит пробег и обновляет документы.</p>
       </div>
-      <div class="card">
+      <div class="tile">
         <span class="ico">🔧</span>
         <h3>Подрядчики и договоры</h3>
         <p>Сервисы, шиномонтаж, эвакуаторы и мойки со специализациями, контактами,
            условиями оплаты и сроком договора.</p>
       </div>
-      <div class="card">
+      <div class="tile">
         <span class="ico">🧠</span>
         <h3>Загрузка данных с ИИ</h3>
         <p>Пришлите Excel, Word или PDF в любом виде — система сама разложит машины,
            водителей и подрядчиков по карточкам. Останется проверить.</p>
       </div>
-      <div class="card">
+      <div class="tile">
         <span class="ico">🔔</span>
         <h3>Уведомления и рассылки</h3>
         <p>Смена статуса, назначенный исполнитель, истекающие документы, приближающееся ТО.
            Плюс рассылка сообщения всем водителям сразу.</p>
       </div>
-      <div class="card">
+      <div class="tile">
         <span class="ico">👥</span>
         <h3>Команда и роли</h3>
         <p>Приглашение сотрудников по ссылке, роли владельца, администратора, диспетчера
            и наблюдателя, журнал действий.</p>
       </div>
-      <div class="card">
+      <div class="tile">
         <span class="ico">💾</span>
         <h3>Резервные копии</h3>
         <p>Выгрузка всех данных компании одним файлом и восстановление из него —
            без обращений в поддержку.</p>
-      </div>
-      <!-- /ТЕКСТ -->
-    </div>
-  </div>
-</section>
-
-<!-- ══ ПРЕИМУЩЕСТВА ══ -->
-<section id="benefits" class="tint">
-  <div class="wrap">
-    <div class="sec-head">
-      <!-- ТЕКСТ: преимущества -->
-      <div class="eyebrow">Преимущества</div>
-      <h2>Почему это удобнее переписки и таблиц</h2>
-      <p>То, ради чего автопарки уходят из чатов и таблиц.</p>
-    </div>
-
-    <div class="grid-2" style="gap:30px">
-      <div class="adv">
-        <div class="adv-ico">⚡</div>
-        <div>
-          <h3>Ничего не теряется</h3>
-          <p>Заявка не растворяется в чате: у неё есть номер, статус, срок, исполнитель и история.
-             Видно, кто и когда что сделал.</p>
-        </div>
-      </div>
-      <div class="adv">
-        <div class="adv-ico">📱</div>
-        <div>
-          <h3>Водителю не нужно ничего ставить</h3>
-          <p>Он уже в Telegram или MAX. Пара кнопок — и заявка на доске у диспетчера,
-             вместе с фото и видео с места.</p>
-        </div>
-      </div>
-      <div class="adv">
-        <div class="adv-ico">📅</div>
-        <div>
-          <h3>Сроки не подкрадываются</h3>
-          <p>ОСАГО, техосмотр, медсправка, права, ТО по пробегу — система напоминает заранее,
-             а не в день, когда машина уже не может выехать.</p>
-        </div>
-      </div>
-      <div class="adv">
-        <div class="adv-ico">🧾</div>
-        <div>
-          <h3>Понятно, куда уходят деньги</h3>
-          <p>История обслуживания и работ по каждой машине, подрядчики с условиями договора
-             и сроками оплаты — в одном месте.</p>
-        </div>
       </div>
       <!-- /ТЕКСТ -->
     </div>
@@ -455,8 +557,8 @@ footer a:hover { color: #fff; }
       </div>
     </div>
 
-    <div style="margin-top:56px;max-width:760px">
-      <h2 style="font-size:24px;margin-bottom:8px">Частые вопросы</h2>
+    <div style="margin-top:72px;max-width:800px">
+      <h2 style="font-size:28px;margin-bottom:10px">Частые вопросы</h2>
 
       <!-- ТЕКСТ: вопросы -->
       <details class="faq" open>
@@ -490,20 +592,21 @@ footer a:hover { color: #fff; }
 </section>
 
 <!-- ══ ВЕБИНАР ══ -->
-<section id="webinar" class="tint">
-  <div class="wrap grid-2" style="gap:44px;align-items:start">
+<section id="webinar" class="on-white">
+  <div class="wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start" id="webinar-grid">
     <div>
       <!-- ТЕКСТ: вебинар -->
       <div class="eyebrow">Вебинар</div>
-      <h2>Покажем систему вживую за 40 минут</h2>
-      <p style="font-size:16.5px;color:var(--muted);margin-bottom:26px">
-        Разберём на живом автопарке: как заявка проходит путь от бота до закрытия,
-        как загрузить свои данные и как настроить напоминания. В конце — ответы на вопросы.
+      <h2>Покажем систему вживую за 10 минут</h2>
+      <p style="font-size:18px;color:var(--ink-3);margin:16px 0 30px">
+        Короткая встреча без слайдов: показываем на живом автопарке, как заявка
+        проходит путь от бота до закрытия и как загрузить в систему свои данные.
+        Останутся вопросы — ответим сразу после.
       </p>
-      <ul style="list-style:none;font-size:15px;color:var(--ink-soft)">
-        <li style="margin-bottom:11px">✅ Показываем на реальных данных, без слайдов</li>
-        <li style="margin-bottom:11px">✅ Отвечаем на вопросы про ваш парк</li>
-        <li style="margin-bottom:11px">✅ После вебинара присылаем запись</li>
+      <ul class="checklist">
+        <li><span class="tick">✓</span> Десять минут — успеете в перерыве</li>
+        <li><span class="tick">✓</span> Отвечаем на вопросы про ваш парк</li>
+        <li><span class="tick">✓</span> После встречи присылаем запись</li>
       </ul>
       <!-- /ТЕКСТ -->
     </div>
@@ -511,41 +614,20 @@ footer a:hover { color: #fff; }
     <div class="form-card">
       <div class="form-msg" id="webinar-msg"></div>
       <form id="webinar-form" onsubmit="return submitLead(event,'webinar')">
-        <div class="row-2">
-          <div class="field">
-            <label for="w-name">Как к вам обращаться *</label>
-            <input id="w-name" name="name" required placeholder="Иван Иванов">
-          </div>
-          <div class="field">
-            <label for="w-company">Компания</label>
-            <input id="w-company" name="company" placeholder="ООО «Ромашка»">
-          </div>
+        <div class="field">
+          <label for="w-name">Имя</label>
+          <input id="w-name" name="name" required autocomplete="name" placeholder="Иван Иванов">
         </div>
         <div class="row-2">
           <div class="field">
             <label for="w-phone">Телефон</label>
-            <input id="w-phone" name="phone" type="tel" placeholder="+7 900 000-00-00">
+            <input id="w-phone" name="phone" type="tel" required inputmode="tel" autocomplete="tel"
+                   placeholder="+7 900 000-00-00" oninput="formatPhone(this)" onfocus="phoneFocus(this)">
           </div>
           <div class="field">
             <label for="w-email">E-mail</label>
-            <input id="w-email" name="email" type="email" placeholder="ivan@company.ru">
+            <input id="w-email" name="email" type="email" required autocomplete="email" placeholder="ivan@company.ru">
           </div>
-        </div>
-        <div class="field">
-          <label for="w-slot">Удобное время</label>
-          <!-- ТЕКСТ: варианты времени вебинара -->
-          <select id="w-slot" name="slot">
-            <option>Ближайший вебинар</option>
-            <option>Будни, утро (10:00–12:00 МСК)</option>
-            <option>Будни, день (13:00–16:00 МСК)</option>
-            <option>Будни, вечер (17:00–19:00 МСК)</option>
-            <option>Индивидуальный показ — свяжитесь со мной</option>
-          </select>
-          <!-- /ТЕКСТ -->
-        </div>
-        <div class="field">
-          <label for="w-message">Что показать в первую очередь</label>
-          <textarea id="w-message" name="message" style="min-height:78px" placeholder="Например: у нас 40 машин и три склада, интересует контроль ТО"></textarea>
         </div>
 
         <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -555,7 +637,8 @@ footer a:hover { color: #fff; }
           <span>Согласен на обработку персональных данных для связи по заявке</span>
         </label>
 
-        <button class="btn btn-primary btn-lg" style="width:100%" type="submit">Записаться на вебинар</button>
+        <button class="btn btn-primary" style="width:100%" type="submit">Записаться на вебинар</button>
+        <div class="form-hint">Свяжемся и предложим ближайшее удобное время.</div>
       </form>
     </div>
   </div>
@@ -563,16 +646,16 @@ footer a:hover { color: #fff; }
 
 <!-- ══ ОБРАТНАЯ СВЯЗЬ ══ -->
 <section id="contact">
-  <div class="wrap grid-2" style="gap:44px;align-items:start">
+  <div class="wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start" id="contact-grid">
     <div>
       <!-- ТЕКСТ: обратная связь -->
       <div class="eyebrow">Обратная связь</div>
       <h2>Есть вопрос или своя задача?</h2>
-      <p style="font-size:16.5px;color:var(--muted);margin-bottom:22px">
+      <p style="font-size:18px;color:var(--ink-3);margin:16px 0 24px">
         Напишите, что нужно вашему автопарку. Отвечаем на все обращения —
         и по работе системы, и по доработкам под ваши процессы.
       </p>
-      <p style="font-size:14.5px;color:var(--muted)">
+      <p style="font-size:16px;color:var(--ink-3)">
         Если вы уже работаете в FleetDesk, быстрее написать своему диспетчеру
         или владельцу аккаунта — часть вопросов решается прямо в настройках компании.
       </p>
@@ -582,29 +665,24 @@ footer a:hover { color: #fff; }
     <div class="form-card">
       <div class="form-msg" id="feedback-msg"></div>
       <form id="feedback-form" onsubmit="return submitLead(event,'feedback')">
-        <div class="row-2">
-          <div class="field">
-            <label for="f-name">Как к вам обращаться *</label>
-            <input id="f-name" name="name" required placeholder="Иван Иванов">
-          </div>
-          <div class="field">
-            <label for="f-company">Компания</label>
-            <input id="f-company" name="company" placeholder="ООО «Ромашка»">
-          </div>
+        <div class="field">
+          <label for="f-name">Имя</label>
+          <input id="f-name" name="name" required autocomplete="name" placeholder="Иван Иванов">
         </div>
         <div class="row-2">
           <div class="field">
             <label for="f-phone">Телефон</label>
-            <input id="f-phone" name="phone" type="tel" placeholder="+7 900 000-00-00">
+            <input id="f-phone" name="phone" type="tel" required inputmode="tel" autocomplete="tel"
+                   placeholder="+7 900 000-00-00" oninput="formatPhone(this)" onfocus="phoneFocus(this)">
           </div>
           <div class="field">
             <label for="f-email">E-mail</label>
-            <input id="f-email" name="email" type="email" placeholder="ivan@company.ru">
+            <input id="f-email" name="email" type="email" required autocomplete="email" placeholder="ivan@company.ru">
           </div>
         </div>
         <div class="field">
-          <label for="f-message">Сообщение *</label>
-          <textarea id="f-message" name="message" required placeholder="Опишите вопрос или задачу"></textarea>
+          <label for="f-message">Сообщение <span style="color:var(--ink-3);font-weight:500">— необязательно</span></label>
+          <textarea id="f-message" name="message" placeholder="Коротко опишите вопрос или задачу"></textarea>
         </div>
 
         <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -614,7 +692,8 @@ footer a:hover { color: #fff; }
           <span>Согласен на обработку персональных данных для ответа на обращение</span>
         </label>
 
-        <button class="btn btn-primary btn-lg" style="width:100%" type="submit">Отправить сообщение</button>
+        <button class="btn btn-primary" style="width:100%" type="submit">Отправить сообщение</button>
+        <div class="form-hint">Отвечаем на все обращения, обычно в течение рабочего дня.</div>
       </form>
     </div>
   </div>
@@ -626,8 +705,8 @@ footer a:hover { color: #fff; }
     <div class="foot-grid">
       <!-- ТЕКСТ: подвал -->
       <div>
-        <div class="logo">🚗 FleetDesk</div>
-        <p style="max-width:340px">
+        <div class="logo"><span class="logo-dot">🚗</span> FleetDesk</div>
+        <p style="max-width:360px">
           Система управления корпоративным автопарком: заявки, машины, водители,
           подрядчики и документы в одном месте.
         </p>
@@ -635,8 +714,8 @@ footer a:hover { color: #fff; }
       <div>
         <h4>Разделы</h4>
         <ul>
+          <li><a href="#value">Кому и зачем</a></li>
           <li><a href="#features">Возможности</a></li>
-          <li><a href="#benefits">Преимущества</a></li>
           <li><a href="#how">Как начать</a></li>
           <li><a href="#webinar">Вебинар</a></li>
         </ul>
@@ -651,7 +730,7 @@ footer a:hover { color: #fff; }
       <!-- /ТЕКСТ -->
     </div>
     <div class="foot-bottom">
-      <span>© <span id="year">2026</span> FleetDesk</span>
+      <span>© <span id="year">2026</span> FleetDesk · бета-версия</span>
       <span>Работает в браузере · Боты в Telegram и MAX</span>
     </div>
   </div>
@@ -662,6 +741,75 @@ footer a:hover { color: #fff; }
 const API = 'https://fleetdesk-bot-production.up.railway.app';
 
 document.getElementById('year').textContent = new Date().getFullYear();
+
+// Граница у шапки появляется, только когда страницу прокрутили
+const nav = document.getElementById('nav');
+const onScroll = () => nav.classList.toggle('stuck', window.scrollY > 8);
+onScroll();
+window.addEventListener('scroll', onScroll, { passive: true });
+
+// На узком экране двухколоночные секции складываются в одну
+function stackOnMobile() {
+  const narrow = window.innerWidth <= 980;
+  ['webinar-grid', 'contact-grid'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.gridTemplateColumns = narrow ? '1fr' : '1fr 1fr';
+  });
+}
+stackOnMobile();
+window.addEventListener('resize', stackOnMobile);
+
+// ── Телефон ──────────────────────────────────────────────────────────
+// Человек пишет номер как привык: 8 999…, +7 999…, 79991234567,
+// 999 123 45 67, со скобками и без. Приводим всё к одному виду и не
+// мешаем вводить: иностранные номера (+375, +1, +49) не трогаем,
+// только разбиваем на группы.
+function normalizePhone(value) {
+  const raw = String(value || '').trim();
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+
+  // Иностранный номер оставляем как есть: группировать чужой план нумерации
+  // вслепую — только портить. Убираем лишние пробелы, и всё.
+  if (raw.startsWith('+') && !/^\+[78]/.test(raw)) return raw.replace(/\s+/g, ' ');
+
+  // Российский номер. Если цифр 11 и больше — последние десять и есть номер,
+  // а всё, что перед ними, это 8 или +7. Если меньше — человек ещё печатает.
+  let local;
+  if (digits.length >= 11) {
+    local = digits.slice(-10);
+  } else {
+    local = digits;
+    if (raw.startsWith('+') && local[0] === '7') local = local.slice(1);
+    else if (local[0] === '8') local = local.slice(1);
+    else if (local === '7') local = '';
+    local = local.slice(0, 10);
+  }
+
+  const a = local.slice(0, 3), b = local.slice(3, 6), c = local.slice(6, 8), d = local.slice(8, 10);
+  let out = '+7';
+  if (a) out += ' (' + a;
+  if (a.length === 3) out += ')';
+  if (b) out += ' ' + b;
+  if (c) out += '-' + c;
+  if (d) out += '-' + d;
+  return out;
+}
+
+function formatPhone(input) {
+  const atEnd = input.selectionStart === input.value.length;
+  const next = normalizePhone(input.value);
+  if (next === input.value) return;
+  input.value = next;
+  if (atEnd) input.setSelectionRange(next.length, next.length);
+}
+
+// Пустое поле при клике подставляет код страны — так короче набирать
+function phoneFocus(input) {
+  if (!input.value.trim()) input.value = '+7 ';
+}
+
+const phoneDigits = (v) => String(v || '').replace(/\D/g, '').length;
 
 function showFormMsg(id, text, ok) {
   const el = document.getElementById(id);
@@ -678,6 +826,14 @@ async function submitLead(event, kind) {
 
   const data = { kind, source: location.pathname };
   new FormData(form).forEach((value, key) => { data[key] = value; });
+
+  // Короткий номер — почти всегда опечатка, ловим до отправки
+  const phoneField = form.querySelector('input[type=tel]');
+  if (phoneDigits(data.phone) < 10) {
+    showFormMsg(msgId, '⚠️ Проверьте номер телефона — кажется, он неполный', false);
+    phoneField && phoneField.focus();
+    return false;
+  }
 
   button.disabled = true;
   button.textContent = 'Отправляем…';
