@@ -3,138 +3,223 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#241F1B">
+<meta name="theme-color" content="#20211C">
 <title>FleetDesk — Мой кабинет</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/tokens.css">
 <style>
-/* ══════════════════════════════════════════════════════════════════
-   Кабинет водителя. Открывается с телефона по ссылке из бота, поэтому
-   всё крупное: пальцем, на ходу, часто на солнце. Тёплая основа вместо
-   белой — меньше бликов и меньше усталости глаз.
-   ══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════
+   Кабинет водителя. Телефон, солнце, иногда перчатки.
+   Отсюда всё: высокий контраст, крупный шрифт, цели нажатия от 48px,
+   одно главное действие внизу — там, где до него достаёт большой палец.
+   Палитра общая с лендингом и CRM и лежит в /tokens.css.
+   ══════════════════════════════════════════════════════════════════════ */
 :root {
-  --bg:     #F6F2ED;
-  --card:   #FFFFFF;
-  --sunk:   #F1EBE4;
-  --border: #E9E1D8;
-  --text:   #211D19;
-  --soft:   #4B443D;
-  --muted:  #877D73;
+  --paper:     var(--fd-paper);
+  --paper-hi:  #FFFFFF;
+  --sunk:      var(--fd-sunk);
+  --enamel:    var(--fd-enamel);
+  --line:      var(--fd-line);
 
-  --blue:        #4F46E5;
-  --blue-light:  #EEEBFF;
-  --green:       #2E7D4F;
-  --green-light: #E7F4EC;
-  --amber:       #B26A08;
-  --amber-light: #FCF2E1;
-  --red:         #BE3A2F;
-  --red-light:   #FBEDEB;
+  --ink:       var(--fd-ink);   /* 13.8:1 на бумаге */
+  --ink-2:     var(--fd-ink-2);   /*  8.1:1 */
+  --ink-3:     #6E655B;   /*  4.9:1 — мелкий текст на солнце */
 
-  --shadow: 0 1px 2px rgba(33,29,25,.04), 0 6px 18px -10px rgba(33,29,25,.20);
+  --coolant:      var(--fd-coolant);
+  --coolant-deep: var(--fd-coolant-deep);
+
+  /* Лампа как графика — от 3:1, подпись как текст — от 4.5:1 */
+  --ok:   var(--fd-ok-text);  --ok-bg:   #E6F1EA;  --ok-line:   #BEDECB;
+  --warn: var(--fd-warn-text);  --warn-bg: #F8EEDC;  --warn-line: #E7D2AC;
+  --stop: var(--fd-stop-text);  --stop-bg: #F8E7E4;  --stop-line: #EFC3BC;
+
+  --r:      18px;
+  --r-sm:   12px;
+  --shadow: 0 1px 2px rgba(36,31,27,.05), 0 8px 22px -14px rgba(36,31,27,.4);
+
+  --font-text: 'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'DejaVu Sans Mono', Consolas, monospace;
+
+  --bar-h: 84px;   /* высота нижней панели действия */
 }
+
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5;
-  padding-bottom: env(safe-area-inset-bottom); -webkit-font-smoothing: antialiased;
+  font-family: var(--font-text);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(var(--bar-h) + env(safe-area-inset-bottom));
 }
-.wrap { max-width: 580px; margin: 0 auto; padding: 0 16px 48px; }
 
-/* Шапка */
+svg.i { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.8;
+        stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 3px solid var(--coolant); outline-offset: 2px; border-radius: 6px;
+}
+
+.wrap { max-width: 620px; margin: 0 auto; padding: 0 16px 32px; }
+
+/* ── Шапка ── */
 .header {
-  background: linear-gradient(160deg, #2E2721 0%, #241F1B 100%);
-  color: #FDF6EE; padding: 26px 18px 34px;
-  padding-top: calc(26px + env(safe-area-inset-top));
+  background: linear-gradient(168deg, #2C2D26 0%, var(--enamel) 100%);
+  color: #FBF7EF;
+  padding: 22px 16px 40px;
+  padding-top: calc(22px + env(safe-area-inset-top));
 }
-.header-inner { max-width: 580px; margin: 0 auto; }
-.logo { font-size: 13px; opacity: .6; margin-bottom: 8px; letter-spacing: .04em; }
-.hello { font-size: 25px; font-weight: 800; letter-spacing: -.4px; line-height: 1.15; }
-.company { font-size: 14px; opacity: .65; margin-top: 5px; }
+.header-inner { max-width: 620px; margin: 0 auto; }
+.logo { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
+        color: #9C9382; letter-spacing: .01em; margin-bottom: 14px; }
+.logo svg.i { font-size: 19px; color: #7FB3C4; }
+.hello { font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.company { font-size: 15px; color: #A79D8B; margin-top: 5px; }
 
-/* Карточки */
+/* ── Карточки ── */
 .card {
-  background: var(--card); border-radius: 18px; padding: 20px;
-  box-shadow: var(--shadow); border: 1px solid var(--border); margin-top: 16px;
+  background: var(--paper-hi); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 20px; box-shadow: var(--shadow); margin-top: 14px;
 }
-.wrap > .card:first-child { margin-top: -20px; }
-.card-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 14px; }
+.wrap > .card:first-child { margin-top: -24px; }
+.card-title {
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 15px;
+}
 
-/* Авто */
+/* ── Номерной знак: та же деталь, что на лендинге ── */
 .plate {
-  display: inline-block; font-size: 22px; font-weight: 800; letter-spacing: .6px;
-  background: var(--sunk); border: 1px solid var(--border); border-radius: 11px;
-  padding: 8px 16px; margin-bottom: 10px;
+  display: inline-flex; align-items: stretch; background: #fff; color: #111;
+  border: 1.5px solid #2B2B2B; border-radius: 6px; overflow: hidden;
+  font-family: var(--font-mono); font-weight: 600; margin-bottom: 12px;
 }
-.car-name { font-size: 18px; font-weight: 700; }
-.car-sub { font-size: 14px; color: var(--muted); margin-top: 3px; }
+.plate-main { padding: 8px 12px; font-size: 22px; letter-spacing: .06em; }
+.plate-reg { padding: 8px 10px 6px; border-left: 1.5px solid #2B2B2B;
+             display: flex; flex-direction: column; align-items: center; justify-content: center;
+             font-size: 15px; line-height: 1; }
+.plate-reg i { font-style: normal; font-size: 8px; margin-top: 3px; color: #444; letter-spacing: .06em; }
 
-.rows { display: flex; flex-direction: column; gap: 1px; background: var(--border); border-radius: 14px; overflow: hidden; margin-top: 16px; }
-.row { display: flex; justify-content: space-between; align-items: center; gap: 14px; background: var(--card); padding: 14px 15px; }
-.row-label { font-size: 14px; color: var(--muted); }
-.row-value { font-size: 15px; font-weight: 650; text-align: right; }
+.car-name { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+.car-sub  { font-size: 15px; color: var(--ink-3); margin-top: 3px; }
 
-.badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 20px; white-space: nowrap; }
-.b-ok   { background: var(--green-light); color: var(--green); border: 1px solid #BFE0CB; }
-.b-warn { background: var(--amber-light); color: var(--amber); border: 1px solid #EFD9B4; }
-.b-bad  { background: var(--red-light);   color: var(--red);   border: 1px solid #F0C7C2; }
-.b-gray { background: var(--sunk);        color: var(--muted); border: 1px solid var(--border); }
+/* ── Строки «подпись — значение» ── */
+.rows { display: flex; flex-direction: column; gap: 1px; background: var(--line);
+        border-radius: var(--r-sm); overflow: hidden; margin-top: 16px; }
+/* Длинное значение не ломается посреди слова, а занимает свою строку целиком */
+.row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+       gap: 4px 14px; background: var(--paper-hi); padding: 14px 15px; min-height: 52px; }
+.row-label { font-size: 15px; color: var(--ink-3); }
+.row-value { font-size: 16px; font-weight: 600; text-align: right;
+             font-variant-numeric: tabular-nums; }
 
-/* Кнопки */
+/* ── Статусы: цвет + значок + слово, никогда только цвет ── */
+.badge { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600;
+         padding: 5px 11px; border-radius: 999px; white-space: nowrap; border: 1px solid; }
+.badge svg.i { font-size: 14px; }
+.b-ok   { background: var(--ok-bg);   color: var(--ok);   border-color: var(--ok-line); }
+.b-warn { background: var(--warn-bg); color: var(--warn); border-color: var(--warn-line); }
+.b-bad  { background: var(--stop-bg); color: var(--stop); border-color: var(--stop-line); }
+.b-gray { background: var(--sunk);    color: var(--ink-3); border-color: var(--line); }
+
+/* ── Кнопки: цель нажатия от 52px, между целями зазор ── */
 .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 15px 20px; border-radius: 999px; font-size: 16px; font-weight: 650;
-  border: 1px solid transparent; cursor: pointer; width: 100%; font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  min-height: 52px; padding: 14px 20px; border-radius: 999px;
+  font-size: 16.5px; font-weight: 600; font-family: inherit;
+  border: 1.5px solid transparent; cursor: pointer; width: 100%;
   transition: transform .12s, background .15s, border-color .15s;
 }
 .btn:active { transform: scale(.985); }
-.btn-primary { background: var(--blue); color: #fff; box-shadow: 0 6px 16px -8px rgba(79,70,229,.9); }
-.btn-ghost { background: var(--card); color: var(--text); border-color: var(--border); }
-.btn:disabled { opacity: .5; }
-.btn-row { display: flex; gap: 11px; margin-top: 16px; }
+.btn svg.i { font-size: 20px; }
+.btn-primary { background: var(--coolant); color: #fff; }
+.btn-primary:active { background: var(--coolant-deep); }
+.btn-ghost { background: var(--paper-hi); color: var(--ink); border-color: var(--line); }
+.btn:disabled { opacity: .55; }
+.btn-row { display: flex; gap: 12px; margin-top: 16px; }
 
-/* Поля */
-.field { margin-bottom: 15px; }
-.field label { display: block; font-size: 13px; font-weight: 650; color: var(--muted); margin-bottom: 7px; }
-.input {
-  width: 100%; padding: 14px 15px; border: 1px solid var(--border); border-radius: 13px;
-  font-size: 16px; font-family: inherit; color: var(--text); background: var(--card); outline: none;
-  transition: border-color .15s, box-shadow .15s;
+/* ── Одно главное действие, в зоне большого пальца ── */
+.action-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(12px); border-top: 1px solid var(--line);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
 }
-.input::placeholder { color: #B6ADA3; }
-.input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(79,70,229,.15); }
-textarea.input { resize: vertical; min-height: 100px; }
+.action-bar .inner { max-width: 620px; margin: 0 auto; }
 
-/* Заявки */
-.ticket { display: flex; gap: 13px; padding: 15px 0; border-bottom: 1px solid var(--border); }
-.ticket:last-child { border-bottom: none; }
-.ticket-icon { font-size: 21px; flex-shrink: 0; }
-.ticket-title { font-size: 15px; font-weight: 650; margin-bottom: 4px; line-height: 1.4; }
-.ticket-meta { font-size: 13px; color: var(--muted); }
+/* ── Поля ввода. 16px и больше, иначе iOS зумит форму при фокусе ── */
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 14.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 8px; }
+.input {
+  width: 100%; min-height: 52px; padding: 14px 15px;
+  border: 1.5px solid var(--line); border-radius: var(--r-sm);
+  font-size: 16.5px; font-family: inherit; color: var(--ink); background: var(--paper-hi);
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.input::placeholder { color: #A79C8D; }
+.input:focus { border-color: var(--coolant); box-shadow: 0 0 0 3px rgba(23,96,125,.16); }
+textarea.input { min-height: 112px; resize: vertical; }
 
-/* Служебное */
-.center { text-align: center; padding: 70px 20px; color: var(--muted); }
-.spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 16px; }
+/* ── Заявки ── */
+.ticket { display: flex; gap: 13px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+.ticket:last-of-type { border-bottom: none; }
+.ticket-icon { font-size: 22px; flex: none; line-height: 1.2; }
+.ticket-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; line-height: 1.35; }
+.ticket-meta { font-size: 13.5px; color: var(--ink-3); }
+
+/* ── Пустой экран — приглашение, а не сообщение об отсутствии ── */
+.empty { font-size: 15px; color: var(--ink-3); line-height: 1.5; }
+
+/* ── Служебное ── */
+.center { text-align: center; padding: 72px 20px; color: var(--ink-3); }
+.spinner { width: 30px; height: 30px; border: 3px solid var(--line); border-top-color: var(--coolant);
+           border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 16px; }
 @keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+  .btn:active { transform: none; }
+}
+
 .toast {
-  position: fixed; left: 50%; transform: translateX(-50%) translateY(120px);
-  bottom: 24px; background: #241F1B; color: #FDF6EE; padding: 14px 22px; border-radius: 999px;
-  font-size: 15px; font-weight: 550; z-index: 100; opacity: 0; transition: all .3s; max-width: 90vw; text-align: center;
+  position: fixed; left: 50%; bottom: calc(var(--bar-h) + 16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%) translateY(120px);
+  background: var(--enamel); color: #FBF7EF; padding: 14px 22px; border-radius: 999px;
+  font-size: 15.5px; font-weight: 500; z-index: 100; opacity: 0;
+  transition: transform .3s, opacity .3s; max-width: calc(100vw - 32px); text-align: center;
 }
 .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-.modal-bg { display: none; position: fixed; inset: 0; background: rgba(33,29,25,.5); z-index: 90; align-items: flex-end; }
+
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(36,31,27,.55);
+            z-index: 90; align-items: flex-end; }
 .modal-bg.open { display: flex; }
 .sheet {
-  background: var(--card); width: 100%; border-radius: 24px 24px 0 0; padding: 8px 20px 24px;
-  padding-bottom: calc(24px + env(safe-area-inset-bottom)); max-height: 88vh; overflow-y: auto;
+  background: var(--paper); width: 100%; border-radius: 24px 24px 0 0;
+  padding: 8px 18px 24px; padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  max-height: 88vh; overflow-y: auto;
 }
-/* Полоска-«ручка» вверху шторки: сразу понятно, что её можно закрыть */
-.sheet::before {
-  content: ''; display: block; width: 40px; height: 4px; border-radius: 4px;
-  background: var(--border); margin: 8px auto 18px;
-}
-.sheet-title { font-size: 19px; font-weight: 750; margin-bottom: 18px; letter-spacing: -.02em; }
+/* Полоска-«ручка»: сразу понятно, что шторку можно потянуть вниз */
+.sheet::before { content: ''; display: block; width: 42px; height: 4px; border-radius: 4px;
+                 background: var(--line); margin: 8px auto 18px; }
+.sheet-title { font-size: 20px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 18px; }
 </style>
 </head>
 <body>
+
+<!-- Значки спрайтом: эмодзи в каждой системе выглядят по-своему -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M3.5 17a9 9 0 1 1 17 0"/><path d="M12 13.5 16 9"/><circle cx="12" cy="17" r="1.4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4.2 21 19.5H3z"/><path d="M12 10v4M12 16.7v.1"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.8v4.6M12 15.8v.1"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-road" viewBox="0 0 24 24"><path d="M8 3 5 21M16 3l3 18M12 4v3M12 10.5v3M12 17v3"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 6.5l3 3"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M15.5 3.8a5.2 5.2 0 0 0-6 7.4l-6 6a2 2 0 1 0 2.8 2.8l6-6a5.2 5.2 0 0 0 7.4-6l-3 3-2.2-2.2z"/></symbol>
+</svg>
 
 <div id="app">
   <div class="center"><div class="spinner"></div>Загружаем ваши данные…</div>
@@ -172,12 +257,27 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('ru-RU') : '—';
 const fmtNum  = (n) => (n || n === 0) ? Number(n).toLocaleString('ru-RU') : '—';
 const daysLeft = (d) => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null;
 
+const icon = (name, size) =>
+  `<svg class="i"${size ? ` style="font-size:${size}"` : ''}><use href="#i-${name}"/></svg>`;
+
+// Срок показываем значком, словом и цветом сразу: на солнце цвет читается
+// хуже всего, а водитель смотрит в экран мельком
 function deadlineBadge(date) {
   const left = daysLeft(date);
   if (left === null) return '<span class="badge b-gray">не указано</span>';
-  if (left < 0)  return `<span class="badge b-bad">просрочено</span>`;
-  if (left < 30) return `<span class="badge b-warn">${left} дн.</span>`;
-  return `<span class="badge b-ok">${fmtDate(date)}</span>`;
+  if (left < 0)  return `<span class="badge b-bad">${icon('stop')} просрочено</span>`;
+  if (left < 30) return `<span class="badge b-warn">${icon('warn')} ${left} дн.</span>`;
+  return `<span class="badge b-ok">${icon('check')} ${fmtDate(date)}</span>`;
+}
+
+// «А123ВЕ77» → номерной знак с отбитым кодом региона. Если формат другой
+// (иностранный, спецсерия) — показываем строкой как есть.
+function plateHtml(raw) {
+  const s = String(raw || '').replace(/\s+/g, '').toUpperCase();
+  const m = s.match(/^([АВЕКМНОРСТУХ]\d{3}[АВЕКМНОРСТУХ]{2})(\d{2,3})$/);
+  if (!m) return `<div class="plate"><span class="plate-main">${esc(raw || '—')}</span></div>`;
+  return `<div class="plate"><span class="plate-main">${m[1]}</span>` +
+         `<span class="plate-reg">${m[2]}<i>RUS</i></span></div>`;
 }
 
 function showToast(msg) {
@@ -214,7 +314,7 @@ function renderNoAccess(msg) {
   document.getElementById('app').innerHTML = `
     <div class="center">
       <div style="font-size:44px;margin-bottom:14px">🔒</div>
-      <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">Нет доступа</div>
+      <div style="font-size:16px;font-weight:600;color:var(--ink);margin-bottom:8px">Нет доступа</div>
       <div style="max-width:300px;margin:0 auto">${esc(msg)}</div>
     </div>`;
 }
@@ -226,7 +326,7 @@ function render() {
 
   document.getElementById('app').innerHTML = `
     <div class="header"><div class="header-inner">
-      <div class="logo">🚗 FleetDesk</div>
+      <div class="logo">${icon('gauge')} FleetDesk</div>
       <div class="hello">${esc(d.name)}</div>
       <div class="company">${esc(company.name)}</div>
     </div></div>
@@ -235,7 +335,7 @@ function render() {
       ${v ? `
         <div class="card">
           <div class="card-title">Мой автомобиль</div>
-          <div class="plate">${esc(v.plate)}</div>
+          ${plateHtml(v.plate)}
           <div class="car-name">${esc([v.brand, v.model].filter(Boolean).join(' ')) || '—'}</div>
           <div class="car-sub">${[v.year, v.color].filter(Boolean).map(esc).join(' · ')}</div>
 
@@ -247,7 +347,7 @@ function render() {
             <div class="row"><span class="row-label">Техосмотр до</span>
               <span class="row-value">${deadlineBadge(v.inspection_until)}</span></div>
             <div class="row"><span class="row-label">Следующее ТО</span>
-              <span class="row-value">${v.next_service_date ? fmtDate(v.next_service_date) : '—'}${v.next_service_km ? ' · ' + fmtNum(v.next_service_km) + ' км' : ''}</span></div>
+              <span class="row-value">${v.next_service_date ? fmtDate(v.next_service_date) : '—'}${v.next_service_km ? ' · ' + fmtNum(v.next_service_km) + '&nbsp;км' : ''}</span></div>
             ${v.tires_change_date ? `<div class="row"><span class="row-label">Смена резины</span>
               <span class="row-value">${fmtDate(v.tires_change_date)}</span></div>` : ''}
             ${v.location ? `<div class="row"><span class="row-label">Где находится</span>
@@ -255,13 +355,13 @@ function render() {
           </div>
 
           <div class="btn-row">
-            <button class="btn btn-primary" onclick="openMileage()">📊 Внести пробег</button>
+            <button class="btn btn-ghost" onclick="openMileage()">${icon('road')} Внести пробег</button>
           </div>
         </div>
       ` : `
         <div class="card">
           <div class="card-title">Мой автомобиль</div>
-          <div style="color:var(--muted);font-size:14px">
+          <div style="color:var(--ink-3);font-size:14px">
             За вами пока не закреплён автомобиль. Обратитесь к диспетчеру.
           </div>
         </div>
@@ -282,37 +382,43 @@ function render() {
             <span class="row-value">${fmtDate(d.briefing_date)}</span></div>` : ''}
         </div>
         <div class="btn-row">
-          <button class="btn btn-ghost" onclick="openProfile()">✏️ Изменить данные</button>
+          <button class="btn btn-ghost" onclick="openProfile()">${icon('pencil')} Изменить данные</button>
         </div>
       </div>
 
       <div class="card">
         <div class="card-title">Мои заявки${active.length ? ` · ${active.length} в работе` : ''}</div>
         ${tickets.length === 0
-          ? `<div style="color:var(--muted);font-size:14px">Заявок пока нет</div>`
+          ? `<div class="empty">Заявок пока нет. Новую можно создать кнопкой внизу экрана —
+               машина подставится сама.</div>`
           : tickets.slice(0, 10).map(t => renderTicket(t)).join('')}
-        <div class="btn-row">
-          <button class="btn btn-primary" onclick="openNewTicket()">📝 Новая заявка</button>
-        </div>
       </div>
 
-      <div style="text-align:center;margin-top:22px;font-size:12px;color:var(--muted)">
+      <div style="text-align:center;margin-top:20px;font-size:13px;color:var(--ink-3)">
         Данные обновляются автоматически.<br>Вопросы — вашему диспетчеру.
+      </div>
+    </div>
+
+    <!-- Одно главное действие, внизу: туда достаёт большой палец на ходу -->
+    <div class="action-bar">
+      <div class="inner">
+        <button class="btn btn-primary" onclick="openNewTicket()">${icon('plus')} Новая заявка</button>
       </div>
     </div>
   `;
 }
 
+// У статуса есть значок и слово, а не только цвет
 const STATUS = {
-  NEW:         { label: 'Новая',      cls: 'b-warn' },
-  IN_PROGRESS: { label: 'В работе',   cls: 'b-ok'   },
-  WAITING:     { label: 'Ожидание',   cls: 'b-gray' },
-  DONE:        { label: 'Выполнено',  cls: 'b-ok'   },
-  CANCELLED:   { label: 'Отменена',   cls: 'b-gray' },
+  NEW:         { label: 'Новая',      cls: 'b-warn', ico: 'warn'  },
+  IN_PROGRESS: { label: 'В работе',   cls: 'b-ok',   ico: 'wrench'},
+  WAITING:     { label: 'Ожидание',   cls: 'b-gray', ico: 'clock' },
+  DONE:        { label: 'Выполнено',  cls: 'b-ok',   ico: 'check' },
+  CANCELLED:   { label: 'Отменена',   cls: 'b-gray', ico: 'stop'  },
 };
 
 function renderTicket(t) {
-  const st = STATUS[t.status] || { label: t.status, cls: 'b-gray' };
+  const st = STATUS[t.status] || { label: t.status, cls: 'b-gray', ico: 'clock' };
   return `
     <div class="ticket">
       <div class="ticket-icon">${esc(t.type_icon)}</div>
@@ -320,10 +426,10 @@ function renderTicket(t) {
         <div class="ticket-title">${esc(t.title || t.type_name)}</div>
         <div class="ticket-meta">
           ${esc(t.num)} · ${new Date(t.created_at).toLocaleDateString('ru-RU')}
-          ${t.contractor_name ? ` · 🔧 ${esc(t.contractor_name)}` : ''}
+          ${t.contractor_name ? ` · ${esc(t.contractor_name)}` : ''}
         </div>
       </div>
-      <span class="badge ${st.cls}" style="align-self:flex-start">${st.label}</span>
+      <span class="badge ${st.cls}" style="align-self:flex-start">${icon(st.ico)} ${st.label}</span>
     </div>`;
 }
 
@@ -340,7 +446,7 @@ function openMileage() {
   const v = data.vehicle;
   openSheet(`
     <div class="sheet-title">Внести пробег</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">
+    <div style="font-size:13px;color:var(--ink-3);margin-bottom:14px">
       Текущий в системе: <strong>${fmtNum(v.mileage)} км</strong>
     </div>
     <div class="field">
@@ -432,7 +538,7 @@ function openNewTicket() {
       <textarea class="input" id="t-desc" placeholder="Когда началось, что уже проверяли"></textarea></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet()">Отмена</button>
-      <button class="btn btn-primary" id="t-save" onclick="saveTicket()">Отправить</button>
+      <button class="btn btn-primary" id="t-save" onclick="saveTicket()">Создать заявку</button>
     </div>
   `);
 }

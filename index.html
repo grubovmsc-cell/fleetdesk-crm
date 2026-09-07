@@ -4,304 +4,401 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FleetDesk — CRM для корпоративного автопарка</title>
-<meta name="description" content="FleetDesk — система управления корпоративным автопарком: заявки от водителей из Telegram и MAX, карточки машин, водителей и подрядчиков, контроль документов и ТО.">
-<meta name="theme-color" content="#FAF7F3">
+<meta name="description" content="Заявки от водителей из Telegram и MAX, карточки машин, документы и подрядчики в одном месте. Бета-версия.">
+<meta name="theme-color" content="#F2EBDD">
 
-<!--
-  ════════════════════════════════════════════════════════════════════
-  ГДЕ МЕНЯТЬ ТЕКСТЫ
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
-  Страница собрана из обычного HTML — никаких сборок и шаблонизаторов.
-  Каждый смысловой блок помечен комментарием вида «ТЕКСТ: …».
-  Меняйте текст прямо между тегами, вёрстка не поедет.
-
-  Что где:
-    ТЕКСТ: первый экран        — заголовок, подзаголовок, кнопки, цифры
-    ТЕКСТ: польза компании     — что даёт CRM автопарку
-    ТЕКСТ: польза водителю     — что даёт CRM человеку за рулём
-    ТЕКСТ: возможности         — плитки «что умеет система»
-    ТЕКСТ: как начать          — инструкция по работе, шаги 1–4
-    ТЕКСТ: вопросы             — короткий FAQ
-    ТЕКСТ: вебинар             — приглашение и варианты времени
-    ТЕКСТ: обратная связь      — приглашение написать
-    ТЕКСТ: подвал              — контакты и разделы
-
-  Формы отправляют заявки на сервер FleetDesk, а оттуда они попадают
-  в админку в раздел «Заявки с сайта». Адрес сервера — в константе API
-  в самом низу файла.
-  ════════════════════════════════════════════════════════════════════
--->
-
+<link rel="stylesheet" href="/tokens.css">
 <style>
-/* ══════════════════════════════════════════════════════════════════
-   ДИЗАЙН-СИСТЕМА
-   Тёплая основа вместо белой: экран не «светит», читать спокойнее.
-   Цвет появляется только там, где он что-то значит.
-   ══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════
+   FleetDesk — лендинг.  Тема: «приборная панель парка».
+
+   Тепло берём не из абстрактной «кремовой» палитры, а из мира автопарка:
+   бумага путевого листа, эмаль приборной панели, тосол, контрольные лампы.
+   Каждый цвет ниже можно объяснить, откуда он взялся.
+
+   Палитра и гарнитуры лежат в /tokens.css — там же посчитанные контрасты.
+   ══════════════════════════════════════════════════════════════════════ */
 :root {
-  --ground:       #FAF7F3;
-  --ground-warm:  #FDF6EE;
-  --surface:      #FFFFFF;
-  --sunk:         #F5F0EA;
-  --line:         #EAE2D9;
-  --line-soft:    #F2EBE3;
+  /* Основа */
+  --paper:     var(--fd-paper);   /* бумага путевого листа — фон страницы */
+  --paper-hi:  var(--fd-paper-hi);   /* лист посветлее — карточки и формы */
+  --enamel:    var(--fd-enamel);   /* эмаль приборной панели — тёмные плоскости */
+  --enamel-2:  var(--fd-enamel-2);   /* та же эмаль, на свету */
+  --line:      #DED2BC;   /* линовка бланка */
+  --line-soft: #E9E0CE;
 
-  --ink:   #211D19;
-  --ink-2: #4B443D;
-  --ink-3: #877D73;
+  /* Текст */
+  --ink:    var(--fd-ink);      /* 13.8:1 на бумаге */
+  --ink-2:  var(--fd-ink-2);      /*  8.1:1 */
+  --ink-3:  #71685E;      /*  4.6:1 — минимум для мелкого текста */
 
-  --accent:       #4F46E5;
-  --accent-hover: #4338CA;
-  --accent-soft:  #EEEBFF;
-  --amber:        #B26A08;
-  --amber-soft:   #FCF2E1;
-  --green:        #2E7D4F;
-  --green-soft:   #E7F4EC;
-  --red:          #BE3A2F;
-  --red-soft:     #FBEDEB;
+  /* Акцент: тосол. Не спорит с лампами, потому что лежит в другой части
+     спектра — статус нельзя перепутать с кнопкой. */
+  --coolant:      var(--fd-coolant);
+  --coolant-deep: var(--fd-coolant-deep);
+  --coolant-wash: var(--fd-coolant-wash);
 
-  --espresso: #241F1B;
+  /* Контрольные лампы. Точка — графика (от 3:1), подпись — текст (от 4.5:1) */
+  --lamp-ok:        var(--fd-ok);  --lamp-ok-text:   #2B764B;  --lamp-ok-wash:   #E6F1EA;
+  --lamp-warn:      var(--fd-warn);  --lamp-warn-text: #975A06;  --lamp-warn-wash: #F8EEDC;
+  --lamp-stop:      var(--fd-stop);  --lamp-stop-text: #BE3A2F;  --lamp-stop-wash: #F8E7E4;
 
-  --r-sm: 10px;
-  --r:    16px;
-  --r-lg: 22px;
+  /* Ритм и форма */
+  --sec-y:   104px;         /* один источник вертикального ритма секции */
+  --r-sm:    10px;
+  --r:       16px;
+  --r-lg:    22px;
+  --shadow:     0 1px 2px rgba(36,31,27,.05), 0 10px 26px -18px rgba(36,31,27,.45);
+  --shadow-lg:  0 2px 6px rgba(36,31,27,.06), 0 30px 60px -32px rgba(36,31,27,.55);
 
-  --sh-xs: 0 1px 2px rgba(33,29,25,.05);
-  --sh:    0 1px 2px rgba(33,29,25,.04), 0 8px 24px -10px rgba(33,29,25,.16);
-  --sh-lg: 0 2px 6px rgba(33,29,25,.05), 0 30px 60px -24px rgba(33,29,25,.30);
+  --font-display: 'Unbounded', 'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-text:    'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, 'DejaVu Sans Mono', 'Consolas', monospace;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--ground); color: var(--ink-2);
-  font-size: 17px; line-height: 1.65;
-  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  font-family: var(--font-text);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
-img { max-width: 100%; }
-a { color: inherit; }
-::selection { background: var(--accent-soft); color: var(--ink); }
 
-.wrap { max-width: 1140px; margin: 0 auto; padding: 0 26px; }
+.wrap { width: min(1180px, 100% - 40px); margin: 0 auto; }
+@media (max-width: 640px) { .wrap { width: min(1180px, 100% - 32px); } }
 
-h1, h2, h3, h4 { color: var(--ink); font-weight: 780; letter-spacing: -.022em; line-height: 1.14; }
-h1 { font-size: clamp(36px, 5.2vw, 56px); letter-spacing: -.03em; line-height: 1.06; }
-h2 { font-size: clamp(28px, 3.4vw, 38px); }
-h3 { font-size: 19px; letter-spacing: -.015em; line-height: 1.3; }
+/* Заголовки. У кириллицы очертания плотнее и прямоугольнее латиницы:
+   строчным заголовкам нужен интерлиньяж побольше и трекинг поменьше. */
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; letter-spacing: -.015em; text-wrap: balance; }
+h1 { font-size: clamp(33px, 4.6vw, 54px); line-height: 1.16; }
+h2 { font-size: clamp(26px, 3.1vw, 38px); line-height: 1.22; }
+h3 { font-size: 19px; line-height: 1.35; font-weight: 600; }
 
-/* ── КНОПКИ ── */
+a { color: var(--coolant); text-underline-offset: 3px; }
+
+/* Видимый фокус — на всём, по чему можно попасть с клавиатуры */
+:where(a, button, input, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--coolant);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+svg.i { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.7;
+        stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ── Служебные метки. Заглавные в русском читаются плохо, поэтому только
+      короткие подписи и обязательно с трекингом. ── */
+.eyebrow {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--coolant);
+}
+
+/* ══ ШАПКА ══ */
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s, background .2s;
+}
+.nav.stuck { border-bottom-color: var(--line); background: color-mix(in srgb, var(--paper) 96%, transparent); }
+.nav-inner { display: flex; align-items: center; gap: 28px; height: 68px; }
+
+.logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-display);
+        font-weight: 700; font-size: 19px; letter-spacing: -.02em; color: var(--ink); text-decoration: none; }
+.logo svg.i { font-size: 26px; color: var(--coolant); stroke-width: 1.6; }
+
+.beta {
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--lamp-warn-text);
+  background: var(--lamp-warn-wash); border: 1px solid #E7D2AC;
+  padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+}
+
+.nav-links { display: flex; gap: 26px; margin-left: auto; }
+.nav-links a { color: var(--ink-2); text-decoration: none; font-size: 15.5px; font-weight: 500;
+               padding: 9px 2px; display: inline-block; }
+.nav-links a:hover { color: var(--coolant); }
+@media (max-width: 940px) { .nav-links { display: none; } .nav-inner { gap: 16px; } .btn-sm { margin-left: auto; } }
+
+/* ── Кнопки ── */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-  padding: 13px 24px; border-radius: 999px; border: 1px solid transparent; cursor: pointer;
-  font-family: inherit; font-size: 16px; font-weight: 650; text-decoration: none;
-  transition: transform .14s ease, box-shadow .14s ease, background .14s ease, border-color .14s ease;
-  white-space: nowrap;
+  font-family: var(--font-text); font-size: 16px; font-weight: 600;
+  padding: 13px 22px; border-radius: 999px; border: 1.5px solid transparent;
+  text-decoration: none; cursor: pointer; white-space: nowrap;
+  transition: background .16s, border-color .16s, transform .16s;
 }
-.btn:hover  { transform: translateY(-1px); }
-.btn:active { transform: translateY(0); }
-.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 6px 18px -8px rgba(79,70,229,.9); }
-.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 12px 26px -10px rgba(79,70,229,.95); }
-.btn-quiet { background: var(--surface); color: var(--ink); border-color: var(--line); box-shadow: var(--sh-xs); }
-.btn-quiet:hover { border-color: #DCD1C4; }
-.btn-sm { padding: 10px 19px; font-size: 15px; }
-.btn-lg { padding: 16px 30px; font-size: 17px; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--coolant); color: #fff; }
+.btn-primary:hover { background: var(--coolant-deep); }
+.btn-quiet { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn-quiet:hover { border-color: var(--ink-3); background: var(--paper-hi); }
+.btn-sm { padding: 9px 18px; font-size: 15px; }
+.btn-lg { padding: 16px 28px; font-size: 17px; }
+.btn[disabled] { opacity: .55; cursor: default; }
 
-/* ── ШАПКА ── */
-.nav {
-  position: sticky; top: 0; z-index: 60;
-  background: rgba(250,247,243,.82); backdrop-filter: saturate(180%) blur(14px);
-  border-bottom: 1px solid transparent; transition: border-color .2s;
+/* ══ ПЕРВЫЙ ЭКРАН ══ */
+.hero { padding: clamp(48px, 7vw, 92px) 0 var(--sec-y); }
+.hero-inner { display: grid; grid-template-columns: 1.02fr .98fr; gap: 64px; align-items: center; }
+@media (max-width: 1000px) { .hero-inner { grid-template-columns: 1fr; gap: 48px; } }
+
+.hero-pill {
+  display: inline-flex; align-items: center; gap: 9px;
+  background: var(--paper-hi); border: 1px solid var(--line);
+  padding: 7px 15px 7px 11px; border-radius: 999px;
+  font-size: 14.5px; font-weight: 500; color: var(--ink-2); margin-bottom: 26px;
 }
-.nav.stuck { border-bottom-color: var(--line); }
-.nav-inner { display: flex; align-items: center; gap: 30px; height: 72px; }
-.logo { display: flex; align-items: center; gap: 9px; font-size: 19px; font-weight: 800; color: var(--ink); letter-spacing: -.03em; white-space: nowrap; }
-.logo-dot {
-  width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0;
-  background: linear-gradient(140deg, var(--accent), #7C6BF0);
-  display: flex; align-items: center; justify-content: center; font-size: 15px;
-}
-.beta {
-  font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
-  color: var(--amber); background: var(--amber-soft); border: 1px solid #EFD9B4;
-  padding: 3px 9px; border-radius: 999px; white-space: nowrap;
-}
+.hero-pill svg.i { font-size: 17px; color: var(--coolant); }
+
+.lead { font-size: clamp(17px, 1.6vw, 19.5px); color: var(--ink-2); margin-top: 22px; max-width: 33em; }
+.hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.hero-note { font-size: 15px; color: var(--ink-3); margin-top: 16px; }
+
 .beta-note {
-  display: flex; gap: 13px; align-items: flex-start;
-  background: var(--amber-soft); border: 1px solid #EFD9B4; border-radius: var(--r);
-  padding: 16px 20px; font-size: 15.5px; color: #7A4B08; margin-top: 30px; max-width: 545px;
+  display: flex; gap: 13px; margin-top: 30px; max-width: 34em;
+  background: var(--lamp-warn-wash); border: 1px solid #E7D2AC;
+  border-left: 4px solid var(--lamp-warn);
+  padding: 16px 18px; border-radius: var(--r-sm);
+  font-size: 15.5px; color: #6E4204; line-height: 1.55;
 }
-.beta-note b { color: #5E3A06; }
-.nav-links { display: flex; gap: 26px; margin-left: auto; }
-.nav-links a { font-size: 15px; color: var(--ink-3); text-decoration: none; font-weight: 550; transition: color .15s; }
-.nav-links a:hover { color: var(--ink); }
+.beta-note svg.i { font-size: 20px; color: var(--lamp-warn); margin-top: 1px; }
+.beta-note b { color: #573402; }
 
-/* ── ПЕРВЫЙ ЭКРАН ── */
-.hero { position: relative; overflow: hidden; background: linear-gradient(178deg, var(--ground-warm) 0%, var(--ground) 62%); }
-.hero::before {
-  content: ''; position: absolute; top: -320px; right: -180px; width: 780px; height: 780px;
-  background: radial-gradient(circle, rgba(124,107,240,.13), transparent 66%); pointer-events: none;
+.facts { display: flex; flex-wrap: wrap; gap: 30px 40px; margin-top: 34px; }
+.fact-num { font-family: var(--font-mono); font-size: 17px; font-weight: 600; color: var(--ink);
+            font-variant-numeric: tabular-nums; }
+.fact-label { font-size: 14px; color: var(--ink-3); margin-top: 2px; }
+
+/* ══ ПОДПИСЬ СТРАНИЦЫ: панель парка ══
+   Машина показана так, как её узнают все: номерным знаком. Рядом три
+   контрольные лампы — тот же язык, что на приборке: горит только то,
+   что требует внимания. При загрузке лампы вспыхивают все разом и гаснут,
+   как приборная панель при повороте ключа. */
+.cluster {
+  background: var(--enamel); border-radius: var(--r-lg); padding: 22px;
+  box-shadow: var(--shadow-lg); color: var(--paper);
 }
-.hero-inner { position: relative; display: grid; grid-template-columns: 1.02fr .98fr; gap: 60px; align-items: center; padding: 76px 0 96px; }
-.eyebrow-pill {
-  display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
-  background: var(--surface); color: var(--ink-2); border: 1px solid var(--line);
-  padding: 7px 15px 7px 9px; border-radius: 999px; margin-bottom: 26px; box-shadow: var(--sh-xs);
+.cluster-head { display: flex; align-items: baseline; justify-content: space-between;
+                gap: 14px; flex-wrap: wrap; padding: 2px 4px 18px; }
+.cluster-title { font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+                 letter-spacing: .13em; text-transform: uppercase; color: #A29A89; }
+.cluster-sub { font-size: 14px; color: #B8AE9B; font-variant-numeric: tabular-nums; }
+
+.units { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 520px) { .units { grid-template-columns: 1fr; } }
+
+.unit { background: var(--enamel-2); border: 1px solid #3A3B32; border-radius: var(--r); padding: 15px; }
+
+/* Номерной знак российского образца: чёрным по белому, код региона отбит
+   вертикальной чертой. Буквы — только те двенадцать, что есть на настоящих. */
+.plate {
+  display: inline-flex; align-items: stretch; background: #fff; color: #111;
+  border-radius: 5px; overflow: hidden; font-family: var(--font-mono);
+  font-weight: 600; box-shadow: 0 1px 0 rgba(0,0,0,.35);
 }
-.hero p.lead { font-size: 19px; color: var(--ink-2); margin: 22px 0 34px; max-width: 545px; }
-.hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
-.hero-note { margin-top: 18px; font-size: 14.5px; color: var(--ink-3); }
+.plate-main { padding: 6px 9px; font-size: 17px; letter-spacing: .06em; }
+.plate-reg  { padding: 6px 8px 5px; border-left: 1.5px solid #C9C9C9;
+              display: flex; flex-direction: column; align-items: center; justify-content: center;
+              font-size: 13px; line-height: 1; letter-spacing: .04em; }
+.plate-reg i { font-style: normal; font-size: 7px; letter-spacing: .06em; margin-top: 2px; color: #444; }
 
-.facts { display: flex; gap: 40px; margin-top: 46px; flex-wrap: wrap; }
-.fact-num { font-size: 27px; font-weight: 800; color: var(--ink); letter-spacing: -.03em; }
-.fact-label { font-size: 14px; color: var(--ink-3); margin-top: 1px; }
+.unit-model { font-size: 13.5px; color: #A79D8B; margin-top: 9px; }
 
-/* Мини-макет доски — вёрстка, а не картинка */
-.shot { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--sh-lg); overflow: hidden; border: 1px solid var(--line-soft); }
-.shot-bar { display: flex; align-items: center; gap: 7px; padding: 14px 18px; background: var(--sunk); border-bottom: 1px solid var(--line-soft); }
-.dot { width: 10px; height: 10px; border-radius: 50%; }
-.shot-title { font-size: 12.5px; color: var(--ink-3); margin-left: 9px; font-weight: 600; }
-.shot-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; background: var(--ground); }
-.shot-col-h { font-size: 11px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px; }
-.mini { background: var(--surface); border-radius: 12px; padding: 12px; margin-bottom: 9px; box-shadow: var(--sh-xs); border: 1px solid var(--line-soft); border-left: 3px solid var(--accent); }
-.mini.red   { border-left-color: var(--red); }
-.mini.amber { border-left-color: var(--amber); }
-.mini.green { border-left-color: var(--green); }
-.mini-top { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-3); margin-bottom: 5px; }
-.mini-title { font-size: 12.5px; font-weight: 650; line-height: 1.4; color: var(--ink); }
-.mini-foot { font-size: 11px; color: var(--ink-3); margin-top: 6px; }
+.lamps { display: flex; flex-direction: column; gap: 7px; margin-top: 13px; }
+.lamp { display: flex; align-items: flex-start; gap: 9px; font-size: 13.5px; color: #C6BCA8; line-height: 1.4; }
+.lamp svg.i { font-size: 16px; flex: none; margin-top: 1px; }
+/* Погашенная лампа не исчезает совсем — на приборке она тоже видна, просто не горит */
+.lamp.off { opacity: .34; }
+.lamp.ok   { color: #8FCBA6; }
+.lamp.warn { color: #EFB552; }
+.lamp.stop { color: #F0958A; }
 
-/* ── СЕКЦИИ ── */
-section { padding: 96px 0; }
-section.on-white { background: var(--surface); }
-.sec-head { max-width: 720px; margin-bottom: 52px; }
-.sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
-.eyebrow { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px; }
-.sec-head p { font-size: 18px; color: var(--ink-3); margin-top: 14px; }
+/* Самотест: все лампы загораются разом и гаснут, оставляя настоящие */
+@keyframes selftest { 0%, 30% { opacity: 1; } 100% { opacity: var(--rest, 1); } }
+.lamp { animation: selftest 1.9s cubic-bezier(.4,0,.2,1) both; }
+.lamp.off { --rest: .34; }
+.unit:nth-child(2) .lamp { animation-delay: .07s; }
+.unit:nth-child(3) .lamp { animation-delay: .14s; }
+.unit:nth-child(4) .lamp { animation-delay: .21s; }
+@media (prefers-reduced-motion: reduce) { .lamp { animation: none; } }
 
-/* ── ДВА АДРЕСАТА ── */
+.cluster-foot { display: flex; gap: 8px; align-items: center; margin-top: 16px; padding: 0 4px;
+                font-size: 12.5px; color: #948C7C; font-family: var(--font-mono); }
+
+/* ══ СЕКЦИИ ══
+   Один источник вертикального ритма: отступы задаёт только сама секция. */
+section { padding: var(--sec-y) 0; }
+.on-paper-hi { background: var(--paper-hi); border-block: 1px solid var(--line-soft); }
+
+.sec-head { max-width: 46em; margin-bottom: 52px; }
+.sec-head.center { margin-inline: auto; text-align: center; }
+.sec-head h2 { margin-top: 14px; }
+.sec-head p { font-size: 18px; color: var(--ink-2); margin-top: 14px; }
+
+/* ── Две дорожки: компания и водитель ── */
 .audience { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.aud-card {
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
-  padding: 38px 36px; box-shadow: var(--sh); position: relative; overflow: hidden;
-}
-.aud-card.warm { background: linear-gradient(168deg, #FFFBF5, var(--surface) 55%); }
-.aud-head { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
-.aud-icon {
-  width: 50px; height: 50px; border-radius: 15px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; font-size: 24px;
-  background: var(--accent-soft);
-}
-.aud-card.warm .aud-icon { background: var(--amber-soft); }
-.aud-card h3 { font-size: 23px; }
-.aud-for { font-size: 13.5px; color: var(--ink-3); font-weight: 600; }
-.aud-lead { font-size: 16px; color: var(--ink-3); margin: 14px 0 24px; }
-.aud-list { list-style: none; display: flex; flex-direction: column; gap: 17px; }
-.aud-list li { display: flex; gap: 13px; font-size: 16px; }
-.aud-list b { color: var(--ink); font-weight: 650; }
-.tick {
-  flex-shrink: 0; width: 23px; height: 23px; border-radius: 8px; margin-top: 2px;
-  background: var(--accent-soft); color: var(--accent);
-  display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800;
-}
-.aud-card.warm .tick { background: var(--amber-soft); color: var(--amber); }
+@media (max-width: 900px) { .audience { grid-template-columns: 1fr; } }
 
-/* ── ПЛИТКИ ── */
+.aud-card { background: var(--paper-hi); border: 1px solid var(--line); border-radius: var(--r-lg);
+            padding: 34px; box-shadow: var(--shadow); }
+.aud-card.warm { background: #FBF3E6; border-color: #EADCC0; }
+.aud-head { display: flex; gap: 15px; align-items: flex-start; }
+.aud-icon { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center;
+            background: var(--coolant-wash); color: var(--coolant); flex: none; }
+.aud-card.warm .aud-icon { background: #F5E4C8; color: #8A5406; }
+.aud-icon svg.i { font-size: 24px; }
+.aud-for { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; letter-spacing: .12em;
+           text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+.aud-lead { font-size: 15.5px; color: var(--ink-3); margin: 18px 0 20px; }
+
+.aud-list { list-style: none; display: flex; flex-direction: column; gap: 15px; }
+.aud-list li { display: flex; gap: 11px; font-size: 15.5px; color: var(--ink-2); line-height: 1.55; }
+.aud-list b { color: var(--ink); font-weight: 600; }
+.tick { color: var(--lamp-ok-text); flex: none; margin-top: 3px; }
+.tick svg.i { font-size: 17px; stroke-width: 2.2; }
+
+/* ── Возможности ── */
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-.tile {
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
-  padding: 30px 28px; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
-}
-.tile:hover { transform: translateY(-3px); box-shadow: var(--sh); border-color: #DFD5C9; }
-section.on-white .tile { background: var(--ground); }
-.tile .ico { font-size: 25px; margin-bottom: 16px; display: block; }
-.tile h3 { margin-bottom: 9px; }
-.tile p { font-size: 16px; color: var(--ink-3); }
+@media (max-width: 940px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px) { .grid-3 { grid-template-columns: 1fr; } }
 
-/* ── ШАГИ ── */
-.steps { counter-reset: step; display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px; }
-.step { position: relative; padding-top: 58px; }
+.tile { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r);
+        padding: 26px; transition: border-color .16s, transform .16s; }
+.on-paper-hi .tile { background: var(--paper-hi); }
+.tile:hover { border-color: var(--coolant); transform: translateY(-2px); }
+.tile .ico { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px;
+             background: var(--coolant-wash); color: var(--coolant); margin-bottom: 16px; }
+.tile .ico svg.i { font-size: 23px; }
+.tile h3 { margin-bottom: 8px; }
+.tile p { font-size: 15px; color: var(--ink-2); }
+
+/* ── Как начать: здесь порядок действительно важен, поэтому нумерация ── */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; counter-reset: step; }
+@media (max-width: 940px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .steps { grid-template-columns: 1fr; } }
+
+.step { counter-increment: step; padding-top: 20px; border-top: 2px solid var(--line); }
 .step::before {
-  counter-increment: step; content: counter(step);
-  position: absolute; top: 0; left: 0; width: 42px; height: 42px; border-radius: 14px;
-  background: var(--espresso); color: #FDF6EE; font-weight: 800; font-size: 17px;
-  display: flex; align-items: center; justify-content: center;
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--coolant);
+  letter-spacing: .08em; display: block; margin-bottom: 12px;
 }
-.step h3 { margin-bottom: 9px; }
-.step p { font-size: 16px; color: var(--ink-3); }
+.step h3 { margin-bottom: 8px; }
+.step p { font-size: 15px; color: var(--ink-2); }
 
-details.faq { border-bottom: 1px solid var(--line); padding: 22px 0; }
-details.faq summary { cursor: pointer; font-weight: 650; font-size: 17.5px; color: var(--ink); list-style: none; display: flex; align-items: flex-start; gap: 13px; }
-details.faq summary::-webkit-details-marker { display: none; }
-details.faq summary::before { content: '+'; color: var(--accent); font-weight: 700; font-size: 22px; line-height: 1.1; width: 18px; flex-shrink: 0; }
-details.faq[open] summary::before { content: '−'; }
-details.faq p { font-size: 16.5px; color: var(--ink-3); padding: 14px 0 0 31px; }
+/* ── Вопросы ── */
+.faq { border-bottom: 1px solid var(--line); }
+.faq summary {
+  cursor: pointer; padding: 19px 40px 19px 0; font-weight: 600; font-size: 17px;
+  list-style: none; position: relative;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: ''; position: absolute; right: 8px; top: 27px;
+  width: 9px; height: 9px; border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3);
+  transform: rotate(45deg); transition: transform .18s;
+}
+.faq[open] summary::after { transform: rotate(-135deg); }
+.faq p { padding-bottom: 20px; color: var(--ink-2); font-size: 16px; max-width: 60ch; }
 
-/* ── ФОРМЫ ── */
-.form-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 34px; box-shadow: var(--sh); }
-section.on-white .form-card { background: var(--ground); }
+/* ── Две колонки: текст + форма ── */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 52px; align-items: start; }
+@media (max-width: 980px) { .split { grid-template-columns: 1fr; gap: 36px; } }
+.split p.big { font-size: 18px; color: var(--ink-2); margin: 16px 0 28px; }
+
+.checklist { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.checklist li { display: flex; gap: 11px; align-items: flex-start; font-size: 16px; color: var(--ink-2); }
+
+/* ── Формы ── */
+.form-card { background: var(--paper-hi); border: 1px solid var(--line); border-radius: var(--r-lg);
+             padding: 30px; box-shadow: var(--shadow); }
+.on-paper-hi .form-card { background: var(--paper); }
 .field { margin-bottom: 17px; }
-.field label { display: block; font-size: 13.5px; font-weight: 650; color: var(--ink-2); margin-bottom: 7px; }
-.field input, .field select, .field textarea {
-  width: 100%; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px;
-  font-family: inherit; font-size: 16px; color: var(--ink); background: var(--surface);
-  transition: border-color .14s, box-shadow .14s;
+.field label { display: block; font-size: 14.5px; font-weight: 600; margin-bottom: 7px; }
+.field input, .field textarea {
+  width: 100%; padding: 14px 15px; font-size: 16px; font-family: inherit; color: var(--ink);
+  background: #fff; border: 1.5px solid var(--line); border-radius: var(--r-sm); outline: none;
+  transition: border-color .15s, box-shadow .15s;
 }
-section.on-white .field input, section.on-white .field select, section.on-white .field textarea { background: var(--surface); }
-.field input::placeholder, .field textarea::placeholder { color: #B6ADA3; }
-.field input:focus, .field select:focus, .field textarea:focus {
-  outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79,70,229,.13);
-}
-.field textarea { resize: vertical; min-height: 112px; }
-.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.consent { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--ink-3); margin: 6px 0 20px; cursor: pointer; }
-.consent input { margin-top: 3px; flex-shrink: 0; accent-color: var(--accent); }
+.field input::placeholder, .field textarea::placeholder { color: #A79C8D; }
+.field input:focus, .field textarea:focus { border-color: var(--coolant); box-shadow: 0 0 0 3px rgba(23,96,125,.16); }
+.field textarea { min-height: 104px; resize: vertical; }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 480px) { .row-2 { grid-template-columns: 1fr; gap: 0; } }
+
+.consent { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--ink-3);
+           margin: 6px 0 20px; cursor: pointer; }
+.consent input { margin-top: 1px; flex: none; width: 24px; height: 24px; accent-color: var(--coolant); }
+.form-hint { font-size: 13.5px; color: var(--ink-3); text-align: center; margin-top: 13px; }
+
+/* Ответ формы: и цветом, и значком, и словами — не только цветом */
+.form-msg { display: none; gap: 9px; align-items: flex-start; padding: 13px 15px; border-radius: var(--r-sm);
+            font-size: 15px; margin-bottom: 18px; line-height: 1.5; }
+.form-msg.show { display: flex; }
+.form-msg.ok  { background: var(--lamp-ok-wash);   color: #1E5535; border: 1px solid #BEDECB; }
+.form-msg.err { background: var(--lamp-stop-wash); color: #8E241B; border: 1px solid #EFC3BC; }
+.form-msg svg.i { font-size: 19px; flex: none; margin-top: 1px; }
+
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
-.form-msg { font-size: 15px; padding: 14px 16px; border-radius: 12px; margin-bottom: 16px; display: none; }
-.form-msg.show { display: block; }
-.form-msg.ok  { background: var(--green-soft); border: 1px solid #BFE0CB; color: var(--green); }
-.form-msg.err { background: var(--red-soft);   border: 1px solid #F0C7C2; color: var(--red); }
-.form-hint { font-size: 13.5px; color: var(--ink-3); text-align: center; margin-top: 14px; }
 
-.checklist { list-style: none; font-size: 16.5px; color: var(--ink-2); }
-.checklist li { display: flex; gap: 12px; margin-bottom: 14px; }
-
-/* ── ПОДВАЛ ── */
-footer { background: var(--espresso); color: #B4A99E; padding: 62px 0 36px; font-size: 16px; }
-footer .logo { color: #FDF6EE; margin-bottom: 16px; }
-footer a { color: #D9CFC5; text-decoration: none; transition: color .15s; }
-footer a:hover { color: #fff; }
-.foot-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
-.foot-grid h4 { color: #FDF6EE; font-size: 13px; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; letter-spacing: .09em; }
-.foot-grid li { list-style: none; margin-bottom: 10px; }
-.foot-bottom { border-top: 1px solid rgba(253,246,238,.13); padding-top: 26px; font-size: 14px; display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
-
-@media (max-width: 980px) {
-  body { font-size: 16px; }
-  .hero-inner { grid-template-columns: 1fr; gap: 50px; padding: 54px 0 72px; }
-  .audience, .grid-3, .steps { grid-template-columns: 1fr 1fr; }
-  section { padding: 68px 0; }
-  .sec-head { margin-bottom: 40px; }
-}
-@media (max-width: 680px) {
-  .nav-links { display: none; }
-  .nav-inner { height: 64px; gap: 14px; }
-  .audience, .grid-3, .steps, .row-2, .foot-grid { grid-template-columns: 1fr; }
-  .shot-cols { grid-template-columns: 1fr; }
-  .aud-card { padding: 28px 24px; }
-  .form-card { padding: 26px 22px; }
-  .facts { gap: 26px; }
-  .btn { width: 100%; }
-  .nav .btn { width: auto; }
-}
+/* ── Подвал ── */
+footer { background: var(--enamel); color: #B8AE9B; padding: 64px 0 32px; }
+footer .logo { color: var(--paper); }
+footer .logo svg.i { color: #7FB3C4; }
+.foot-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; }
+@media (max-width: 760px) { .foot-grid { grid-template-columns: 1fr 1fr; gap: 32px; } }
+@media (max-width: 460px) { .foot-grid { grid-template-columns: 1fr; } }
+footer p { font-size: 15px; margin-top: 14px; max-width: 360px; }
+footer h4 { font-size: 12px; font-family: var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
+            color: #948C7C; margin-bottom: 14px; font-weight: 600; }
+footer ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+footer a { color: #C6BCA8; text-decoration: none; font-size: 15px; padding: 4px 0; display: inline-block; }
+footer a:hover { color: var(--paper); text-decoration: underline; }
+.foot-bottom { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between;
+               border-top: 1px solid #3A3B32; margin-top: 48px; padding-top: 24px;
+               font-size: 13.5px; color: #948C7C; }
 </style>
 </head>
 <body>
 
+<!-- Значки одним спрайтом: эмодзи выглядят по-разному в каждой системе
+     и в интерфейсе ведут себя как случайная картинка. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M3.5 17a9 9 0 1 1 17 0"/><path d="M12 13.5 16 9"/><circle cx="12" cy="17" r="1.4"/></symbol>
+  <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V4.5"/><circle cx="12" cy="3.5" r="1.2"/><path d="M9 13v1.5M15 13v1.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9.5 3v6.2L4.8 17a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3l-4.7-7.8V3"/><path d="M8 3h8M7.6 14h8.8"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 20V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v14"/><path d="M15 10h3a2 2 0 0 1 2 2v8"/><path d="M3 20h18M8 8h3M8 12h3M8 16h3"/></symbol>
+  <symbol id="i-truck" viewBox="0 0 24 24"><path d="M2 17V7a1 1 0 0 1 1-1h11v11"/><path d="M14 9h3.5l2.5 3.5V17"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/><path d="M9 17.5h6"/></symbol>
+  <symbol id="i-board" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9h16M10 9v11"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M4 16v2M20 16v2"/><path d="M3 16v-3.2a2 2 0 0 1 .3-1L5.6 8A2 2 0 0 1 7.3 7h9.4a2 2 0 0 1 1.7 1l2.3 3.8c.2.3.3.7.3 1V16z"/><circle cx="7.5" cy="16" r="1.3"/><circle cx="16.5" cy="16" r="1.3"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M15.5 3.8a5.2 5.2 0 0 0-6 7.4l-6 6a2 2 0 1 0 2.8 2.8l6-6a5.2 5.2 0 0 0 7.4-6l-3 3-2.2-2.2z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3.5 13.8 9 19 10.8 13.8 12.6 12 18 10.2 12.6 5 10.8 10.2 9z"/><path d="M18.5 16.5 19.2 18.4 21 19l-1.8.7-.7 1.8-.7-1.8L16 19l1.8-.6z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6.5 10a5.5 5.5 0 0 1 11 0c0 4 1.5 5.5 1.5 5.5H5S6.5 14 6.5 10"/><path d="M10.2 19a2 2 0 0 0 3.6 0"/></symbol>
+  <symbol id="i-team" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M16 5.6a3.2 3.2 0 0 1 0 6.3M17.5 14.2A5.6 5.6 0 0 1 21 19"/></symbol>
+  <symbol id="i-backup" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4.2 21 19.5H3z"/><path d="M12 10v4M12 16.7v.1"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.8v4.6M12 15.8v.1"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M13.5 3v5.5H19M8.5 13h7M8.5 16.5h4"/></symbol>
+</svg>
+
 <!-- ══ ШАПКА ══ -->
 <header class="nav" id="nav">
   <div class="wrap nav-inner">
-    <div class="logo"><span class="logo-dot">🚗</span> FleetDesk <span class="beta">Бета</span></div>
+    <a class="logo" href="#top"><svg class="i"><use href="#i-gauge"/></svg> FleetDesk <span class="beta">бета</span></a>
     <nav class="nav-links">
       <a href="#value">Кому и зачем</a>
       <a href="#features">Возможности</a>
@@ -314,11 +411,11 @@ footer a:hover { color: #fff; }
 </header>
 
 <!-- ══ ПЕРВЫЙ ЭКРАН ══ -->
-<div class="hero">
+<div class="hero" id="top">
   <div class="wrap hero-inner">
     <div>
       <!-- ТЕКСТ: первый экран -->
-      <div class="eyebrow-pill"><span class="logo-dot" style="width:22px;height:22px;border-radius:7px;font-size:12px">🤖</span> Заявки приходят из Telegram и MAX</div>
+      <div class="hero-pill"><svg class="i"><use href="#i-bot"/></svg> Заявки приходят из Telegram и MAX</div>
       <h1>Автопарк, который сам рассказывает, что с ним происходит</h1>
       <p class="lead">
         FleetDesk — CRM для корпоративного автопарка. Водитель пишет боту, заявка сразу
@@ -333,13 +430,14 @@ footer a:hover { color: #fff; }
 
       <!-- ТЕКСТ: предупреждение о бета-версии -->
       <div class="beta-note">
-        <span style="font-size:19px;line-height:1">🧪</span>
+        <svg class="i"><use href="#i-flask"/></svg>
         <span><b>Сейчас это бета-версия.</b> Системой уже можно пользоваться каждый день,
         но какие-то разделы будут меняться, а что-то может работать не так, как задумано.
         Напишите нам, если заметите — чиним быстро.</span>
       </div>
       <!-- /ТЕКСТ -->
 
+      <!-- ТЕКСТ: три факта -->
       <div class="facts">
         <div>
           <div class="fact-num">2 мессенджера</div>
@@ -357,50 +455,58 @@ footer a:hover { color: #fff; }
       <!-- /ТЕКСТ -->
     </div>
 
-    <div class="shot" aria-hidden="true">
-      <div class="shot-bar">
-        <span class="dot" style="background:#E5867A"></span>
-        <span class="dot" style="background:#E8B463"></span>
-        <span class="dot" style="background:#84C09B"></span>
-        <span class="shot-title">FleetDesk — Заявки</span>
+    <!-- Подпись страницы: панель парка -->
+    <div class="cluster" role="img"
+         aria-label="Панель парка: четыре машины. У Е456КХ77 подходит срок ОСАГО, у Т012УС50 открыта срочная заявка, остальные в норме.">
+      <div class="cluster-head">
+        <span class="cluster-title">Панель парка</span>
+        <span class="cluster-sub">4 машины · 2 требуют внимания</span>
       </div>
-      <div class="shot-cols">
-        <div>
-          <div class="shot-col-h">Новые · 3</div>
-          <div class="mini red">
-            <div class="mini-top">🔴 TK-0042 · срочный</div>
-            <div class="mini-title">Не заводится, стоит у офиса</div>
-            <div class="mini-foot">А123БВ77 · Иванов А.</div>
-          </div>
-          <div class="mini amber">
-            <div class="mini-top">🛞 TK-0041</div>
-            <div class="mini-title">Замена резины, 3 машины</div>
-            <div class="mini-foot">📎 2 фото · из Telegram</div>
+      <div class="units" aria-hidden="true">
+        <div class="unit">
+          <div class="plate"><span class="plate-main">А123ВЕ</span><span class="plate-reg">77<i>RUS</i></span></div>
+          <div class="unit-model">Toyota Camry · Иванов А.</div>
+          <div class="lamps">
+            <span class="lamp ok"><svg class="i"><use href="#i-check"/></svg> Документы в порядке</span>
+            <span class="lamp off"><svg class="i"><use href="#i-wrench"/></svg> До ТО 7 400 км</span>
+            <span class="lamp off"><svg class="i"><use href="#i-board"/></svg> Открытых заявок нет</span>
           </div>
         </div>
-        <div>
-          <div class="shot-col-h">В работе · 2</div>
-          <div class="mini">
-            <div class="mini-top">🔧 TK-0038</div>
-            <div class="mini-title">Плановое ТО-60000</div>
-            <div class="mini-foot">СТО Авторем</div>
+        <div class="unit">
+          <div class="plate"><span class="plate-main">Е456КХ</span><span class="plate-reg">77<i>RUS</i></span></div>
+          <div class="unit-model">Mercedes Sprinter · Козлова М.</div>
+          <div class="lamps">
+            <span class="lamp warn"><svg class="i"><use href="#i-warn"/></svg> ОСАГО истекает через 9 дней</span>
+            <span class="lamp off"><svg class="i"><use href="#i-wrench"/></svg> До ТО 2 100 км</span>
+            <span class="lamp off"><svg class="i"><use href="#i-board"/></svg> Открытых заявок нет</span>
           </div>
         </div>
-        <div>
-          <div class="shot-col-h">Выполнено · 8</div>
-          <div class="mini green">
-            <div class="mini-top">🚿 TK-0035</div>
-            <div class="mini-title">Мойка перед выездом</div>
-            <div class="mini-foot">вчера в 18:20</div>
+        <div class="unit">
+          <div class="plate"><span class="plate-main">О789МН</span><span class="plate-reg">50<i>RUS</i></span></div>
+          <div class="unit-model">Lada Vesta · Фёдоров И.</div>
+          <div class="lamps">
+            <span class="lamp ok"><svg class="i"><use href="#i-check"/></svg> Документы в порядке</span>
+            <span class="lamp off"><svg class="i"><use href="#i-wrench"/></svg> До ТО 11 900 км</span>
+            <span class="lamp off"><svg class="i"><use href="#i-board"/></svg> Открытых заявок нет</span>
+          </div>
+        </div>
+        <div class="unit">
+          <div class="plate"><span class="plate-main">Т012УС</span><span class="plate-reg">50<i>RUS</i></span></div>
+          <div class="unit-model">Kia Sorento · Сидоров Д.</div>
+          <div class="lamps">
+            <span class="lamp stop"><svg class="i"><use href="#i-stop"/></svg> Не заводится — срочная заявка</span>
+            <span class="lamp ok"><svg class="i"><use href="#i-check"/></svg> Документы в порядке</span>
+            <span class="lamp off"><svg class="i"><use href="#i-wrench"/></svg> До ТО 400 км</span>
           </div>
         </div>
       </div>
+      <div class="cluster-foot"><svg class="i" style="font-size:15px"><use href="#i-gauge"/></svg> так парк выглядит у диспетчера утром</div>
     </div>
   </div>
 </div>
 
 <!-- ══ ДВА АДРЕСАТА ══ -->
-<section id="value">
+<section id="value" class="on-paper-hi">
   <div class="wrap">
     <div class="sec-head center">
       <div class="eyebrow">Кому и зачем</div>
@@ -412,7 +518,7 @@ footer a:hover { color: #fff; }
       <!-- ТЕКСТ: польза компании -->
       <div class="aud-card">
         <div class="aud-head">
-          <div class="aud-icon">🏢</div>
+          <div class="aud-icon"><svg class="i"><use href="#i-building"/></svg></div>
           <div>
             <div class="aud-for">Для компании</div>
             <h3>Автопарк перестаёт быть чёрным ящиком</h3>
@@ -420,12 +526,12 @@ footer a:hover { color: #fff; }
         </div>
         <p class="aud-lead">Что получает бизнес, у которого машины — рабочий инструмент, а не хобби.</p>
         <ul class="aud-list">
-          <li><span class="tick">✓</span><span><b>Ни одна заявка не теряется.</b> У каждой есть номер, статус, срок и исполнитель. Видно, кто и когда что сделал.</span></li>
-          <li><span class="tick">✓</span><span><b>Сроки не подкрадываются.</b> ОСАГО, техосмотр, медсправка, права, ТО по пробегу — напоминание приходит заранее, а не в день, когда машина уже не выехала.</span></li>
-          <li><span class="tick">✓</span><span><b>Понятно, куда уходят деньги.</b> История работ по каждой машине, подрядчики с условиями договора и сроками оплаты — в одном месте.</span></li>
-          <li><span class="tick">✓</span><span><b>Меньше простоя.</b> Заявка без движения сама помечается срочной и всплывает наверх, а не тонет в переписке.</span></li>
-          <li><span class="tick">✓</span><span><b>Данные остаются в компании.</b> Водитель уволился — карточки, документы и история обслуживания на месте, а не в его телефоне.</span></li>
-          <li><span class="tick">✓</span><span><b>Диспетчер успевает больше.</b> Один экран вместо пяти чатов, таблицы и стопки путевых листов.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Ни одна заявка не теряется.</b> У каждой есть номер, статус, срок и исполнитель. Видно, кто и когда что сделал.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Сроки не подкрадываются.</b> ОСАГО, техосмотр, медсправка, права, ТО по пробегу — напоминание приходит заранее, а не в день, когда машина уже не выехала.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Понятно, куда уходят деньги.</b> История работ по каждой машине, подрядчики с условиями договора и сроками оплаты — в одном месте.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Меньше простоя.</b> Заявка без движения сама помечается срочной и всплывает наверх, а не тонет в переписке.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Данные остаются в компании.</b> Водитель уволился — карточки, документы и история обслуживания на месте, а не в его телефоне.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Диспетчер успевает больше.</b> Один экран вместо пяти чатов, таблицы и стопки путевых листов.</span></li>
         </ul>
       </div>
       <!-- /ТЕКСТ -->
@@ -433,7 +539,7 @@ footer a:hover { color: #fff; }
       <!-- ТЕКСТ: польза водителю -->
       <div class="aud-card warm">
         <div class="aud-head">
-          <div class="aud-icon">🚚</div>
+          <div class="aud-icon"><svg class="i"><use href="#i-truck"/></svg></div>
           <div>
             <div class="aud-for">Для водителя</div>
             <h3>Сообщить о проблеме — дело одной минуты</h3>
@@ -441,12 +547,12 @@ footer a:hover { color: #fff; }
         </div>
         <p class="aud-lead">Тот, кто за рулём, работает в привычном мессенджере и ничему не учится заново.</p>
         <ul class="aud-list">
-          <li><span class="tick">✓</span><span><b>Ставить ничего не нужно.</b> Заявка создаётся в Telegram или MAX, которые уже стоят в телефоне. Ни логинов, ни паролей.</span></li>
-          <li><span class="tick">✓</span><span><b>Три касания.</b> Выбрать тип заявки, машину, описать проблему — бот ведёт по шагам и сам подставляет закреплённый автомобиль.</span></li>
-          <li><span class="tick">✓</span><span><b>Фото и видео прямо с камеры.</b> Показать вмятину проще, чем описать словами, — и подрядчик сразу знает, что везти.</span></li>
-          <li><span class="tick">✓</span><span><b>Не надо звонить и ждать.</b> Статус меняется — приходит уведомление в тот же чат, и там же можно ответить диспетчеру.</span></li>
-          <li><span class="tick">✓</span><span><b>Свои документы под рукой.</b> Сроки прав, медсправки и техосмотра видны в личном кабинете, напоминание приходит заранее.</span></li>
-          <li><span class="tick">✓</span><span><b>Пробег — за десять секунд.</b> С телефона, без бумажек и без поездки в офис.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Ставить ничего не нужно.</b> Заявка создаётся в Telegram или MAX, которые уже стоят в телефоне. Ни логинов, ни паролей.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Три касания.</b> Выбрать тип заявки, машину, описать проблему — бот ведёт по шагам и сам подставляет закреплённый автомобиль.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Фото и видео прямо с камеры.</b> Показать вмятину проще, чем описать словами, — и подрядчик сразу знает, что везти.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Не надо звонить и ждать.</b> Статус меняется — приходит уведомление в тот же чат, и там же можно ответить диспетчеру.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Свои документы под рукой.</b> Сроки прав, медсправки и техосмотра видны в личном кабинете, напоминание приходит заранее.</span></li>
+          <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span><span><b>Пробег — за десять секунд.</b> С телефона, без бумажек и без поездки в офис.</span></li>
         </ul>
       </div>
       <!-- /ТЕКСТ -->
@@ -455,7 +561,7 @@ footer a:hover { color: #fff; }
 </section>
 
 <!-- ══ ВОЗМОЖНОСТИ ══ -->
-<section id="features" class="on-white">
+<section id="features">
   <div class="wrap">
     <div class="sec-head">
       <!-- ТЕКСТ: возможности -->
@@ -466,55 +572,55 @@ footer a:hover { color: #fff; }
 
     <div class="grid-3">
       <div class="tile">
-        <span class="ico">📋</span>
+        <span class="ico"><svg class="i"><use href="#i-board"/></svg></span>
         <h3>Доска заявок</h3>
         <p>Новые, в работе, выполненные. Перетаскиванием меняется статус, приоритет виден по цвету,
            заявка без движения сама помечается срочной.</p>
       </div>
       <div class="tile">
-        <span class="ico">🤖</span>
+        <span class="ico"><svg class="i"><use href="#i-bot"/></svg></span>
         <h3>Бот в Telegram и MAX</h3>
         <p>Водитель выбирает тип заявки, машину, описывает проблему и прикладывает фото или видео.
            Ответ диспетчера приходит туда же, откуда пришла заявка.</p>
       </div>
       <div class="tile">
-        <span class="ico">🚗</span>
+        <span class="ico"><svg class="i"><use href="#i-car"/></svg></span>
         <h3>Карточки автомобилей</h3>
         <p>Пробег, ОСАГО, техосмотр, ТО, смена резины, топливная карта, история обслуживания
            и закреплённый водитель.</p>
       </div>
       <div class="tile">
-        <span class="ico">👤</span>
+        <span class="ico"><svg class="i"><use href="#i-user"/></svg></span>
         <h3>Карточки водителей</h3>
         <p>Права и их срок, медсправка, инструктаж, тахограф, путевой лист.
            Личный кабинет — водитель сам вносит пробег и обновляет документы.</p>
       </div>
       <div class="tile">
-        <span class="ico">🔧</span>
+        <span class="ico"><svg class="i"><use href="#i-wrench"/></svg></span>
         <h3>Подрядчики и договоры</h3>
         <p>Сервисы, шиномонтаж, эвакуаторы и мойки со специализациями, контактами,
            условиями оплаты и сроком договора.</p>
       </div>
       <div class="tile">
-        <span class="ico">🧠</span>
+        <span class="ico"><svg class="i"><use href="#i-spark"/></svg></span>
         <h3>Загрузка данных с ИИ</h3>
         <p>Пришлите Excel, Word или PDF в любом виде — система сама разложит машины,
            водителей и подрядчиков по карточкам. Останется проверить.</p>
       </div>
       <div class="tile">
-        <span class="ico">🔔</span>
+        <span class="ico"><svg class="i"><use href="#i-bell"/></svg></span>
         <h3>Уведомления и рассылки</h3>
         <p>Смена статуса, назначенный исполнитель, истекающие документы, приближающееся ТО.
            Плюс рассылка сообщения всем водителям сразу.</p>
       </div>
       <div class="tile">
-        <span class="ico">👥</span>
+        <span class="ico"><svg class="i"><use href="#i-team"/></svg></span>
         <h3>Команда и роли</h3>
         <p>Приглашение сотрудников по ссылке, роли владельца, администратора, диспетчера
            и наблюдателя, журнал действий.</p>
       </div>
       <div class="tile">
-        <span class="ico">💾</span>
+        <span class="ico"><svg class="i"><use href="#i-backup"/></svg></span>
         <h3>Резервные копии</h3>
         <p>Выгрузка всех данных компании одним файлом и восстановление из него —
            без обращений в поддержку.</p>
@@ -525,7 +631,7 @@ footer a:hover { color: #fff; }
 </section>
 
 <!-- ══ КАК НАЧАТЬ ══ -->
-<section id="how">
+<section id="how" class="on-paper-hi">
   <div class="wrap">
     <div class="sec-head">
       <!-- ТЕКСТ: как начать -->
@@ -557,8 +663,8 @@ footer a:hover { color: #fff; }
       </div>
     </div>
 
-    <div style="margin-top:72px;max-width:800px">
-      <h2 style="font-size:28px;margin-bottom:10px">Частые вопросы</h2>
+    <div style="margin-top:76px;max-width:820px">
+      <h2 style="font-size:28px;margin-bottom:14px">Частые вопросы</h2>
 
       <!-- ТЕКСТ: вопросы -->
       <details class="faq" open>
@@ -592,21 +698,21 @@ footer a:hover { color: #fff; }
 </section>
 
 <!-- ══ ВЕБИНАР ══ -->
-<section id="webinar" class="on-white">
-  <div class="wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start" id="webinar-grid">
+<section id="webinar">
+  <div class="wrap split">
     <div>
       <!-- ТЕКСТ: вебинар -->
       <div class="eyebrow">Вебинар</div>
       <h2>Покажем систему вживую за 10 минут</h2>
-      <p style="font-size:18px;color:var(--ink-3);margin:16px 0 30px">
+      <p class="big">
         Короткая встреча без слайдов: показываем на живом автопарке, как заявка
         проходит путь от бота до закрытия и как загрузить в систему свои данные.
         Останутся вопросы — ответим сразу после.
       </p>
       <ul class="checklist">
-        <li><span class="tick">✓</span> Десять минут — успеете в перерыве</li>
-        <li><span class="tick">✓</span> Отвечаем на вопросы про ваш парк</li>
-        <li><span class="tick">✓</span> После встречи присылаем запись</li>
+        <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span> Десять минут — успеете в перерыве</li>
+        <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span> Отвечаем на вопросы про ваш парк</li>
+        <li><span class="tick"><svg class="i"><use href="#i-check"/></svg></span> После встречи присылаем запись</li>
       </ul>
       <!-- /ТЕКСТ -->
     </div>
@@ -625,7 +731,7 @@ footer a:hover { color: #fff; }
                    placeholder="+7 900 000-00-00" oninput="formatPhone(this)" onfocus="phoneFocus(this)">
           </div>
           <div class="field">
-            <label for="w-email">E-mail</label>
+            <label for="w-email">Почта</label>
             <input id="w-email" name="email" type="email" required autocomplete="email" placeholder="ivan@company.ru">
           </div>
         </div>
@@ -645,13 +751,13 @@ footer a:hover { color: #fff; }
 </section>
 
 <!-- ══ ОБРАТНАЯ СВЯЗЬ ══ -->
-<section id="contact">
-  <div class="wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start" id="contact-grid">
+<section id="contact" class="on-paper-hi">
+  <div class="wrap split">
     <div>
       <!-- ТЕКСТ: обратная связь -->
       <div class="eyebrow">Обратная связь</div>
       <h2>Есть вопрос или своя задача?</h2>
-      <p style="font-size:18px;color:var(--ink-3);margin:16px 0 24px">
+      <p class="big">
         Напишите, что нужно вашему автопарку. Отвечаем на все обращения —
         и по работе системы, и по доработкам под ваши процессы.
       </p>
@@ -676,7 +782,7 @@ footer a:hover { color: #fff; }
                    placeholder="+7 900 000-00-00" oninput="formatPhone(this)" onfocus="phoneFocus(this)">
           </div>
           <div class="field">
-            <label for="f-email">E-mail</label>
+            <label for="f-email">Почта</label>
             <input id="f-email" name="email" type="email" required autocomplete="email" placeholder="ivan@company.ru">
           </div>
         </div>
@@ -705,8 +811,8 @@ footer a:hover { color: #fff; }
     <div class="foot-grid">
       <!-- ТЕКСТ: подвал -->
       <div>
-        <div class="logo"><span class="logo-dot">🚗</span> FleetDesk</div>
-        <p style="max-width:360px">
+        <div class="logo"><svg class="i"><use href="#i-gauge"/></svg> FleetDesk</div>
+        <p>
           Система управления корпоративным автопарком: заявки, машины, водители,
           подрядчики и документы в одном месте.
         </p>
@@ -747,17 +853,6 @@ const nav = document.getElementById('nav');
 const onScroll = () => nav.classList.toggle('stuck', window.scrollY > 8);
 onScroll();
 window.addEventListener('scroll', onScroll, { passive: true });
-
-// На узком экране двухколоночные секции складываются в одну
-function stackOnMobile() {
-  const narrow = window.innerWidth <= 980;
-  ['webinar-grid', 'contact-grid'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.gridTemplateColumns = narrow ? '1fr' : '1fr 1fr';
-  });
-}
-stackOnMobile();
-window.addEventListener('resize', stackOnMobile);
 
 // ── Телефон ──────────────────────────────────────────────────────────
 // Человек пишет номер как привык: 8 999…, +7 999…, 79991234567,
@@ -811,9 +906,11 @@ function phoneFocus(input) {
 
 const phoneDigits = (v) => String(v || '').replace(/\D/g, '').length;
 
+// Ответ формы показываем значком и словами, а не одним цветом
 function showFormMsg(id, text, ok) {
   const el = document.getElementById(id);
-  el.textContent = text;
+  el.innerHTML = '<svg class="i"><use href="#' + (ok ? 'i-check' : 'i-warn') + '"/></svg><span></span>';
+  el.querySelector('span').textContent = text;
   el.className = 'form-msg show ' + (ok ? 'ok' : 'err');
 }
 
@@ -830,7 +927,7 @@ async function submitLead(event, kind) {
   // Короткий номер — почти всегда опечатка, ловим до отправки
   const phoneField = form.querySelector('input[type=tel]');
   if (phoneDigits(data.phone) < 10) {
-    showFormMsg(msgId, '⚠️ Проверьте номер телефона — кажется, он неполный', false);
+    showFormMsg(msgId, 'Проверьте номер телефона — кажется, он неполный', false);
     phoneField && phoneField.focus();
     return false;
   }
@@ -850,10 +947,10 @@ async function submitLead(event, kind) {
 
     form.reset();
     showFormMsg(msgId, kind === 'webinar'
-      ? '✅ Записали! Пришлём ссылку и напоминание перед началом.'
-      : '✅ Сообщение отправлено. Ответим на указанные контакты.', true);
+      ? 'Записали! Пришлём ссылку и напоминание перед началом.'
+      : 'Сообщение отправлено. Ответим на указанные контакты.', true);
   } catch (err) {
-    showFormMsg(msgId, '⚠️ ' + err.message, false);
+    showFormMsg(msgId, err.message, false);
   } finally {
     button.disabled = false;
     button.textContent = label;

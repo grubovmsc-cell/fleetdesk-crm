@@ -4,49 +4,55 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FleetDesk CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/tokens.css">
 <style>
 /* ══════════════════════════════════════════════════════════════════
-   ДИЗАЙН-СИСТЕМА CRM
+   ДИЗАЙН-СИСТЕМА CRM. Палитра — общая, из /tokens.css
    Тёплая основа вместо холодной серо-голубой: за экраном сидят весь
    день, и глаза устают меньше. Цвет остаётся только там, где он что-то
    означает: статус, приоритет, срок. Всё остальное — оттенки бумаги.
    ══════════════════════════════════════════════════════════════════ */
 :root {
-  --sidebar-bg: #241F1B;
+  --sidebar-bg: var(--fd-enamel);
   --sidebar-w: 236px;
 
-  --bg:        #F6F2ED;
-  --card-bg:   #FFFFFF;
-  --sunk:      #F1EBE4;
-  --border:    #E9E1D8;
+  --bg:        var(--fd-paper);
+  --card-bg:   var(--fd-paper-hi);
+  --sunk:      var(--fd-sunk);
+  --border:    var(--fd-line);
   --border-2:  #DCD1C4;
 
-  --text:       #211D19;
-  --text-soft:  #4B443D;
-  --text-muted: #877D73;
+  --text:       var(--fd-ink);
+  --text-soft:  var(--fd-ink-2);
+  --text-muted: var(--fd-ink-3);
 
-  --blue:         #4F46E5;
-  --blue-dark:    #4338CA;
-  --blue-light:   #EEEBFF;
-  --amber:        #B26A08;
-  --amber-light:  #FCF2E1;
-  --green:        #2E7D4F;
-  --green-light:  #E7F4EC;
-  --red:          #BE3A2F;
-  --red-light:    #FBEDEB;
-  --purple:       #6D4AA8;
+  --blue:         var(--fd-coolant);
+  --blue-dark:    var(--fd-coolant-deep);
+  --blue-light:   var(--fd-coolant-wash);
+  --amber:        var(--fd-warn-text);
+  --amber-light:  var(--fd-warn-wash);
+  --green:        var(--fd-ok-text);
+  --green-light:  var(--fd-ok-wash);
+  --red:          var(--fd-stop-text);
+  --red-light:    var(--fd-stop-wash);
+  --purple:       #5B5A8F;
   --purple-light: #F1EBFA;
   --orange:       #C2600C;
 
   --radius:    14px;
   --radius-sm: 10px;
-  --shadow:    0 1px 2px rgba(33,29,25,.04), 0 4px 14px -8px rgba(33,29,25,.16);
-  --shadow-md: 0 2px 6px rgba(33,29,25,.05), 0 18px 38px -16px rgba(33,29,25,.28);
-  --ring:      0 0 0 3px rgba(79,70,229,.15);
+  --shadow:    0 1px 2px rgba(32,33,28,.04), 0 4px 14px -8px rgba(32,33,28,.16);
+  --shadow-md: 0 2px 6px rgba(32,33,28,.05), 0 18px 38px -16px rgba(32,33,28,.28);
+  --ring:      0 0 0 3px rgba(23,96,125,.16);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+/* Цифры одной ширины: столбцы чисел читаются как столбцы, а не как каша */
+table, .num, .row-value, .stat-num { font-variant-numeric: tabular-nums; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg); color: var(--text); display: flex; height: 100vh;
   overflow: hidden; font-size: 14.5px; line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -60,9 +66,9 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
 .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); display: flex; flex-direction: column; flex-shrink: 0; }
 .sidebar-logo { padding: 22px 18px 18px; border-bottom: 1px solid rgba(253,246,238,.09); }
 .logo-mark { font-size: 20px; font-weight: 800; color: #FDF6EE; letter-spacing: -.5px; }
-.logo-sub  { font-size: 12px; color: #8B7F73; margin-top: 3px; }
+.logo-sub  { font-size: 12px; color: #918979; margin-top: 3px; }
 .sidebar-nav { padding: 14px 10px; flex: 1; overflow-y: auto; }
-.nav-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: #6E6259; padding: 0 10px; margin: 16px 0 6px; }
+.nav-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: #908780; padding: 0 10px; margin: 16px 0 6px; }
 .nav-item {
   display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 10px;
   cursor: pointer; color: #B3A79B; font-size: 14px; font-weight: 550;
@@ -73,10 +79,10 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
 .nav-icon { font-size: 16px; width: 20px; text-align: center; }
 .nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
 .sidebar-user { padding: 14px 16px; border-top: 1px solid rgba(253,246,238,.09); display: flex; align-items: center; gap: 11px; cursor: default; }
-.user-ava { width: 34px; height: 34px; border-radius: 50%; background: #4F46E5; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.user-ava { width: 34px; height: 34px; border-radius: 50%; background: #17607D; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
 .user-name { font-size: 13px; font-weight: 650; color: #EFE6DC; }
-.user-role { font-size: 11px; color: #8B7F73; }
-.logout-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #8B7F73; font-size: 16px; padding: 5px; border-radius: 7px; transition: color .15s, background .15s; flex-shrink: 0; }
+.user-role { font-size: 11px; color: #918979; }
+.logout-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #A0958A; font-size: 16px; padding: 7px; min-width: 30px; min-height: 30px; border-radius: 8px; transition: color .15s, background .15s; flex-shrink: 0; }
 .logout-btn:hover { color: #F0A79E; background: rgba(253,246,238,.07); }
 
 /* ── MAIN ── */
@@ -93,14 +99,14 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
 .stat-chip:hover { transform: translateY(-1px); }
 .stat-chip.all    { background: var(--sunk);         border-color: var(--border-2); color: var(--text-soft); }
 .stat-chip.new    { background: var(--amber-light);  border-color: #EFD9B4; color: var(--amber); }
-.stat-chip.wip    { background: var(--blue-light);   border-color: #CFC9FA; color: var(--blue); }
+.stat-chip.wip    { background: var(--blue-light);   border-color: #BBD3DC; color: var(--blue); }
 .stat-chip.done   { background: var(--green-light);  border-color: #BFE0CB; color: var(--green); }
 .stat-chip.urgent { background: var(--red-light);    border-color: #F0C7C2; color: var(--red); }
 .stat-chip.active-filter { box-shadow: 0 0 0 2px currentColor; }
 .topbar-spacer { flex: 1; }
-.search-box { display: flex; align-items: center; gap: 9px; background: var(--sunk); border: 1px solid transparent; border-radius: 999px; padding: 9px 15px; width: 250px; transition: border-color .15s, background .15s; }
+.search-box { display: flex; align-items: center; gap: 9px; background: var(--sunk); border: 1px solid transparent; border-radius: 999px; padding: 0 15px; width: 250px; transition: border-color .15s, background .15s; }
 .search-box:focus-within { background: var(--card-bg); border-color: var(--blue); box-shadow: var(--ring); }
-.search-box input { border: none; background: none; outline: none; font-size: 14px; width: 100%; color: var(--text); font-family: inherit; }
+.search-box input { border: none; background: none; outline: none; font-size: 14px; width: 100%; color: var(--text); font-family: inherit; padding: 10px 0; min-height: 24px; }
 .search-box input::placeholder { color: var(--text-muted); }
 
 .btn {
@@ -109,7 +115,7 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
   font-family: inherit; transition: background .15s, border-color .15s, transform .12s, box-shadow .15s;
 }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--blue); color: #fff; box-shadow: 0 4px 12px -6px rgba(79,70,229,.9); }
+.btn-primary { background: var(--blue); color: #fff; box-shadow: 0 4px 12px -6px rgba(23,96,125,.9); }
 .btn-primary:hover { background: var(--blue-dark); box-shadow: 0 8px 18px -8px rgba(79,70,229,.95); }
 .btn-ghost { background: var(--card-bg); color: var(--text-soft); border-color: var(--border); }
 .btn-ghost:hover { border-color: var(--border-2); background: var(--sunk); }
@@ -129,7 +135,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .column { flex: 0 0 336px; display: flex; flex-direction: column; gap: 10px; }
 .col-header { display: flex; align-items: center; gap: 9px; padding: 12px 15px; border-radius: var(--radius); font-weight: 700; font-size: 13.5px; }
 .col-header .col-count { margin-left: auto; font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
-.col-wrap { background: rgba(33,29,25,.035); border-radius: var(--radius); padding: 9px; display: flex; flex-direction: column; gap: 9px; min-height: 130px; }
+.col-wrap { background: rgba(32,33,28,.035); border-radius: var(--radius); padding: 9px; display: flex; flex-direction: column; gap: 9px; min-height: 130px; }
 
 .col-new .col-header    { background: var(--amber-light); color: var(--amber); }
 .col-new .col-count     { background: var(--amber); color: #fff; }
@@ -170,9 +176,9 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .card-contractor { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
 
 /* ── MODAL OVERLAY ── */
-.overlay { display: none; position: fixed; inset: 0; background: rgba(33,29,25,.42); backdrop-filter: blur(2px); z-index: 100; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(32,33,28,.42); backdrop-filter: blur(2px); z-index: 100; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
 .overlay.open { display: flex; }
-.modal { background: var(--card-bg); border-radius: 20px; width: 100%; max-width: 680px; box-shadow: 0 30px 70px -20px rgba(33,29,25,.45); overflow: hidden; margin: auto; }
+.modal { background: var(--card-bg); border-radius: 20px; width: 100%; max-width: 680px; box-shadow: 0 30px 70px -20px rgba(32,33,28,.45); overflow: hidden; margin: auto; }
 .modal-header { display: flex; align-items: center; gap: 14px; padding: 20px 24px; border-bottom: 1px solid var(--border); }
 .modal-type-icon { font-size: 24px; }
 .modal-title-block { flex: 1; }
@@ -183,7 +189,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .modal-body { padding: 22px 24px; }
 .modal-section { margin-bottom: 24px; }
 .modal-section:last-child { margin-bottom: 0; }
-.modal-section-title { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: 11px; }
+.modal-section-title { font-size: 12.5px; font-weight: 700; letter-spacing: .01em; color: var(--text-muted); margin-bottom: 11px; }
 .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .info-label { font-size: 11.5px; color: var(--text-muted); margin-bottom: 4px; }
 .info-val { font-size: 14px; font-weight: 550; color: var(--text); }
@@ -193,7 +199,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .status-btn.active { color: #fff !important; }
 .status-btn.s-new    { border-color: #EFD9B4; color: var(--amber); }
 .status-btn.s-new.active { background: var(--amber); border-color: var(--amber); }
-.status-btn.s-wip    { border-color: #CFC9FA; color: var(--blue); }
+.status-btn.s-wip    { border-color: #BBD3DC; color: var(--blue); }
 .status-btn.s-wip.active { background: var(--blue); border-color: var(--blue); }
 .status-btn.s-wait   { border-color: #DCCDF0; color: var(--purple); }
 .status-btn.s-wait.active { background: var(--purple); border-color: var(--purple); }
@@ -246,7 +252,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 
 /* ── FIELD EDIT ── */
 .fg { margin-bottom: 16px; }
-.fg-label { font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
+.fg-label { font-size: 12.5px; font-weight: 700; color: var(--text-muted); letter-spacing: .01em; margin-bottom: 6px; }
 .fg-input { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; color: var(--text); outline: none; background: var(--card-bg); font-family: inherit; transition: border-color .15s, box-shadow .15s; }
 .fg-input::placeholder { color: #B6ADA3; }
 .fg-input:focus { border-color: var(--blue); box-shadow: var(--ring); }
@@ -262,13 +268,13 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .ib-active   { background: var(--green-light); color: var(--green);  border: 1px solid #BFE0CB; }
 .ib-repair   { background: #FDF0E3;            color: var(--orange); border: 1px solid #F2D6B4; }
 .ib-idle     { background: var(--sunk);        color: var(--text-muted); border: 1px solid var(--border-2); }
-.ib-vacation { background: var(--blue-light);  color: var(--blue);   border: 1px solid #CFC9FA; }
+.ib-vacation { background: var(--blue-light);  color: var(--blue);   border: 1px solid #BBD3DC; }
 .ib-fired    { background: var(--red-light);   color: var(--red);    border: 1px solid #F0C7C2; }
 
 /* ── VEHICLE / DRIVER MODAL ── */
-.vmodal-overlay { display: none; position: fixed; inset: 0; background: rgba(33,29,25,.46); backdrop-filter: blur(2px); z-index: 200; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+.vmodal-overlay { display: none; position: fixed; inset: 0; background: rgba(32,33,28,.46); backdrop-filter: blur(2px); z-index: 200; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
 .vmodal-overlay.open { display: flex; }
-.vmodal { background: var(--card-bg); border-radius: 20px; width: 100%; max-width: 820px; box-shadow: 0 30px 70px -20px rgba(33,29,25,.45); margin: auto; overflow: hidden; display: flex; flex-direction: column; max-height: 92vh; }
+.vmodal { background: var(--card-bg); border-radius: 20px; width: 100%; max-width: 820px; box-shadow: 0 30px 70px -20px rgba(32,33,28,.45); margin: auto; overflow: hidden; display: flex; flex-direction: column; max-height: 92vh; }
 .vmodal-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
 .vmodal-icon { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
 .vmodal-htext { flex: 1; }
@@ -316,7 +322,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .driver-ava-lg { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0; }
 
 /* ── AUTH SCREEN ── */
-.auth-overlay { position: fixed; inset: 0; background: linear-gradient(165deg, #2E2721 0%, #241F1B 55%, #1C1814 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+.auth-overlay { position: fixed; inset: 0; background: linear-gradient(165deg, #2E2721 0%, #20211C 55%, #1C1814 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
 .auth-overlay.hidden { display: none; }
 .auth-card { background: var(--card-bg); border-radius: 22px; width: 440px; max-width: 100%; box-shadow: 0 30px 90px -20px rgba(0,0,0,.55); overflow: hidden; }
 .auth-header { background: linear-gradient(150deg, #FDF6EE, #F6EFE5); padding: 34px 34px 26px; text-align: center; color: var(--text); border-bottom: 1px solid var(--border); }
@@ -327,17 +333,17 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .auth-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: var(--card-bg); }
 .auth-body { padding: 30px 34px 32px; }
 .auth-field { margin-bottom: 18px; }
-.auth-field label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 7px; text-transform: uppercase; letter-spacing: .06em; }
+.auth-field label { display: block; font-size: 13px; font-weight: 600; color: var(--text-soft); margin-bottom: 7px; }
 .auth-input { width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: 11px; font-size: 15px; outline: none; transition: border-color .15s, box-shadow .15s; color: var(--text); font-family: inherit; background: var(--card-bg); }
 .auth-input::placeholder { color: #B6ADA3; }
 .auth-input:focus { border-color: var(--blue); box-shadow: var(--ring); }
-.auth-btn { width: 100%; padding: 14px; background: var(--blue); color: #fff; border: none; border-radius: 999px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; transition: background .15s, box-shadow .15s; font-family: inherit; box-shadow: 0 6px 16px -8px rgba(79,70,229,.9); }
+.auth-btn { width: 100%; padding: 14px; background: var(--blue); color: #fff; border: none; border-radius: 999px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; transition: background .15s, box-shadow .15s; font-family: inherit; box-shadow: 0 6px 16px -8px rgba(23,96,125,.9); }
 .auth-btn:hover { background: var(--blue-dark); }
 .auth-btn:disabled { opacity: .6; cursor: default; }
 .auth-error { background: var(--red-light); border: 1px solid #F0C7C2; color: var(--red); border-radius: 11px; padding: 12px 15px; font-size: 14px; margin-bottom: 18px; display: none; }
 .auth-error.show { display: block; }
 .auth-demo { margin-top: 22px; padding: 16px; background: var(--green-light); border: 1px solid #BFE0CB; border-radius: 12px; }
-.auth-demo-title { font-size: 11.5px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 9px; }
+.auth-demo-title { font-size: 12.5px; font-weight: 700; color: var(--green); letter-spacing: .01em; margin-bottom: 9px; }
 .auth-demo-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; margin-bottom: 5px; cursor: pointer; padding: 5px 7px; border-radius: 7px; transition: background .1s; }
 .auth-demo-row:hover { background: #D9EDE1; }
 .auth-demo-company { font-weight: 650; color: var(--green); }
@@ -359,7 +365,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .media-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .media-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .media-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 25px; }
-.media-badge { position: absolute; left: 7px; bottom: 7px; background: rgba(33,29,25,.8); color: #fff;
+.media-badge { position: absolute; left: 7px; bottom: 7px; background: rgba(32,33,28,.8); color: #fff;
   font-size: 10.5px; font-weight: 650; padding: 3px 8px; border-radius: 20px; }
 
 .lightbox { position: fixed; inset: 0; background: rgba(24,20,17,.94); z-index: 10000;
@@ -444,7 +450,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
       </div>
 
       <div style="margin-top:20px;text-align:center;font-size:12px">
-        <a href="/" style="color:#877D73;text-decoration:none">← О системе, инструкция и вебинары</a>
+        <a href="/" style="color:#6E655B;text-decoration:none">← О системе, инструкция и вебинары</a>
       </div>
     </div>
   </div>
@@ -679,7 +685,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 // ══════════════════════════════════════════
 let USERS = [
   {
-    id:'u1', name:'Иванов Алексей', initials:'ИА', color:'#4F46E5',
+    id:'u1', name:'Иванов Алексей', initials:'ИА', color:'#17607D',
     telegram:'@ivanov_a', phone:'+7 916 100-11-22', email:'ivanov@fleet.ru',
     status:'active', license_number:'77 АА 123456', license_category:'B',
     license_expires:'2029-05-15', medical_expires:'2026-12-01', tachograph:false,
@@ -690,7 +696,7 @@ let USERS = [
     fines_count:1, accidents_count:0,
   },
   {
-    id:'u2', name:'Петрова Светлана', initials:'ПС', color:'#6D4AA8',
+    id:'u2', name:'Петрова Светлана', initials:'ПС', color:'#5B5A8F',
     telegram:'@petrova_s', phone:'+7 916 200-33-44', email:'petrova@fleet.ru',
     status:'active', license_number:'77 БВ 234567', license_category:'B',
     license_expires:'2027-08-20', medical_expires:'2026-09-15', tachograph:false,
@@ -1121,7 +1127,7 @@ function fromServerDriver(raw) {
     fuel_per_100km: u.fuel_per_100km != null ? Number(u.fuel_per_100km) : 0,
     has_app: !!(u.telegram_id || u.max_id),
     initials: u.initials || (u.name || '?').slice(0, 2).toUpperCase(),
-    color: u.color || '#A99D91',
+    color: u.color || '#918979',
   };
 }
 
@@ -1492,7 +1498,7 @@ function renderCard(t) {
     <div class="card-title">${t.title}</div>
     <div class="card-meta">
       <div class="card-meta-row">
-        <div class="card-ava" style="background:${u.color||'#A99D91'}">${u.initials||'?'}</div>
+        <div class="card-ava" style="${avaStyle(u.color||'#918979')}">${u.initials||'?'}</div>
         ${u.name||'—'}
       </div>
       <div class="card-meta-row">
@@ -1550,19 +1556,19 @@ function openModal(id) {
   const historyHTML = t.history.slice().reverse().map(h => {
     const who = USERS.find(u => u.id === h.who);
     const dt  = new Date(h.time).toLocaleString('ru', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
-    const colors = { NEW:'#B26A08', IN_PROGRESS:'#4F46E5', DONE:'#2E7D4F', CANCELLED:'#A99D91', WAITING:'#6D4AA8' };
+    const colors = { NEW:'#B26A08', IN_PROGRESS:'#17607D', DONE:'#2E7D4F', CANCELLED:'#918979', WAITING:'#5B5A8F' };
     const fromTo = h.from
       ? `<strong>${statusNames[h.from]||h.from}</strong> → <strong>${statusNames[h.to]||h.to}</strong>`
       : `Создана со статусом <strong>${statusNames[h.to]||h.to}</strong>`;
     return `<div class="history-item">
-      <div class="history-dot" style="background:${colors[h.to]||'#A99D91'}"></div>
+      <div class="history-dot" style="background:${colors[h.to]||'#918979'}"></div>
       <div class="history-text">${dt} · ${fromTo}${who ? ' · ' + who.name : ''}</div>
     </div>`;
   }).join('');
 
   const commentsHTML = t.comments.map(c => {
-    const author = c.author ? { name: c.author, initials: c.author.slice(0,2).toUpperCase(), color:'#241F1B' } : null;
-    const cu = USERS.find(u => u.id === c.userId) || author || { name:'Система', initials:'СИ', color:'#A99D91' };
+    const author = c.author ? { name: c.author, initials: c.author.slice(0,2).toUpperCase(), color:'#20211C' } : null;
+    const cu = USERS.find(u => u.id === c.userId) || author || { name:'Система', initials:'СИ', color:'#918979' };
     const dt = new Date(c.time).toLocaleString('ru', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
     return `<div class="comment">
       <div class="comment-header">
@@ -1570,7 +1576,7 @@ function openModal(id) {
         <span class="comment-author">${cu.name}</span>
         <span class="comment-time">${dt}</span>
         ${c.internal ? '<span class="comment-internal">внутренний</span>' : ''}
-        ${c.fromDriver ? '<span class="comment-internal" style="color:#4338CA;background:#EEEBFF">из Telegram</span>' : ''}
+        ${c.fromDriver ? '<span class="comment-internal" style="color:#0F4658;background:#E3EDF1">из Telegram</span>' : ''}
       </div>
       <div class="comment-text">${c.text}</div>
     </div>`;
@@ -1598,7 +1604,7 @@ function openModal(id) {
         </div>
         <div class="info-item"><div class="info-label">Сотрудник</div>
           <div class="info-val" style="display:flex;align-items:center;gap:6px">
-            <div class="card-ava" style="background:${u.color||'#A99D91'};width:24px;height:24px;font-size:10px">${u.initials||'?'}</div>
+            <div class="card-ava" style="${avaStyle(u.color||'#918979')};width:24px;height:24px;font-size:10px">${u.initials||'?'}</div>
             ${u.name||'—'}
           </div>
         </div>
@@ -2226,10 +2232,10 @@ function openVehicleModal(id) {
   const vTypeLabel = {sedan:'Седан', suv:'Внедорожник/SUV', van:'Микроавтобус/Фургон', truck:'Грузовик'};
   const statusLabel = {active:'Активен', repair:'На ремонте', idle:'Простой'};
   const statusClass = {active:'ib-active', repair:'ib-repair', idle:'ib-idle'};
-  const tlColor = {maintenance:'#4F46E5', repair:'#C2600C', tires:'#6D4AA8', accident:'#BE3A2F'};
+  const tlColor = {maintenance:'#17607D', repair:'#C2600C', tires:'#5B5A8F', accident:'#BE3A2F'};
   const tlLabel = {maintenance:'ТО', repair:'Ремонт', tires:'Шины', accident:'ДТП'};
 
-  document.getElementById('vm-icon-wrap').style.background = v.status==='active'?'#E7F4EC':v.status==='repair'?'#FDF0E3':'#F1EBE4';
+  document.getElementById('vm-icon-wrap').style.background = v.status==='active'?'#E7F4EC':v.status==='repair'?'#FDF0E3':'#F6F0E4';
   document.getElementById('vm-icon').textContent = typeIcons[v.type]||'🚗';
   document.getElementById('vm-subtitle').textContent = `${v.plate} · VIN: ${v.vin}`;
   document.getElementById('vm-title').textContent = `${v.brand} ${v.model} ${v.year}`;
@@ -2266,7 +2272,7 @@ function openVehicleModal(id) {
         <div class="fg"><div class="fg-label">VIN</div><input class="fg-input" id="v-vin" value="${v.vin}" style="font-family:monospace"></div>
       </div>
       <div style="background:var(--bg);border-radius:9px;padding:14px;margin-bottom:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Габариты и масса</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Габариты и масса</div>
         <div class="frow3">
           <div class="fg"><div class="fg-label">Длина, мм</div><input class="fg-input" id="v-length" value="${v.length}"></div>
           <div class="fg"><div class="fg-label">Ширина, мм</div><input class="fg-input" id="v-width" value="${v.width}"></div>
@@ -2303,7 +2309,7 @@ function openVehicleModal(id) {
         <div class="fg"><div class="fg-label">Пробег до след. ТО, км</div><input class="fg-input" id="v-nextservicekm" type="number" value="${v.next_service_km}"></div>
       </div>
       <div style="margin-top:8px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Ключевые сроки</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Ключевые сроки</div>
         <div class="dl-row"><span class="dl-label">🔧 Следующее ТО</span><span class="dl-date">${dlDate(v.next_service_date)}</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="v-nextservicedate" value="${v.next_service_date||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(v.next_service_date)}</div></div>
         <div class="dl-row"><span class="dl-label">🛡 Страховка (ОСАГО)</span><span class="dl-date">${dlDate(v.insurance_until)}</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="v-insurance" value="${v.insurance_until||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(v.insurance_until)}</div></div>
         <div class="dl-row"><span class="dl-label">🔍 Техосмотр (ТО ГИБДД)</span><span class="dl-date">${dlDate(v.inspection_until)}</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="v-inspection" value="${v.inspection_until||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(v.inspection_until)}</div></div>
@@ -2315,7 +2321,7 @@ function openVehicleModal(id) {
     <!-- TAB 2: ПРИВЯЗКИ -->
     <div class="tab-panel">
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Водитель</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Водитель</div>
         <div class="fg"><div class="fg-label">Назначенный водитель</div>
           <select class="fg-select" id="v-driver">
             <option value="">— Не назначен —</option>
@@ -2329,18 +2335,18 @@ function openVehicleModal(id) {
         </div>` : ''}
       </div>
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Топливная карта</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Топливная карта</div>
         <div class="frow">
           <div class="fg"><div class="fg-label">Номер карты</div><input class="fg-input" id="v-fuelcard" value="${v.fuel_card_number||''}" style="font-family:monospace"></div>
           <div class="fg"><div class="fg-label">Код у провайдера</div><input class="fg-input" id="v-fuelcode" value="${v.fuel_card_code||''}"></div>
         </div>
       </div>
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Страховой полис</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Страховой полис</div>
         <div class="fg"><div class="fg-label">Номер / серия полиса</div><input class="fg-input" id="v-policy" value="${v.insurance_policy||''}"></div>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Телематика / GPS</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Телематика / GPS</div>
         <div class="fg"><div class="fg-label">Устройство / провайдер</div><input class="fg-input" id="v-telematics" value="${v.telematics||''}"></div>
       </div>
     </div>
@@ -2350,11 +2356,11 @@ function openVehicleModal(id) {
       <div class="timeline">
         ${(v.history||[]).map((h,i,arr) => `<div class="tl-item">
           <div class="tl-left">
-            <div class="tl-dot" style="background:${tlColor[h.type]||'#A99D91'}"></div>
+            <div class="tl-dot" style="background:${tlColor[h.type]||'#918979'}"></div>
             ${i<arr.length-1?'<div class="tl-line"></div>':''}
           </div>
           <div class="tl-content">
-            <div class="tl-meta">${new Date(h.date).toLocaleDateString('ru',{day:'2-digit',month:'long',year:'numeric'})} · <span style="color:${tlColor[h.type]||'#A99D91'};font-weight:700">${tlLabel[h.type]||h.type}</span> · ${(h.mileage||0).toLocaleString('ru')} км</div>
+            <div class="tl-meta">${new Date(h.date).toLocaleDateString('ru',{day:'2-digit',month:'long',year:'numeric'})} · <span style="color:${tlColor[h.type]||'#918979'};font-weight:700">${tlLabel[h.type]||h.type}</span> · ${(h.mileage||0).toLocaleString('ru')} км</div>
             <div class="tl-desc">${h.desc}</div>
           </div>
         </div>`).join('') || '<div style="color:var(--text-muted);font-size:13px;padding:20px 0;text-align:center">История пуста</div>'}
@@ -2381,7 +2387,7 @@ function openVehicleModal(id) {
     <!-- TAB 4: ФИНАНСЫ & РЕЖИМ -->
     <div class="tab-panel">
       <div style="margin-bottom:20px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Финансы (TCO)</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Финансы (TCO)</div>
         <div class="fg"><div class="fg-label">Расходы в месяц (TCO), ₽</div><input class="fg-input" type="number" id="v-tco" value="${v.tco_monthly||0}"></div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px">
           ${[['Год',12],['3 года',36],['5 лет',60]].map(([label,mo])=>`
@@ -2392,7 +2398,7 @@ function openVehicleModal(id) {
         </div>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Режим эксплуатации</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Режим эксплуатации</div>
         <div class="fg"><div class="fg-label">Тип маршрутизации</div>
           <select class="fg-select" id="v-opmode">
             <option value="return"      ${v.operation_mode==='return'?'selected':''}>Возвратный (работник → офис → работник)</option>
@@ -2440,7 +2446,7 @@ function openContractorModal(id) {
   const activeTickets = ctrTickets.filter(t => t.status !== 'DONE' && t.status !== 'CANCELLED');
   const esc = (s) => String(s ?? '').replace(/"/g, '&quot;');
 
-  document.getElementById('vm-icon-wrap').style.background = '#EEEBFF';
+  document.getElementById('vm-icon-wrap').style.background = '#E3EDF1';
   document.getElementById('vm-icon').textContent = '🔧';
   document.getElementById('vm-icon').style.cssText = 'font-size:22px';
   document.getElementById('vm-subtitle').textContent = 'Подрядчик';
@@ -2507,7 +2513,7 @@ function openContractorModal(id) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${specCheckboxes}</div>
       </div>
 
-      <div style="margin-top:16px;padding:12px 14px;background:var(--blue-light);border:1px solid #CFC9FA;border-radius:9px;font-size:12px;color:#4F46E5">
+      <div style="margin-top:16px;padding:12px 14px;background:var(--blue-light);border:1px solid #BBD3DC;border-radius:9px;font-size:12px;color:#17607D">
         💬 При назначении этого подрядчика на заявку водитель получит в Telegram название, контакты и текст из поля «Информация об исполнителе».
       </div>
 
@@ -2694,7 +2700,7 @@ function openDriverModal(id) {
     <!-- TAB 1: ДОКУМЕНТЫ & ДОПУСК -->
     <div class="tab-panel">
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Водительское удостоверение</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Водительское удостоверение</div>
         <div class="frow">
           <div class="fg"><div class="fg-label">Серия и номер</div><input class="fg-input" id="d-licnum" value="${u.license_number}" style="font-family:monospace"></div>
           <div class="fg"><div class="fg-label">Категории</div><input class="fg-input" id="d-liccat" value="${u.license_category}"></div>
@@ -2702,12 +2708,12 @@ function openDriverModal(id) {
         <div class="dl-row"><span class="dl-label">📋 Срок действия ВУ</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="d-licexp" value="${u.license_expires||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(u.license_expires)}</div></div>
       </div>
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Медицинская справка</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Медицинская справка</div>
         <div class="dl-row"><span class="dl-label">🏥 Действительна до</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="d-medexp" value="${u.medical_expires||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(u.medical_expires)}</div></div>
         <div class="dl-row"><span class="dl-label">📅 Последний медосмотр</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="d-meddate" value="${u.medical_date||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"><span class="dl-badge dl-ok">✓</span></div></div>
       </div>
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Допуск к работе</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Допуск к работе</div>
         <div class="dl-row"><span class="dl-label">🛡 Инструктаж</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="d-briefing" value="${u.briefing_date||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"><span class="dl-badge dl-ok">✓</span></div></div>
         <div class="dl-row"><span class="dl-label">📝 Путевой лист</span>
           <select id="d-waybill" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
@@ -2743,7 +2749,7 @@ function openDriverModal(id) {
         </div>
       </div>` : ''}
       <div style="margin-bottom:8px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Активные заявки (${activeTickets.length})</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Активные заявки (${activeTickets.length})</div>
         ${activeTickets.length>0 ? activeTickets.map(t=>{
           const v2=VEHICLES.find(v=>v.id===t.vehicleId);
           return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;cursor:pointer;border:1px solid var(--border)" onclick="closeVModal();setTimeout(()=>openModal('${t.id}'),100)">
@@ -2763,7 +2769,7 @@ function openDriverModal(id) {
     <!-- TAB 3: ПОВЕДЕНИЕ & ДОСТУПЫ -->
     <div class="tab-panel">
       <div style="margin-bottom:20px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Стиль вождения (телематика)</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:12px">Стиль вождения (телематика)</div>
         <div class="score-wrap">
           <div class="score-row">
             <span class="score-label">Общая оценка</span>
@@ -2792,7 +2798,7 @@ function openDriverModal(id) {
         </div>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Доступы и инструменты</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Доступы и инструменты</div>
         <div class="dl-row"><span class="dl-label">⛽ Топливная карта</span><span style="font-family:monospace;font-size:12px">${u.fuel_card||'—'}</span></div>
         <div class="dl-row"><span class="dl-label">🛣 Транспондер</span><span style="font-size:12px;color:var(--text-muted)">${u.transponder||'—'}</span></div>
         <div class="dl-row"><span class="dl-label">📱 Мобильное приложение</span><span class="dl-badge ${u.has_app?'dl-ok':'dl-warn'}">${u.has_app?'✓ Установлено':'Не установлено'}</span></div>
@@ -3013,11 +3019,11 @@ function renderBotPage() {
     <div style="max-width:820px">
 
       <!-- Header card -->
-      <div style="background:linear-gradient(135deg,#241F1B,#4F46E5);border-radius:14px;padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;color:#fff">
+      <div style="background:linear-gradient(135deg,#20211C,#17607D);border-radius:14px;padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;color:#fff">
         <div style="width:56px;height:56px;background:rgba(255,255,255,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🤖</div>
         <div style="flex:1">
           <div style="font-size:18px;font-weight:800;margin-bottom:4px">Telegram Bot для водителей</div>
-          <div style="font-size:13px;color:#CFC9FA">Один общий бот на все компании — подключать и настраивать ничего не нужно</div>
+          <div style="font-size:13px;color:#BBD3DC">Один общий бот на все компании — подключать и настраивать ничего не нужно</div>
         </div>
         <div style="background:${isActive?'rgba(46,125,79,.20)':'rgba(190,58,47,.20)'};border:1px solid ${isActive?'rgba(46,125,79,.40)':'rgba(190,58,47,.40)'};padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;color:${isActive?'#BFE0CB':'#F0C7C2'};white-space:nowrap">
           ${isActive ? '✅ Бот на связи' : (hasManager ? '⏳ Проверяем связь…' : '⚠️ Сервер не настроен')}
@@ -3029,7 +3035,7 @@ function renderBotPage() {
         <div style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px"><span>📨</span> Ссылка для водителей</div>
         ${isActive ? `
           <div style="display:flex;gap:8px;align-items:center">
-            <div id="bot-link-box" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:14px;font-weight:600;color:#4338CA;font-family:monospace">${botLink}</div>
+            <div id="bot-link-box" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:14px;font-weight:600;color:#0F4658;font-family:monospace">${botLink}</div>
             <button class="btn btn-ghost" onclick="copyBotLink()">📋 Скопировать</button>
           </div>
           <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
@@ -3109,7 +3115,7 @@ function renderDriverConnections(channel, isActive) {
           <div style="font-weight:600;font-size:13px">${u.name}</div>
           <div style="font-size:11px;color:var(--text-muted)">${nick} · ${vehicle ? vehicle.plate+' '+vehicle.brand : 'Без ТС'}</div>
         </div>
-        <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;${connected?'background:#E7F4EC;color:#2E7D4F;border:1px solid #BFE0CB':'background:#F1EBE4;color:#A99D91;border:1px solid var(--border)'}">
+        <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;${connected?'background:#E7F4EC;color:#2E7D4F;border:1px solid #BFE0CB':'background:#F6F0E4;color:#918979;border:1px solid var(--border)'}">
           ${connected ? '✅ Подключён' : '⬜ Ожидает'}
         </span>
         ${!connected && isActive ? `<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="inviteDriver('${u.id}','${channel}')">📨 Пригласить</button>` : ''}
@@ -3137,7 +3143,7 @@ function renderMaxBotPage() {
   const html = `
     <div style="max-width:820px">
 
-      <div style="background:linear-gradient(135deg,#241F1B,#6D4AA8);border-radius:14px;padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;color:#fff">
+      <div style="background:linear-gradient(135deg,#20211C,#5B5A8F);border-radius:14px;padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;color:#fff">
         <div style="width:56px;height:56px;background:rgba(255,255,255,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">💬</div>
         <div style="flex:1">
           <div style="font-size:18px;font-weight:800;margin-bottom:4px">MAX для водителей</div>
@@ -3152,7 +3158,7 @@ function renderMaxBotPage() {
         <div style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px"><span>📨</span> Ссылка для водителей</div>
         ${link ? `
           <div style="display:flex;gap:8px;align-items:center">
-            <div style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:14px;font-weight:600;color:#6D4AA8;font-family:monospace">${link}</div>
+            <div style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:14px;font-weight:600;color:#5B5A8F;font-family:monospace">${link}</div>
             <button class="btn btn-ghost" onclick="copyLink('${link}')">📋 Скопировать</button>
           </div>
           <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
@@ -3174,7 +3180,7 @@ function renderMaxBotPage() {
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
         ${steps.map(s=>`
           <div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:18px">
-            <div style="width:28px;height:28px;background:#6D4AA8;color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-bottom:10px">${s.n}</div>
+            <div style="width:28px;height:28px;background:#5B5A8F;color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-bottom:10px">${s.n}</div>
             <div style="font-size:16px;margin-bottom:6px">${s.icon}</div>
             <div style="font-weight:700;font-size:13px;margin-bottom:6px">${s.title}</div>
             <div style="font-size:12px;color:var(--text-muted);line-height:1.6">${s.desc}</div>
@@ -3269,7 +3275,7 @@ function renderContractorsPage() {
         const contacts = [c.contact_person, c.phone].filter(Boolean).join(' · ');
         return `<div class="fleet-card" onclick="openContractorModal('${c.id}')"
                      style="display:flex;align-items:center;gap:16px;padding:16px">
-          <div style="width:44px;height:44px;border-radius:50%;background:#EEEBFF;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔧</div>
+          <div style="width:44px;height:44px;border-radius:50%;background:#E3EDF1;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔧</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
               <span style="font-weight:700;font-size:14px">${c.name}</span>
@@ -3351,7 +3357,7 @@ function renderImportStart() {
       </div>
     </div>
 
-    <div style="background:var(--blue-light);border:1px solid #CFC9FA;border-radius:9px;padding:13px 15px;font-size:12px;color:#4F46E5;line-height:1.6">
+    <div style="background:var(--blue-light);border:1px solid #BBD3DC;border-radius:9px;padding:13px 15px;font-size:12px;color:#17607D;line-height:1.6">
       <strong>Как это работает:</strong> ${{
         drivers:     'водителей ищем по телефону, затем по почте, затем по ФИО. Совпал — обновляем карточку, нет — создаём новую. Чтобы закрепить машину, укажите её госномер.',
         vehicles:    'автомобили ищем по госномеру. Совпал — обновляем карточку, нет — создаём новую. Чтобы закрепить водителя, укажите его телефон.',
@@ -3551,8 +3557,8 @@ function renderImportResult(res) {
   document.getElementById('import-body').innerHTML = `
     <div style="display:flex;gap:10px;margin-bottom:16px">
       ${box(res.created, 'создано', '#2E7D4F')}
-      ${box(res.updated, 'обновлено', '#4F46E5')}
-      ${box(res.skipped, 'пропущено', '#A99D91')}
+      ${box(res.updated, 'обновлено', '#17607D')}
+      ${box(res.skipped, 'пропущено', '#918979')}
     </div>
 
     ${res.errors && res.errors.length ? `
@@ -3596,6 +3602,28 @@ const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 // Русские числительные: 1 заявка, 2 заявки, 5 заявок
+// Цвет кружка приходит из карточки водителя и может быть любым. Подбираем
+// пару «фон + подпись» так, чтобы инициалы читались: сначала пробуем белую и
+// тёмную подпись, и только если обе не дотягивают — притемняем сам кружок.
+function lum(rgb) {
+  const v = rgb.map(c => c / 255).map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+}
+function contrast(a, b) {
+  const la = lum(a), lb = lum(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+function avaStyle(bg) {
+  const h = String(bg || '').replace('#', '');
+  if (h.length !== 6) return 'background:#918979;color:#fff';
+  let rgb = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+  const WHITE = [255, 255, 255], DARK = [36, 31, 27];
+  if (contrast(rgb, DARK) >= 4.5) return `background:${bg};color:#241F1B`;
+  for (let i = 0; i < 12 && contrast(rgb, WHITE) < 4.5; i++) rgb = rgb.map(c => Math.round(c * 0.88));
+  const hex = '#' + rgb.map(c => c.toString(16).padStart(2, '0')).join('');
+  return `background:${hex};color:#fff`;
+}
+
 function plural(n, one, few, many) {
   const a = Math.abs(n) % 100, b = a % 10;
   if (a > 10 && a < 20) return many;
@@ -3652,7 +3680,7 @@ function renderAiStart(status) {
              onchange="handleAiFile(this.files[0]); this.value=''">
     </div>
 
-    <div style="margin-top:16px;background:var(--blue-light);border:1px solid #CFC9FA;border-radius:9px;padding:13px 15px;font-size:12px;color:#4F46E5;line-height:1.65">
+    <div style="margin-top:16px;background:var(--blue-light);border:1px solid #BBD3DC;border-radius:9px;padding:13px 15px;font-size:12px;color:#17607D;line-height:1.65">
       <strong>Что произойдёт:</strong> файл разберут и разложат по трём справочникам — водители, автомобили, подрядчики.
       Перед сохранением вы увидите таблицу: строки можно поправить прямо в ней или снять галочку.
       Совпавшие карточки обновятся, новые создадутся, пустые ячейки ничего не сотрут.
@@ -3866,8 +3894,8 @@ function renderAiResult(res) {
   document.getElementById('ai-body').innerHTML = `
     <div style="display:flex;gap:10px;margin-bottom:16px">
       ${box(res.created, 'создано', '#2E7D4F')}
-      ${box(res.updated, 'обновлено', '#4F46E5')}
-      ${box(res.skipped, 'пропущено', '#A99D91')}
+      ${box(res.updated, 'обновлено', '#17607D')}
+      ${box(res.skipped, 'пропущено', '#918979')}
     </div>
 
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.7">
@@ -3926,11 +3954,11 @@ async function renderBroadcastPage() {
 
   document.getElementById('other-content').innerHTML = `
     <div style="max-width:860px">
-      <div style="background:linear-gradient(135deg,#241F1B,#4F46E5);border-radius:14px;padding:22px;margin-bottom:20px;color:#fff;display:flex;align-items:center;gap:18px">
+      <div style="background:linear-gradient(135deg,#20211C,#17607D);border-radius:14px;padding:22px;margin-bottom:20px;color:#fff;display:flex;align-items:center;gap:18px">
         <div style="width:52px;height:52px;background:rgba(255,255,255,.12);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">📢</div>
         <div>
           <div style="font-size:17px;font-weight:800;margin-bottom:3px">Сообщение всем сотрудникам</div>
-          <div style="font-size:13px;color:#CFC9FA">Придёт в тот мессенджер, где водитель подключён — Telegram или MAX</div>
+          <div style="font-size:13px;color:#BBD3DC">Придёт в тот мессенджер, где водитель подключён — Telegram или MAX</div>
         </div>
       </div>
 
@@ -4123,7 +4151,7 @@ function renderRefreshSettings() {
 
       <div class="fg">
         <div class="fg-label">Громкость — ${Math.round(p.volume * 100)}%</div>
-        <input type="range" min="0" max="100" value="${Math.round(p.volume * 100)}" style="width:100%"
+        <input type="range" min="0" max="100" value="${Math.round(p.volume * 100)}" style="width:100%;height:26px"
                oninput="updatePref('volume', this.value / 100); this.closest('.fg').querySelector('.fg-label').textContent = 'Громкость — ' + this.value + '%'"
                onchange="playNotifySound()">
       </div>
@@ -4393,7 +4421,7 @@ function renderTeamSettings() {
       </div>
       ${team.map((m,i) => `
         <div style="display:flex;align-items:center;gap:12px;padding:13px 20px;${i===team.length-1?'':'border-bottom:1px solid var(--border)'}">
-          <div class="driver-ava-lg" style="background:${m.role==='owner'?'#241F1B':'#4F46E5'};width:36px;height:36px;font-size:13px">${m.initials||'—'}</div>
+          <div class="driver-ava-lg" style="background:${m.role==='owner'?'#20211C':'#17607D'};width:36px;height:36px;font-size:13px">${m.initials||'—'}</div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:600;font-size:13px">
               ${m.name}${m.id===state.currentAccount.id?' <span style="color:var(--text-muted);font-weight:400">— это вы</span>':''}
@@ -4474,7 +4502,7 @@ function showInviteLink(res) {
         <div style="flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:monospace;word-break:break-all">${link}</div>
         <button class="btn btn-ghost" onclick="copyLink('${link}')">📋 Копировать</button>
       </div>
-      <div style="padding:12px 14px;background:var(--blue-light);border:1px solid #CFC9FA;border-radius:9px;font-size:12px;color:#4F46E5;margin-bottom:16px">
+      <div style="padding:12px 14px;background:var(--blue-light);border:1px solid #BBD3DC;border-radius:9px;font-size:12px;color:#17607D;margin-bottom:16px">
         💡 Когда подключим отправку писем, приглашение будет уходить на почту автоматически.
       </div>
       <button class="btn btn-primary" onclick="settingsTab=3;renderSettingsPage()">Готово</button>
