@@ -50,3 +50,47 @@
   --fd-font-text:    'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --fd-font-mono:    'IBM Plex Mono', ui-monospace, 'DejaVu Sans Mono', Consolas, monospace;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   «Ночная смена» — палитра лендинга. Отдельный набор: лендинг — витрина,
+   а CRM и кабинет водителя остаются на тёплом наборе выше, это рабочие
+   инструменты на весь день. Общий у них акцент — синий дорожного знака.
+
+   Контрасты посчитаны:
+     текст на ночном фоне      --fd-night-ink   16.5:1
+     вторичный на ночном       --fd-night-2     7.3:1
+     приглушённый на ночном    --fd-night-3     5.5:1
+     он же на карточке формы   на #101F3D       5.0:1
+     белым по синей кнопке                      4.7:1
+     текст на утреннем фоне    --fd-ink         14.8:1
+   ══════════════════════════════════════════════════════════════════════ */
+:root {
+  --fd-night:      #0A1730;  /* ночное небо над двором — первый экран */
+  --fd-night-deep: #060F22;  /* глубже к подвалу */
+  --fd-night-card: #101F3D;  /* поля форм на ночном фоне */
+  --fd-night-line: #22355C;
+  --fd-night-ink:  #F2F6FF;
+  --fd-night-2:    #93A7C8;
+  --fd-night-3:    #7E90AB;
+
+  --fd-headlight:  #FFD68A;  /* свет фар — он же цвет предупреждения */
+  --fd-sign:       #2B62EA;  /* синий дорожного знака — акцент и кнопки */
+  --fd-sign-soft:  #7FA9FF;  /* тот же синий, читаемый на ночном фоне */
+
+  --fd-day:        #EEF2F8;  /* утренний свет: светлые секции */
+  --fd-day-2:      #F6F8FC;
+  --fd-card:       #FFFFFF;
+  --fd-card-line:  #DCE4F0;
+  --fd-ink:        #0F1E38;
+  --fd-ink-2:      #41527A;
+  --fd-ink-3:      #5A6B8A;
+
+  --fd-lamp-ok-night:   #7FD6A2;
+  --fd-lamp-warn-night: #FFD68A;
+  --fd-lamp-stop-night: #FF8A7A;
+  --fd-driver:     #B4802A;  /* янтарь дорожки водителя */
+  --fd-driver-ink: #996C23;
+
+  --fd-night-display: 'Oswald', 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --fd-night-body:    'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
