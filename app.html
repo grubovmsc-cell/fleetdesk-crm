@@ -62,7 +62,7 @@ svg.ico { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-widt
 table, .num, .row-value, .stat-num { font-variant-numeric: tabular-nums; }
 body {
   font-family: var(--fd-night-body);
-  background: var(--bg); color: var(--text); display: flex; height: 100vh;
+  background: var(--bg); color: var(--text); display: flex; height: 100vh; height: 100dvh;
   overflow: hidden; font-size: 14.5px; line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -364,7 +364,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .view-switch button:focus-visible { outline: none; box-shadow: var(--ring); }
 
 .dt-wrap { border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg);
-  box-shadow: var(--shadow); overflow: auto; max-height: calc(100vh - 214px); }
+  box-shadow: var(--shadow); overflow: auto; max-height: calc(100dvh - 214px); }
 .dt { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px;
       font-variant-numeric: tabular-nums; }
 .dt th { position: sticky; top: 0; z-index: 2; background: var(--sunk); text-align: left;
@@ -374,7 +374,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .dt th.dt-sortable:hover { color: var(--text); }
 .dt th:focus-visible { outline: none; box-shadow: inset var(--ring); }
 .dt-caret { color: var(--blue); margin-left: 4px; font-size: 11px; }
-.dt td { padding: 10px 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.dt td { padding: 10px 13px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
 .dt tbody tr { cursor: pointer; }
 .dt tbody tr:hover td { background: var(--sunk); }
 .dt tbody tr:last-child td { border-bottom: none; }
@@ -392,6 +392,100 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .dt-del:focus-visible { outline: none; box-shadow: var(--ring); }
 .dt-empty { padding: 60px 20px; text-align: center; color: var(--text-muted); font-size: 14px; }
 @media (max-width: 900px) { .dt-hide-sm { display: none; } }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   УЗКИЙ ЭКРАН
+   CRM — инструмент менеджера за столом, и таким она остаётся. Но открыть
+   доску по дороге нужно, а до сих пор на телефоне была видна одна боковая
+   панель во весь экран. Здесь ровно то, что делает CRM пригодной для
+   чтения и быстрого действия с телефона, — не отдельная мобильная версия.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Панель уезжает за край, а не сжимается: в ней навигация, и урезанная
+   она превратилась бы в ряд неподписанных иконок */
+.burger { display: none; background: none; border: none; cursor: pointer; color: var(--text-soft);
+  font-size: 20px; padding: 8px; margin-left: -6px; border-radius: 10px; flex: none;
+  min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+.burger:hover { background: var(--sunk); color: var(--text); }
+.burger:focus-visible { outline: none; box-shadow: var(--ring); }
+.scrim { display: none; position: fixed; inset: 0; background: rgba(15,30,56,.45); z-index: 90; }
+
+@media (max-width: 820px) {
+  .burger { display: inline-flex; }
+
+  .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 100; width: min(280px, 82vw);
+    transform: translateX(-100%); transition: transform .22s ease; box-shadow: 0 0 60px rgba(0,0,0,.5); }
+  .sidebar.open { transform: none; }
+  .scrim.open { display: block; }
+  .nav-item { padding: 12px 12px; font-size: 15px; }
+
+  /* Шапка складывается в три ряда: заголовок и действие, поиск, фильтр
+     по статусу. Порядок — по тому, как часто к ним тянутся */
+  .topbar { height: auto; flex-wrap: wrap; padding: 10px 14px; gap: 10px; row-gap: 9px; }
+  .topbar-title { order: 1; flex: 1; font-size: 17px; min-width: 0; }
+  .burger { order: 0; }
+  .topbar > .btn-primary { order: 2; padding: 12px 15px; }
+  .topbar-spacer { display: none; }
+  .search-box { order: 3; width: 100%; padding: 2px 15px; }
+  .search-box input { padding: 10px 0; }
+  /* Полоса статусов прокручивается вбок: пять фишек в 390 px не влезут,
+     а переносить их на второй ряд — значит съесть половину экрана */
+  .stats-row { order: 4; width: 100%; margin-left: 0; overflow-x: auto; padding-bottom: 3px;
+    scrollbar-width: none; }
+  .stats-row::-webkit-scrollbar { display: none; }
+  .stat-chip { padding: 11px 14px; white-space: nowrap; flex: none; }
+  .stat-chip:hover { transform: none; }   /* на тач-экране это только дёргается */
+
+  .filter-bar { flex-wrap: wrap; padding: 10px 14px; gap: 8px; }
+  .filter-bar label { display: none; }    /* выбранное значение само себя называет */
+  .filter-bar .fsel { flex: 1 1 45%; min-width: 0; padding: 9px 11px; }
+  .filter-bar-spacer { display: none; }
+  .tickets-count { order: 9; }
+
+  /* Доска встаёт в столбец: три колонки по 330 px рядом на телефоне
+     не помещаются, а горизонтальная прокрутка доски прячет половину работы */
+  .kanban { flex-direction: column; overflow-x: hidden; overflow-y: auto; padding: 12px 14px 24px; gap: 16px; }
+  .column { flex: 0 0 auto; width: 100%; }
+  .col-header { position: sticky; top: 0; z-index: 3; }
+  /* Выбран конкретный статус — показываем только его колонку. Переключатель
+     уже есть, это те же фишки в шапке; второго заводить незачем */
+  .kanban[data-status="NEW"]         .column:not(.col-new),
+  .kanban[data-status="IN_PROGRESS"] .column:not(.col-wip),
+  .kanban[data-status="DONE"]        .column:not(.col-done) { display: none; }
+
+  #other-view { padding: 14px; }
+
+  /* Карточка занимает экран целиком: на 390 px «окно с полями» —
+     это те же поля, только уже и с рамкой по краю */
+  .overlay { padding: 0; }
+  .modal { max-width: none; border-radius: 0; min-height: 100%; display: flex; flex-direction: column; }
+  .modal-body { flex: 1; }
+  .vmodal-overlay { padding: 0; }
+  .vmodal { max-width: none; border-radius: 0; max-height: none; min-height: 100%; }
+  .modal-header, .vmodal-header { padding: 14px 16px; position: sticky; top: 0; background: var(--card-bg); z-index: 5; }
+  .vmodal-tabs { padding: 0 16px; }
+  .tab-btn { padding: 12px 13px; }
+  .modal-footer, .vmodal-footer { padding: 12px 16px; position: sticky; bottom: 0; gap: 8px; }
+  /* Подвал разъезжается на два ряда, и «Удалить» уходит вниз: рядом с
+     «Сохранить» на ширину большого пальца ему не место */
+  .vmodal-footer { flex-direction: column-reverse; align-items: stretch; }
+  .vmodal-footer > div:last-child { display: flex; gap: 8px; }
+  .vmodal-footer > div:last-child .btn { flex: 1; justify-content: center; }
+  .vmodal-footer .btn-danger { width: 100%; justify-content: center; }
+  #vm-footer-info { display: none; }      /* цифры есть внутри карточки */
+  .frow, .frow3 { grid-template-columns: 1fr; }
+
+  /* Палец больше курсора: там, где кликают, нужно не меньше 44 px */
+  .dt-del { padding: 10px; }
+  .view-switch button { padding: 9px 14px; }
+  .btn { padding: 11px 16px; }
+}
+
+/* Планшет в портрете: панель ещё влезает, а доска уже нет */
+@media (min-width: 821px) and (max-width: 1100px) {
+  .column { flex: 0 0 300px; }
+  .search-box { width: 180px; }
+}
 .driver-ava-lg { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0; }
 
 /* ── AUTH SCREEN ── */
@@ -494,6 +588,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
   <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 4v8"/><path d="M17.5 7a7.5 7.5 0 1 1-11 0"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M5.5 4h10L20 8.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 1.5-2z"/><path d="M8 4v4.5h7M8 20v-5h8v5"/></symbol>
   <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4.3"/><path d="M12.3 12H20M17.2 12v3M14.6 12v2.2"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
   <symbol id="i-cards" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.6"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.6"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.6"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.6"/></symbol>
   <symbol id="i-rows" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 9.5h17M3.5 14.5h17M9 9.5V19.5"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 6.5h15M9.5 6.5V4.8a1.3 1.3 0 0 1 1.3-1.3h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7"/><path d="M6.5 6.5 7.4 19a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l.9-12.5"/><path d="M10.4 10v6.6M13.6 10v6.6"/></symbol>
@@ -596,41 +691,42 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 </div>
 
 <!-- ── SIDEBAR ── -->
-<nav class="sidebar">
+<div class="scrim" id="scrim" onclick="toggleSidebar(false)"></div>
+<nav class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-mark"><svg class="ico"><use href="#i-gauge"/></svg> FleetDesk<span class="beta-tag on-dark">Бета</span></div>
     <div class="logo-sub" id="sidebar-company">—</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-label">Управление</div>
-    <div class="nav-item active" onclick="setPage('kanban')">
+    <div data-page="kanban" class="nav-item active" onclick="setPage('kanban')">
       <span class="nav-icon"><svg class="ico"><use href="#i-board"/></svg></span> Заявки
       <span class="nav-badge" id="new-badge">3</span>
     </div>
-    <div class="nav-item" onclick="setPage('fleet')">
+    <div data-page="fleet" class="nav-item" onclick="setPage('fleet')">
       <span class="nav-icon"><svg class="ico"><use href="#i-car"/></svg></span> Автопарк
     </div>
-    <div class="nav-item" onclick="setPage('drivers')">
+    <div data-page="drivers" class="nav-item" onclick="setPage('drivers')">
       <span class="nav-icon"><svg class="ico"><use href="#i-user"/></svg></span> Водители
     </div>
-    <div class="nav-item" onclick="setPage('contractors')">
+    <div data-page="contractors" class="nav-item" onclick="setPage('contractors')">
       <span class="nav-icon"><svg class="ico"><use href="#i-wrench"/></svg></span> Подрядчики
     </div>
     <div class="nav-label">Аналитика</div>
     <div class="nav-item" onclick="showToast('Раздел в разработке')">
       <span class="nav-icon"><svg class="ico"><use href="#i-chart"/></svg></span> Отчёты
     </div>
-    <div class="nav-item" onclick="setPage('broadcast')">
+    <div data-page="broadcast" class="nav-item" onclick="setPage('broadcast')">
       <span class="nav-icon"><svg class="ico"><use href="#i-megaphone"/></svg></span> Рассылка
     </div>
     <div class="nav-label">Система</div>
-    <div class="nav-item" onclick="setPage('bot')">
+    <div data-page="bot" class="nav-item" onclick="setPage('bot')">
       <span class="nav-icon"><svg class="ico"><use href="#i-bot"/></svg></span> Telegram Bot
     </div>
-    <div class="nav-item" onclick="setPage('maxbot')">
+    <div data-page="maxbot" class="nav-item" onclick="setPage('maxbot')">
       <span class="nav-icon"><svg class="ico"><use href="#i-chat"/></svg></span> MAX Bot
     </div>
-    <div class="nav-item" onclick="setPage('settings')">
+    <div data-page="settings" class="nav-item" onclick="setPage('settings')">
       <span class="nav-icon"><svg class="ico"><use href="#i-gear"/></svg></span> Настройки
     </div>
   </div>
@@ -649,6 +745,12 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 
   <!-- TOPBAR -->
   <div class="topbar">
+    <!-- На узком экране панель уезжает за край, и это единственный способ
+         её вернуть. На широком кнопка не нужна и скрыта -->
+    <button class="burger" id="burger" onclick="toggleSidebar()"
+            aria-label="Меню" aria-controls="sidebar" aria-expanded="false">
+      <svg class="ico"><use href="#i-menu"/></svg>
+    </button>
     <div class="topbar-title" id="page-title">Заявки</div>
     <div class="stats-row" id="stats-row">
       <div class="stat-chip all active-filter" onclick="filterByStatus('all')" id="chip-all">Все <span id="cnt-all">0</span></div>
@@ -685,7 +787,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
     </select>
     <label>Приоритет:</label>
     <select class="fsel" id="filter-priority" onchange="applyFilters()">
-      <option value="all">Все</option>
+      <option value="all">Все приоритеты</option>
       <option value="URGENT">🔴 Срочный</option>
       <option value="HIGH">🟠 Высокий</option>
       <option value="MEDIUM">🔵 Средний</option>
@@ -693,7 +795,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
     </select>
     <label>Автомобиль:</label>
     <select class="fsel" id="filter-vehicle" onchange="applyFilters()">
-      <option value="all">Все</option>
+      <option value="all">Все автомобили</option>
     </select>
     <div class="filter-bar-spacer"></div>
     <span class="tickets-count" id="tickets-count"></span>
@@ -1445,7 +1547,35 @@ async function _applyLogin(data) {
   // С этого момента доска обновляется сама
   state.lastPollAt = new Date().toISOString();
   startPolling();
+  openFromHash();
 }
+
+// Кнопка «Открыть в CRM» в боте ведёт на /app.html#ticket=<id>. До сих пор
+// хеш никто не читал: диспетчер попадал на доску и искал заявку глазами.
+async function openFromHash() {
+  const m = /^#ticket=([0-9a-zA-Z-]+)$/.exec(location.hash || '');
+  if (!m) return;
+  const id = m[1];
+  // Хеш убираем сразу: перезагрузка страницы не должна снова открывать карточку
+  history.replaceState(null, '', location.pathname + location.search);
+
+  // Сервер отдаёт только последние заявки, а ссылка может вести на старую —
+  // тогда дочитываем её отдельно, иначе кнопка в боте не работала бы
+  // ровно для тех заявок, ради которых её и нажимают
+  if (!tickets.some(t => t.id === id)) {
+    try {
+      const raw = await api('/tickets/' + id);
+      tickets.push(fromServerTicket(raw));
+      render();
+    } catch (err) {
+      showToast('Заявка не найдена: ' + err.message, 'err');
+      return;
+    }
+  }
+  openModal(id);
+}
+
+window.addEventListener('hashchange', openFromHash);
 
 function doLogout() {
   api('/auth/logout', { method: 'POST' }).catch(() => {});
@@ -1497,6 +1627,9 @@ function filterByStatus(s) {
   });
   const map = { all:'all', NEW:'new', IN_PROGRESS:'wip', DONE:'done', urgent:'urgent' };
   document.getElementById('chip-' + (map[s]||s))?.classList.add('active-filter');
+  // На узком экране по этому же признаку CSS оставляет одну колонку:
+  // «Все» и «Срочные» показывают доску целиком, конкретный статус — свою
+  document.getElementById('kanban-view')?.setAttribute('data-status', s);
   renderKanban();
 }
 
@@ -1520,7 +1653,7 @@ function render() {
 
 function populateVehicleFilter(force) {
   const sel = document.getElementById('filter-vehicle');
-  if (force) sel.innerHTML = '<option value="all">Все</option>';
+  if (force) sel.innerHTML = '<option value="all">Все автомобили</option>';
   else if (sel.options.length > 1) return;
   VEHICLES.forEach(v => {
     const o = document.createElement('option');
@@ -2116,10 +2249,14 @@ async function saveModal() {
 // ══════════════════════════════════════════
 //  PAGES
 // ══════════════════════════════════════════
+// Раньше активный пункт подсвечивался через event.currentTarget — то есть
+// функция работала, только если её вызвал клик по самому пункту. Позвать
+// setPage из кода (например, открывая заявку по ссылке из бота) было нельзя:
+// падало на undefined. Теперь пункт ищется по data-page.
 function setPage(page) {
   state.page = page;
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el =>
+    el.classList.toggle('active', el.dataset.page === page));
 
   const kanban = document.getElementById('kanban-view');
   const other  = document.getElementById('other-view');
@@ -2184,6 +2321,31 @@ function setPage(page) {
     renderBroadcastPage();
   }
 }
+
+// ══════════════════════════════════════════
+//  ВЫДВИЖНАЯ ПАНЕЛЬ НА УЗКОМ ЭКРАНЕ
+// ══════════════════════════════════════════
+// На широком экране панель просто стоит слева и ничего из этого не делает:
+// открытым/закрытым состоянием управляет только медиазапрос.
+function toggleSidebar(force) {
+  const bar = document.getElementById('sidebar');
+  const scrim = document.getElementById('scrim');
+  if (!bar) return;
+  const open = force === undefined ? !bar.classList.contains('open') : !!force;
+  bar.classList.toggle('open', open);
+  scrim?.classList.toggle('open', open);
+  document.getElementById('burger')?.setAttribute('aria-expanded', String(open));
+}
+
+// Переход по разделу закрывает панель: иначе выбранная страница окажется
+// под ней и человек решит, что нажатие не сработало
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.sidebar .nav-item')) toggleSidebar(false);
+}, true);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') toggleSidebar(false);
+});
 
 // ══════════════════════════════════════════
 //  ТАБЛИЧНЫЙ ВИД СПРАВОЧНИКОВ
