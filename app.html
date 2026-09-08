@@ -282,6 +282,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .notify-cell input { width: 17px; height: 17px; margin: 0; accent-color: var(--blue); cursor: pointer; }
 .notify-warn { color: var(--amber); font-size: 15px; display: inline-flex; }
 .fg-err { display: none; font-size: 12px; line-height: 1.4; color: var(--red); margin-top: 5px; }
+.fg-hint { font-size: 12px; line-height: 1.45; color: var(--text-muted); margin-top: 6px; }
 .fg-input:disabled { background: var(--sunk); color: var(--text-muted); }
 .fg-select { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; color: var(--text); outline: none; background: var(--card-bg); cursor: pointer; font-family: inherit; transition: border-color .15s, box-shadow .15s; }
 .fg-select:focus { border-color: var(--blue); box-shadow: var(--ring); }
@@ -345,6 +346,52 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .fleet-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--border-2); }
 .driver-card { background: var(--card-bg); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); border: 1px solid var(--border); cursor: pointer; transition: box-shadow .18s, transform .18s, border-color .18s; display: flex; align-items: center; gap: 15px; }
 .driver-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--border-2); }
+.btn-danger { color: var(--red); border-color: var(--border); }
+.btn-danger:hover { background: var(--red-light); border-color: #F3C9CF; }
+
+/* ── ТАБЛИЧНЫЙ ВИД СПРАВОЧНИКОВ ──
+   Карточки хороши, пока записей два десятка. Когда их полтораста, человек
+   сравнивает строки сверху вниз, и ему нужны одинаковые колонки, липкая
+   шапка и цифры разряд в разряд. Сплошной зебры нет намеренно: полоса на
+   всю ширину спорит с выделением строки под курсором — хватит линии снизу. */
+.view-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--card-bg); padding: 2px; gap: 2px; flex: none; }
+.view-switch button { border: none; background: none; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 650; color: var(--text-muted); transition: background .15s, color .15s; }
+.view-switch button:hover { color: var(--text); }
+.view-switch button[aria-pressed="true"] { background: var(--blue); color: #fff; }
+.view-switch button:focus-visible { outline: none; box-shadow: var(--ring); }
+
+.dt-wrap { border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg);
+  box-shadow: var(--shadow); overflow: auto; max-height: calc(100vh - 214px); }
+.dt { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px;
+      font-variant-numeric: tabular-nums; }
+.dt th { position: sticky; top: 0; z-index: 2; background: var(--sunk); text-align: left;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .02em; color: var(--text-soft);
+  padding: 10px 13px; white-space: nowrap; border-bottom: 1px solid var(--border-2); }
+.dt th.dt-sortable { cursor: pointer; user-select: none; }
+.dt th.dt-sortable:hover { color: var(--text); }
+.dt th:focus-visible { outline: none; box-shadow: inset var(--ring); }
+.dt-caret { color: var(--blue); margin-left: 4px; font-size: 11px; }
+.dt td { padding: 10px 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.dt tbody tr { cursor: pointer; }
+.dt tbody tr:hover td { background: var(--sunk); }
+.dt tbody tr:last-child td { border-bottom: none; }
+.dt .dt-num { text-align: right; }
+.dt .dt-soft { color: var(--text-muted); }
+.dt-name { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.dt-ava { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 10px; font-weight: 700; flex: none; }
+.dt-plate { font-weight: 700; letter-spacing: .01em; }
+/* Кнопка удаления видна всегда, а не только под курсором: спрятанное
+   действие нельзя нащупать с клавиатуры и трудно найти на тачпаде. */
+.dt-del { border: 1px solid transparent; background: none; cursor: pointer; color: var(--text-muted);
+  padding: 5px 7px; border-radius: 8px; font-size: 15px; display: inline-flex; transition: all .14s; }
+.dt-del:hover { color: var(--red); background: var(--red-light); border-color: #F3C9CF; }
+.dt-del:focus-visible { outline: none; box-shadow: var(--ring); }
+.dt-empty { padding: 60px 20px; text-align: center; color: var(--text-muted); font-size: 14px; }
+@media (max-width: 900px) { .dt-hide-sm { display: none; } }
 .driver-ava-lg { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0; }
 
 /* ── AUTH SCREEN ── */
@@ -447,6 +494,8 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
   <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 4v8"/><path d="M17.5 7a7.5 7.5 0 1 1-11 0"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M5.5 4h10L20 8.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 1.5-2z"/><path d="M8 4v4.5h7M8 20v-5h8v5"/></symbol>
   <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4.3"/><path d="M12.3 12H20M17.2 12v3M14.6 12v2.2"/></symbol>
+  <symbol id="i-cards" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.6"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.6"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.6"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.6"/></symbol>
+  <symbol id="i-rows" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="1.8"/><path d="M3.5 9.5h17M3.5 14.5h17M9 9.5V19.5"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 6.5h15M9.5 6.5V4.8a1.3 1.3 0 0 1 1.3-1.3h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7"/><path d="M6.5 6.5 7.4 19a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l.9-12.5"/><path d="M10.4 10v6.6M13.6 10v6.6"/></symbol>
   <symbol id="i-building" viewBox="0 0 24 24"><path d="M4.5 20V5.6a1.6 1.6 0 0 1 1.6-1.6h7.3a1.6 1.6 0 0 1 1.6 1.6V20"/><path d="M15 10h3.4a1.6 1.6 0 0 1 1.6 1.6V20"/><path d="M3.5 20h17M8 8h3.5M8 12h3.5M8 16h3.5"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 16V11a6 6 0 1 0-12 0v5l-1.5 2.5h15z"/><path d="M10 19.5a2.2 2.2 0 0 0 4 0"/></symbol>
@@ -716,7 +765,12 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
     </div>
     <div class="vmodal-body" id="vm-body"></div>
     <div class="vmodal-footer">
-      <span id="vm-footer-info" style="font-size:12px;color:var(--text-muted)"></span>
+      <div style="display:flex;align-items:center;gap:16px;min-width:0">
+        <!-- Удаление стоит поодаль от «Сохранить»: промахнуться по нему
+             должно быть трудно, а найти — легко -->
+        <button class="btn btn-ghost btn-danger" onclick="vmDelete()"><svg class="ico"><use href="#i-trash"/></svg> Удалить</button>
+        <span id="vm-footer-info" style="font-size:12px;color:var(--text-muted)"></span>
+      </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="closeVModal()">Закрыть</button>
         <button class="btn btn-primary" onclick="saveVModal()"><svg class="ico"><use href="#i-save"/></svg> Сохранить</button>
@@ -2132,6 +2186,232 @@ function setPage(page) {
 }
 
 // ══════════════════════════════════════════
+//  ТАБЛИЧНЫЙ ВИД СПРАВОЧНИКОВ
+// ══════════════════════════════════════════
+// Одна таблица обслуживает и водителей, и машины: колонки описываются
+// данными, а не разметкой, поэтому шапка и строки не могут разъехаться.
+// Колонка: { key, title, num, hideSm, cell(item), value(item), sort:false }.
+
+// Какой вид выбран, помним в тех же настройках, что интервал обновления
+// и звук: человек выбирает один раз и ждёт, что система это запомнит.
+function viewMode(page) {
+  return (state.prefs && state.prefs[page + 'View']) || 'cards';
+}
+function setViewMode(page, mode) {
+  if (!state.prefs) state.prefs = { ...DEFAULT_PREFS };
+  state.prefs[page + 'View'] = mode;
+  savePrefs();
+  refreshCurrentPage();
+}
+
+function viewSwitch(page) {
+  const mode = viewMode(page);
+  const btn = (value, icon, label) =>
+    `<button type="button" aria-pressed="${mode === value}" title="${label}"
+       onclick="setViewMode('${page}','${value}')">${ic(icon)} ${label}</button>`;
+  return `<div class="view-switch" role="group" aria-label="Вид списка">
+    ${btn('cards', 'cards', 'Карточки')}${btn('table', 'rows', 'Таблица')}
+  </div>`;
+}
+
+// Сортировка живёт в state, а не в разметке: перерисовка страницы её не теряет
+function sortState(page) {
+  if (!state.sort) state.sort = {};
+  if (!state.sort[page]) state.sort[page] = { key: null, dir: 'asc' };
+  return state.sort[page];
+}
+function toggleSort(page, key) {
+  const st = sortState(page);
+  // Второй клик по той же колонке разворачивает порядок, клик по новой —
+  // начинает с возрастания: так привычнее и не нужно гадать
+  if (st.key === key) st.dir = st.dir === 'asc' ? 'desc' : 'asc';
+  else { st.key = key; st.dir = 'asc'; }
+  refreshCurrentPage();
+}
+
+function sortItems(items, columns, st) {
+  const col = columns.find(c => c.key === st.key);
+  if (!col) return items;
+  const read = col.value || ((it) => it[col.key]);
+  const mul = st.dir === 'desc' ? -1 : 1;
+  return items.slice().sort((a, b) => {
+    const x = read(a), y = read(b);
+    // Пустое всегда внизу, в каком бы порядке ни сортировали: иначе
+    // при сортировке «по убыванию» список начинается с прочерков
+    const ex = x === null || x === undefined || x === '';
+    const ey = y === null || y === undefined || y === '';
+    if (ex !== ey) return ex ? 1 : -1;
+    if (ex && ey) return 0;
+    if (typeof x === 'number' && typeof y === 'number') return (x - y) * mul;
+    return String(x).localeCompare(String(y), 'ru') * mul;
+  });
+}
+
+function dataTable({ page, columns, items, onRow, empty }) {
+  if (!items.length) return `<div class="dt-wrap"><div class="dt-empty">${empty}</div></div>`;
+
+  const st = sortState(page);
+  const rows = sortItems(items, columns, st);
+  const cls = (c) => [c.num ? 'dt-num' : '', c.hideSm ? 'dt-hide-sm' : ''].filter(Boolean).join(' ');
+
+  const head = columns.map(c => {
+    const on = st.key === c.key;
+    const sortable = c.sort !== false;
+    return `<th class="${[cls(c), sortable ? 'dt-sortable' : ''].filter(Boolean).join(' ')}"
+      ${sortable ? `tabindex="0" onclick="toggleSort('${page}','${c.key}')"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleSort('${page}','${c.key}')}"
+        aria-sort="${on ? (st.dir === 'asc' ? 'ascending' : 'descending') : 'none'}"` : ''}
+      >${c.title}${on ? `<span class="dt-caret">${st.dir === 'asc' ? '↑' : '↓'}</span>` : ''}</th>`;
+  }).join('');
+
+  const body = rows.map(item => `<tr onclick="${onRow(item)}">
+    ${columns.map(c => `<td class="${cls(c)}">${c.cell(item)}</td>`).join('')}
+  </tr>`).join('');
+
+  return `<div class="dt-wrap"><table class="dt">
+    <thead><tr>${head}</tr></thead><tbody>${body}</tbody>
+  </table></div>`;
+}
+
+// ══════════════════════════════════════════
+//  УДАЛЕНИЕ ВОДИТЕЛЕЙ И МАШИН
+// ══════════════════════════════════════════
+// Спрашиваем не «вы уверены?», а что именно произойдёт. Заявки не пропадают:
+// на сервере связь обнуляется, поэтому история работы остаётся на доске.
+
+// В подвале карточки одна кнопка на все три справочника — что именно
+// удаляем, знает vModalContext, а confirm называет запись по имени.
+function vmDelete() {
+  const { type, id } = vModalContext;
+  if (!id) return;
+  if (type === 'vehicle')    return deleteVehicle(id);
+  if (type === 'driver')     return deleteDriver(id);
+  if (type === 'contractor') return deleteContractor(id);
+}
+
+async function deleteDriver(id) {
+  const u = USERS.find(x => x.id === id);
+  if (!u) return;
+  const open = tickets.filter(t => t.userId === id && t.status !== 'DONE' && t.status !== 'CANCELLED').length;
+  const car  = VEHICLES.find(v => v.id === u.assigned_vehicle);
+
+  const what = [`Удалить водителя «${u.name}»?`, ''];
+  if (open) what.push(`${ticketsWord(open)} ${plural(open, 'останется', 'останутся', 'останутся')} на доске, но без имени водителя.`);
+  if (car)  what.push(`Автомобиль ${car.plate} освободится.`);
+  what.push('Отменить удаление будет нельзя.');
+  if (!confirm(what.join('\n'))) return;
+
+  try {
+    await api(`/drivers/${id}`, { method: 'DELETE' });
+    USERS = USERS.filter(x => x.id !== id);
+    // Обнуляем связь и у себя: сервер её уже снял, а страница
+    // перерисовывается из этих же массивов
+    VEHICLES.forEach(v => { if (v.assigned_user_id === id) v.assigned_user_id = null; });
+    tickets.forEach(t => { if (t.userId === id) t.userId = null; });
+    closeVModal();
+    refreshCurrentPage();
+    showToast(`Водитель «${u.name}» удалён`, 'ok');
+  } catch (err) {
+    showToast('Не удалён: ' + err.message, 'err');
+  }
+}
+
+async function deleteVehicle(id) {
+  const v = VEHICLES.find(x => x.id === id);
+  if (!v) return;
+  const open   = tickets.filter(t => t.vehicleId === id && t.status !== 'DONE' && t.status !== 'CANCELLED').length;
+  const driver = USERS.find(u => u.id === v.assigned_user_id || u.assigned_vehicle === id);
+  const title  = [v.plate, v.brand, v.model].filter(Boolean).join(' ');
+
+  const what = [`Удалить автомобиль ${title}?`, ''];
+  if (open)   what.push(`${ticketsWord(open)} ${plural(open, 'останется', 'останутся', 'останутся')} на доске, но без машины.`);
+  if (driver) what.push(`Водитель ${driver.name} останется без ТС.`);
+  what.push('Отменить удаление будет нельзя.');
+  if (!confirm(what.join('\n'))) return;
+
+  try {
+    await api(`/vehicles/${id}`, { method: 'DELETE' });
+    VEHICLES = VEHICLES.filter(x => x.id !== id);
+    USERS.forEach(u => { if (u.assigned_vehicle === id) u.assigned_vehicle = null; });
+    tickets.forEach(t => { if (t.vehicleId === id) t.vehicleId = null; });
+    closeVModal();
+    refreshCurrentPage();
+    showToast(`Автомобиль ${v.plate} удалён`, 'ok');
+  } catch (err) {
+    showToast('Не удалён: ' + err.message, 'err');
+  }
+}
+
+// Кнопка в строке таблицы. stopPropagation обязателен: клик по строке
+// открывает карточку, и без него удаление открыло бы её же.
+function delBtn(fn, id, label) {
+  return `<button type="button" class="dt-del" title="${label}" aria-label="${label}"
+    onclick="event.stopPropagation();${fn}('${id}')">${ic('trash')}</button>`;
+}
+
+// ── Водители таблицей ──
+// Колонки выбраны по тому, ради чего в этот список заходят: кто, как
+// связаться, на какой машине, не истекают ли документы и сколько на нём
+// сейчас висит. Всё остальное — в карточке по клику на строку.
+function driversTable(list, statusBadge) {
+  const today = new Date();
+  const days = (d) => d ? Math.ceil((new Date(d) - today) / 86400000) : null;
+
+  // Срок документа: сначала число дней (по нему и сортируем), потом цвет
+  const term = (d) => {
+    if (!d) return '<span class="dt-soft">—</span>';
+    const left = days(d);
+    const label = new Date(d).toLocaleDateString('ru', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    if (left < 0)  return `<span style="color:var(--red);font-weight:650">${label} · просрочено</span>`;
+    if (left < 30) return `<span style="color:var(--red);font-weight:650">${label} · ${left} дн.</span>`;
+    if (left < 60) return `<span style="color:var(--amber);font-weight:650">${label} · ${left} дн.</span>`;
+    return label;
+  };
+
+  const columns = [
+    { key: 'name', title: 'Водитель',
+      cell: (u) => `<div class="dt-name">
+        <div class="dt-ava" style="${avaStyle(u.color)}">${u.initials}</div>
+        <span style="font-weight:650">${esc(u.name)}</span></div>` },
+    { key: 'status', title: 'Статус', cell: (u) => statusBadge(u) || '<span class="dt-soft">—</span>' },
+    { key: 'phone', title: 'Телефон',
+      cell: (u) => u.phone ? esc(u.phone) : '<span class="dt-soft">—</span>' },
+    { key: 'telegram', title: 'Мессенджер', hideSm: true,
+      cell: (u) => u.telegram ? esc(u.telegram) : '<span class="dt-soft">—</span>' },
+    { key: 'vehicle', title: 'Автомобиль',
+      value: (u) => (VEHICLES.find(v => v.id === u.assigned_vehicle) || {}).plate || '',
+      cell: (u) => {
+        const v = VEHICLES.find(x => x.id === u.assigned_vehicle);
+        return v ? `<span class="dt-plate">${esc(v.plate)}</span>
+          <span class="dt-soft"> ${esc([v.brand, v.model].filter(Boolean).join(' '))}</span>`
+          : '<span class="dt-soft">Без ТС</span>';
+      } },
+    { key: 'license_expires', title: 'ВУ до', hideSm: true,
+      value: (u) => days(u.license_expires), cell: (u) => term(u.license_expires) },
+    { key: 'medical_expires', title: 'Медсправка до', hideSm: true,
+      value: (u) => days(u.medical_expires), cell: (u) => term(u.medical_expires) },
+    { key: 'open', title: 'Заявки', num: true,
+      value: (u) => tickets.filter(t => t.userId === u.id && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
+      cell: (u) => {
+        const open = tickets.filter(t => t.userId === u.id && t.status !== 'DONE' && t.status !== 'CANCELLED');
+        if (!open.length) return '<span class="dt-soft">0</span>';
+        const urgent = open.filter(t => t.priority === 'URGENT').length;
+        return urgent
+          ? `<strong style="color:var(--red)">${ic('siren')} ${open.length}</strong>`
+          : `<strong style="color:var(--orange)">${open.length}</strong>`;
+      } },
+    { key: 'actions', title: '', sort: false, num: true,
+      cell: (u) => delBtn('deleteDriver', u.id, `Удалить водителя ${u.name}`) },
+  ];
+
+  return dataTable({
+    page: 'drivers', columns, items: list,
+    onRow: (u) => `openDriverModal('${u.id}')`,
+    empty: 'Водители не найдены',
+  });
+}
+
+// ══════════════════════════════════════════
 //  DRIVERS PAGE
 // ══════════════════════════════════════════
 function renderDriversPage() {
@@ -2178,12 +2458,15 @@ function renderDriversPage() {
         <option value="vacation" ${statusFilter==='vacation'  ?'selected':''}>В отпуске (${counts.vacation})</option>
         <option value="fired"    ${statusFilter==='fired'     ?'selected':''}>Уволен (${counts.fired})</option>
       </select>
+      ${viewSwitch('drivers')}
       <button class="btn btn-ghost" onclick="openAiImport()">${ic('bot')} Загрузка с ИИ</button>
       <button class="btn btn-ghost" onclick="openImport('drivers')"><svg class="ico"><use href="#i-download"/></svg> Из шаблона</button>
       <button class="btn btn-primary" onclick="createDriver()"><svg class="ico"><use href="#i-plus"/></svg> Водитель</button>
     </div>
 
-    ${filtered.length === 0
+    ${viewMode('drivers') === 'table'
+      ? driversTable(filtered, drStatusBadge)
+      : filtered.length === 0
       ? `<div style="text-align:center;color:var(--text-muted);padding:80px 20px;font-size:14px">
            <div style="font-size:40px;margin-bottom:12px">👤</div>
            Водители не найдены
@@ -2234,6 +2517,97 @@ function renderDriversPage() {
   document.getElementById('other-content').innerHTML = html;
 }
 
+// ── Автомобили таблицей ──
+// Ради чего сюда заходят: где машина, сколько прошла, не пора ли на ТО,
+// не кончается ли ОСАГО и кто за рулём. Остальное — в карточке.
+function vehiclesTable(list) {
+  const today = new Date();
+  const vTypeLabel = { sedan: 'Седан', suv: 'Внедорожник', van: 'Фургон', truck: 'Грузовик' };
+
+  const term = (d) => {
+    if (!d) return '<span class="dt-soft">—</span>';
+    const left = Math.ceil((new Date(d) - today) / 86400000);
+    const label = new Date(d).toLocaleDateString('ru', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    if (left < 0)  return `<span style="color:var(--red);font-weight:650">${label} · просрочено</span>`;
+    if (left < 30) return `<span style="color:var(--red);font-weight:650">${label} · ${left} дн.</span>`;
+    if (left < 60) return `<span style="color:var(--amber);font-weight:650">${label} · ${left} дн.</span>`;
+    return label;
+  };
+
+  // «До ТО» считается по пробегу, если он задан, иначе по дате: в парке
+  // ведут то так, то так, и подставлять прочерк там, где данные есть, нельзя
+  const toService = (v) => {
+    if (v.next_service_km) return (v.next_service_km - (v.mileage || 0));
+    return null;
+  };
+
+  const columns = [
+    { key: 'plate', title: 'Гос. номер',
+      cell: (v) => `<span class="dt-plate">${esc(v.plate)}</span>` },
+    { key: 'brand', title: 'Марка и модель',
+      value: (v) => [v.brand, v.model].filter(Boolean).join(' '),
+      cell: (v) => {
+        const name = [v.brand, v.model].filter(Boolean).join(' ');
+        return name ? esc(name) : '<span class="dt-soft">Не заполнено</span>';
+      } },
+    { key: 'year', title: 'Год', num: true, hideSm: true,
+      value: (v) => v.year ? Number(v.year) : null,
+      cell: (v) => v.year || '<span class="dt-soft">—</span>' },
+    { key: 'type', title: 'Тип', hideSm: true,
+      value: (v) => vTypeLabel[v.type] || '',
+      cell: (v) => vTypeLabel[v.type] || '<span class="dt-soft">—</span>' },
+    { key: 'status', title: 'Состояние',
+      value: (v) => ({ repair: 1, idle: 2, active: 3 })[v.status] || 9,
+      cell: (v) => {
+        if (v.status === 'repair') return `<span class="ibadge ib-repair">${ic('wrench')} Ремонт</span>`;
+        if (v.status === 'idle')   return `<span class="ibadge ib-idle">Простой</span>`;
+        return `<span class="ibadge ib-active">В работе</span>`;
+      } },
+    { key: 'mileage', title: 'Пробег, км', num: true,
+      value: (v) => Number(v.mileage) || 0,
+      cell: (v) => (Number(v.mileage) || 0).toLocaleString('ru') },
+    { key: 'service', title: 'До ТО, км', num: true, hideSm: true,
+      value: toService,
+      cell: (v) => {
+        const left = toService(v);
+        if (left === null) return '<span class="dt-soft">—</span>';
+        if (left <= 0)     return '<span style="color:var(--red);font-weight:650">пора</span>';
+        if (left < 2000)   return `<span style="color:var(--amber);font-weight:650">${left.toLocaleString('ru')}</span>`;
+        return left.toLocaleString('ru');
+      } },
+    { key: 'insurance_until', title: 'ОСАГО до', hideSm: true,
+      value: (v) => v.insurance_until ? Math.ceil((new Date(v.insurance_until) - today) / 86400000) : null,
+      cell: (v) => term(v.insurance_until) },
+    { key: 'driver', title: 'Водитель',
+      value: (v) => (USERS.find(u => u.id === v.assigned_user_id) || {}).name || '',
+      cell: (v) => {
+        const u = USERS.find(x => x.id === v.assigned_user_id);
+        return u ? `<div class="dt-name">
+          <div class="dt-ava" style="${avaStyle(u.color)}">${u.initials}</div>${esc(u.name)}</div>`
+          : '<span class="dt-soft">Не закреплён</span>';
+      } },
+    { key: 'open', title: 'Заявки', num: true,
+      value: (v) => tickets.filter(t => t.vehicleId === v.id && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
+      cell: (v) => {
+        const open = tickets.filter(t => t.vehicleId === v.id && t.status !== 'DONE' && t.status !== 'CANCELLED');
+        if (!open.length) return '<span class="dt-soft">0</span>';
+        const urgent = open.filter(t => t.priority === 'URGENT').length;
+        // Срочность различима и без цвета: рядом с числом стоит знак
+        return urgent
+          ? `<strong style="color:var(--red)">${ic('siren')} ${open.length}</strong>`
+          : `<strong style="color:var(--orange)">${open.length}</strong>`;
+      } },
+    { key: 'actions', title: '', sort: false, num: true,
+      cell: (v) => delBtn('deleteVehicle', v.id, `Удалить автомобиль ${v.plate}`) },
+  ];
+
+  return dataTable({
+    page: 'fleet', columns, items: list,
+    onRow: (v) => `openVehicleModal('${v.id}')`,
+    empty: 'Автомобилей пока нет. Добавьте первый или загрузите список файлом.',
+  });
+}
+
 // ══════════════════════════════════════════
 //  FLEET PAGE
 // ══════════════════════════════════════════
@@ -2260,12 +2634,14 @@ function renderFleetPage() {
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
       <div style="flex:1">
         <h2 style="font-size:15px;font-weight:700;margin-bottom:4px">Автомобили (${VEHICLES.length})</h2>
-        <p style="font-size:12px;color:var(--text-muted)">Нажмите на карточку для просмотра и редактирования</p>
+        <p style="font-size:12px;color:var(--text-muted)">Нажмите на ${viewMode('fleet') === 'table' ? 'строку' : 'карточку'} для просмотра и редактирования</p>
       </div>
+      ${viewSwitch('fleet')}
       <button class="btn btn-ghost" onclick="openAiImport()">${ic('bot')} Загрузка с ИИ</button>
       <button class="btn btn-ghost" onclick="openImport('vehicles')"><svg class="ico"><use href="#i-download"/></svg> Из шаблона</button>
       <button class="btn btn-primary" onclick="createVehicle()"><svg class="ico"><use href="#i-plus"/></svg> Автомобиль</button>
     </div>
+    ${viewMode('fleet') === 'table' ? `<div style="margin-bottom:32px">${vehiclesTable(VEHICLES)}</div>` : `
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:32px">
       ${VEHICLES.map(v => {
         const driver = USERS.find(u => u.id === v.assigned_user_id);
@@ -2292,7 +2668,7 @@ function renderFleetPage() {
           </div>` : ''}
         </div>`;
       }).join('')}
-    </div>
+    </div>`}
 
     <h2 style="font-size:15px;font-weight:700;margin-bottom:4px">Водители (${USERS.length})</h2>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Нажмите на карточку для просмотра и редактирования</p>
@@ -2467,10 +2843,15 @@ function openVehicleModal(id) {
         </div>` : ''}
       </div>
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Топливная карта</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Топливная карта и транспондер</div>
         <div class="frow">
-          <div class="fg"><div class="fg-label">Номер карты</div><input class="fg-input" id="v-fuelcard" value="${v.fuel_card_number||''}" style="font-family:monospace"></div>
+          <div class="fg"><div class="fg-label">Номер карты</div><input class="fg-input" id="v-fuelcard" value="${v.fuel_card_number||''}" style="font-family:var(--fd-font-mono)"></div>
           <div class="fg"><div class="fg-label">Код у провайдера</div><input class="fg-input" id="v-fuelcode" value="${v.fuel_card_code||''}"></div>
+        </div>
+        <div class="fg" style="margin-top:12px">
+          <div class="fg-label">Транспондер</div>
+          <input class="fg-input" id="v-transponder" value="${v.transponder||''}" placeholder="Номер устройства" style="font-family:var(--fd-font-mono)">
+          <div class="fg-hint">Карта и транспондер бывают закреплены и за машиной, и за водителем — заполняйте то, как заведено у вас</div>
         </div>
       </div>
       <div style="margin-bottom:16px">
@@ -2651,7 +3032,6 @@ function openContractorModal(id) {
       </div>
 
       <div style="margin-top:16px">
-        <button class="btn btn-ghost" style="color:#BE3A2F;border-color:#F0C7C2" onclick="deleteContractor('${c.id}')">🗑 Удалить подрядчика</button>
       </div>
     </div>
 
@@ -2934,8 +3314,13 @@ function openDriverModal(id) {
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Доступы и инструменты</div>
-        <div class="dl-row"><span class="dl-label">⛽ Топливная карта</span><span style="font-family:monospace;font-size:12px">${u.fuel_card||'—'}</span></div>
-        <div class="dl-row"><span class="dl-label">🛣 Транспондер</span><span style="font-size:12px;color:var(--text-muted)">${u.transponder||'—'}</span></div>
+        <div class="frow" style="margin-bottom:10px">
+          <div class="fg"><div class="fg-label">Топливная карта</div>
+            <input class="fg-input" id="d-fuelcard" value="${u.fuel_card||''}" placeholder="Номер карты" style="font-family:var(--fd-font-mono)"></div>
+          <div class="fg"><div class="fg-label">Транспондер</div>
+            <input class="fg-input" id="d-transponder" value="${u.transponder||''}" placeholder="Номер устройства" style="font-family:var(--fd-font-mono)"></div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:12px">Это личные карта и транспондер водителя. Если они закреплены за машиной, заполняйте их в карточке автомобиля.</div>
         <div class="dl-row"><span class="dl-label">📱 Мобильное приложение</span><span class="dl-badge ${u.has_app?'dl-ok':'dl-warn'}">${u.has_app?'✓ Установлено':'Не установлено'}</span></div>
       </div>
     </div>
@@ -2984,6 +3369,7 @@ function saveVModal() {
     v.assigned_user_id  = document.getElementById('v-driver')?.value || null;
     v.fuel_card_number  = document.getElementById('v-fuelcard')?.value || '';
     v.fuel_card_code    = document.getElementById('v-fuelcode')?.value || '';
+    v.transponder       = document.getElementById('v-transponder')?.value || '';
     v.insurance_policy  = document.getElementById('v-policy')?.value || '';
     v.telematics        = document.getElementById('v-telematics')?.value || '';
     v.tco_monthly       = parseInt(document.getElementById('v-tco')?.value) || 0;
@@ -3011,6 +3397,9 @@ function saveVModal() {
     u.has_waybill     = document.getElementById('d-waybill')?.value === '1';
     u.tachograph      = document.getElementById('d-tacho')?.value === '1';
     u.assigned_vehicle= document.getElementById('d-vehicle')?.value || null;
+    // Пустое поле должно стирать значение: карту у водителя забирают
+    u.fuel_card       = (document.getElementById('d-fuelcard')?.value ?? u.fuel_card ?? '').trim();
+    u.transponder     = (document.getElementById('d-transponder')?.value ?? u.transponder ?? '').trim();
     saveDriverToServer(u);
   } else if (vModalContext.type === 'contractor') {
     const c = CONTRACTORS.find(c => c.id === vModalContext.id);
@@ -4819,6 +5208,8 @@ async function removeColleague(id, email) {
 // лёгкий даже при тысячах заявок.
 
 const DEFAULT_PREFS = {
+  driversView: 'cards',   // карточки или таблица на странице «Водители»
+  fleetView:   'cards',   // то же на странице «Автомобили»
   autoRefresh: true,
   interval: 15,          // секунды
   sound: 'chime',
