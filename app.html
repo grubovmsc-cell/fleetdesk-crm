@@ -6,7 +6,7 @@
 <title>FleetDesk CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/tokens.css">
 <style>
 /* ══════════════════════════════════════════════════════════════════
@@ -16,43 +16,52 @@
    означает: статус, приоритет, срок. Всё остальное — оттенки бумаги.
    ══════════════════════════════════════════════════════════════════ */
 :root {
-  --sidebar-bg: var(--fd-enamel);
+  /* CRM живёт на дневной половине палитры лендинга. Тёмной её не делаем:
+     это инструмент на весь день, а не витрина. Боковая панель взята из
+     ночного набора — тот же цвет, что первый экран лендинга, поэтому переход
+     по кнопке «Войти» читается как продолжение, а не как другой продукт. */
+  --sidebar-bg: var(--fd-night-deep);
   --sidebar-w: 236px;
 
-  --bg:        var(--fd-paper);
-  --card-bg:   var(--fd-paper-hi);
-  --sunk:      var(--fd-sunk);
-  --border:    var(--fd-line);
-  --border-2:  #DCD1C4;
+  --bg:        var(--fd-day);
+  --card-bg:   var(--fd-card);
+  --sunk:      var(--fd-day-2);
+  --border:    var(--fd-card-line);
+  --border-2:  var(--fd-card-line-2);
 
-  --text:       var(--fd-ink);
-  --text-soft:  var(--fd-ink-2);
-  --text-muted: var(--fd-ink-3);
+  --text:       var(--fd-day-ink);
+  --text-soft:  var(--fd-day-ink-2);
+  --text-muted: var(--fd-day-ink-3);
 
-  --blue:         var(--fd-coolant);
-  --blue-dark:    var(--fd-coolant-deep);
-  --blue-light:   var(--fd-coolant-wash);
-  --amber:        var(--fd-warn-text);
-  --amber-light:  var(--fd-warn-wash);
-  --green:        var(--fd-ok-text);
-  --green-light:  var(--fd-ok-wash);
-  --red:          var(--fd-stop-text);
-  --red-light:    var(--fd-stop-wash);
-  --purple:       #5B5A8F;
-  --purple-light: #F1EBFA;
-  --orange:       #C2600C;
+  --blue:         var(--fd-sign);
+  --blue-dark:    #1D4FCC;
+  --blue-light:   var(--fd-sign-wash);
+  --amber:        var(--fd-day-warn);
+  --amber-light:  var(--fd-day-warn-wash);
+  --green:        var(--fd-day-ok);
+  --green-light:  var(--fd-day-ok-wash);
+  --red:          var(--fd-day-stop);
+  --red-light:    var(--fd-day-stop-wash);
+  --purple:       var(--fd-day-info);
+  --purple-light: var(--fd-day-info-wash);
+  --orange:       #A64C08;
 
   --radius:    14px;
   --radius-sm: 10px;
-  --shadow:    0 1px 2px rgba(32,33,28,.04), 0 4px 14px -8px rgba(32,33,28,.16);
-  --shadow-md: 0 2px 6px rgba(32,33,28,.05), 0 18px 38px -16px rgba(32,33,28,.28);
-  --ring:      0 0 0 3px rgba(23,96,125,.16);
+  --shadow:    0 1px 2px rgba(15,30,56,.05), 0 4px 14px -8px rgba(15,30,56,.18);
+  --shadow-md: 0 2px 6px rgba(15,30,56,.06), 0 18px 38px -16px rgba(15,30,56,.30);
+  --ring:      0 0 0 3px rgba(43,98,234,.22);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+/* Иконки: размер задаётся font-size родителя, цвет наследуется — поэтому
+   одна и та же иконка живёт и в тёмной панели, и в цветной плашке статуса. */
+svg.ico { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.8;
+          stroke-linecap: round; stroke-linejoin: round; flex: none; vertical-align: -.14em; }
+
 /* Цифры одной ширины: столбцы чисел читаются как столбцы, а не как каша */
 table, .num, .row-value, .stat-num { font-variant-numeric: tabular-nums; }
 body {
-  font-family: 'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--fd-night-body);
   background: var(--bg); color: var(--text); display: flex; height: 100vh;
   overflow: hidden; font-size: 14.5px; line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -131,11 +140,14 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .tickets-count { font-size: 13px; color: var(--text-muted); }
 
 /* ── KANBAN ── */
-.kanban { display: flex; gap: 18px; padding: 22px 26px; overflow-x: auto; flex: 1; align-items: flex-start; }
-.column { flex: 0 0 336px; display: flex; flex-direction: column; gap: 10px; }
-.col-header { display: flex; align-items: center; gap: 9px; padding: 12px 15px; border-radius: var(--radius); font-weight: 700; font-size: 13.5px; }
+/* Плотность. Диспетчер держит доску открытой весь день: ему важнее видеть
+   весь список сразу, чем воздух вокруг каждой карточки. Отступы срезаны
+   там, где они ничего не разделяли, — межстрочные интервалы не тронуты. */
+.kanban { display: flex; gap: 14px; padding: 16px 20px; overflow-x: auto; flex: 1; align-items: flex-start; }
+.column { flex: 0 0 330px; display: flex; flex-direction: column; gap: 8px; }
+.col-header { display: flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: var(--radius-sm); font-weight: 700; font-size: 13px; }
 .col-header .col-count { margin-left: auto; font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
-.col-wrap { background: rgba(32,33,28,.035); border-radius: var(--radius); padding: 9px; display: flex; flex-direction: column; gap: 9px; min-height: 130px; }
+.col-wrap { background: rgba(15,30,56,.035); border-radius: var(--radius); padding: 7px; display: flex; flex-direction: column; gap: 7px; min-height: 110px; }
 
 .col-new .col-header    { background: var(--amber-light); color: var(--amber); }
 .col-new .col-count     { background: var(--amber); color: #fff; }
@@ -146,34 +158,40 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 
 /* ── CARD ── */
 .card {
-  background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow); padding: 14px 15px;
+  background: var(--card-bg); border-radius: 10px; box-shadow: var(--shadow); padding: 11px 13px;
   cursor: pointer; transition: box-shadow .18s, transform .18s, border-color .18s;
   border: 1px solid var(--border); border-left: 3px solid transparent;
 }
-.card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .card.urgent { border-left-color: var(--red); }
-/* Заявка без движения дольше 12 часов */
-.card.stale { border-color: #F0C7C2; border-left-color: var(--red); background: #FFFAF9; }
-.stale-note { font-size: 11.5px; font-weight: 700; color: var(--red); background: var(--red-light); border-radius: 8px; padding: 5px 9px; margin-bottom: 9px; }
+/* Простой заявки разведён по трём уровням. Раньше порог был 12 часов, и
+   пометка «требует внимания» стояла почти на каждой карточке — тревога,
+   которая горит всегда, перестаёт быть тревогой. Кричит только верхний
+   уровень; ниже — спокойная пометка в строке даты. */
+.card.stale-hot { border-color: #F3C9CF; background: #FFFAFB; }
+.stale { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; white-space: nowrap; margin-left: 5px; }
+.stale-soft { color: var(--text-muted); }
+.stale-warn { color: var(--amber); }
+.stale-hot  { color: var(--red); }
 /* Перетаскивание */
 .card.dragging { opacity: .4; }
 .col-wrap.drop-target { background: var(--blue-light); outline: 2px dashed var(--blue); outline-offset: -4px; }
 .card.high   { border-left-color: var(--orange); }
 .card.medium { border-left-color: var(--blue); }
 .card.low    { border-left-color: var(--border-2); }
-.card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
-.card-type-icon { font-size: 17px; }
+.card-top { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+.card-type-icon { font-size: 16px; color: var(--text-soft); display: inline-flex; }
 .card-num { font-size: 11.5px; font-weight: 700; color: var(--text-muted); letter-spacing: .02em; }
 .card-priority { margin-left: auto; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
 .pri-urgent { background: var(--red-light);   color: var(--red); }
-.pri-high   { background: #FDF0E3;            color: var(--orange); }
+.pri-high   { background: var(--amber-light); color: var(--amber); }
 .pri-medium { background: var(--blue-light);  color: var(--blue); }
 .pri-low    { background: var(--sunk);        color: var(--text-muted); }
-.card-title { font-size: 14px; font-weight: 650; color: var(--text); margin-bottom: 11px; line-height: 1.45; }
-.card-meta { display: flex; flex-direction: column; gap: 6px; }
-.card-meta-row { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-muted); }
-.card-ava { width: 21px; height: 21px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; color: #fff; flex-shrink: 0; }
-.card-contractor { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.card-title { font-size: 14px; font-weight: 650; color: var(--text); margin-bottom: 8px; line-height: 1.4; }
+.card-meta { display: flex; flex-direction: column; gap: 4px; }
+.card-meta-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.card-ava { width: 19px; height: 19px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.card-contractor { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
 
 /* ── MODAL OVERLAY ── */
 .overlay { display: none; position: fixed; inset: 0; background: rgba(32,33,28,.42); backdrop-filter: blur(2px); z-index: 100; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
@@ -256,6 +274,8 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .fg-input { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; color: var(--text); outline: none; background: var(--card-bg); font-family: inherit; transition: border-color .15s, box-shadow .15s; }
 .fg-input::placeholder { color: #B6ADA3; }
 .fg-input:focus { border-color: var(--blue); box-shadow: var(--ring); }
+.fg-input.bad, .auth-input.bad { border-color: var(--red); box-shadow: 0 0 0 3px rgba(198,45,62,.14); }
+.fg-err { display: none; font-size: 12px; line-height: 1.4; color: var(--red); margin-top: 5px; }
 .fg-input:disabled { background: var(--sunk); color: var(--text-muted); }
 .fg-select { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; color: var(--text); outline: none; background: var(--card-bg); cursor: pointer; font-family: inherit; transition: border-color .15s, box-shadow .15s; }
 .fg-select:focus { border-color: var(--blue); box-shadow: var(--ring); }
@@ -265,8 +285,8 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 
 /* ── STATUS BADGES ── */
 .ibadge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
-.ib-active   { background: var(--green-light); color: var(--green);  border: 1px solid #BFE0CB; }
-.ib-repair   { background: #FDF0E3;            color: var(--orange); border: 1px solid #F2D6B4; }
+.ib-active   { background: var(--green-light); color: var(--green);  border: 1px solid #BEE0CD; }
+.ib-repair   { background: var(--amber-light); color: var(--amber);  border: 1px solid #EBD8B0; }
 .ib-idle     { background: var(--sunk);        color: var(--text-muted); border: 1px solid var(--border-2); }
 .ib-vacation { background: var(--blue-light);  color: var(--blue);   border: 1px solid #BBD3DC; }
 .ib-fired    { background: var(--red-light);   color: var(--red);    border: 1px solid #F0C7C2; }
@@ -322,22 +342,25 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 .driver-ava-lg { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0; }
 
 /* ── AUTH SCREEN ── */
-.auth-overlay { position: fixed; inset: 0; background: linear-gradient(165deg, #2E2721 0%, #20211C 55%, #1C1814 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+/* Вход — это продолжение лендинга: тот же ночной фон, тот же знак. */
+.auth-overlay { position: fixed; inset: 0; overflow-y: auto;
+  background: linear-gradient(165deg, #12244A 0%, var(--fd-night) 55%, var(--fd-night-deep) 100%);
+  display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
 .auth-overlay.hidden { display: none; }
-.auth-card { background: var(--card-bg); border-radius: 22px; width: 440px; max-width: 100%; box-shadow: 0 30px 90px -20px rgba(0,0,0,.55); overflow: hidden; }
-.auth-header { background: linear-gradient(150deg, #FDF6EE, #F6EFE5); padding: 34px 34px 26px; text-align: center; color: var(--text); border-bottom: 1px solid var(--border); }
+.auth-card { background: var(--card-bg); border-radius: 14px; margin: auto; width: 440px; max-width: 100%; box-shadow: 0 30px 90px -20px rgba(0,0,0,.55); overflow: hidden; }
+.auth-header { background: linear-gradient(150deg, #F4F7FD, #E9EFFA); padding: 30px 30px 24px; text-align: center; color: var(--text); border-bottom: 1px solid var(--border); }
 .auth-logo { font-size: 29px; font-weight: 800; letter-spacing: -.6px; margin-bottom: 6px; }
 .auth-tagline { font-size: 14px; color: var(--text-muted); }
 .auth-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--sunk); }
-.auth-tab { flex: 1; padding: 14px; text-align: center; font-size: 14px; font-weight: 650; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all .15s; }
+.auth-tab { flex: 1; padding: 15px 14px; min-height: 48px; text-align: center; font-size: 14px; font-weight: 650; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all .15s; }
 .auth-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: var(--card-bg); }
 .auth-body { padding: 30px 34px 32px; }
 .auth-field { margin-bottom: 18px; }
 .auth-field label { display: block; font-size: 13px; font-weight: 600; color: var(--text-soft); margin-bottom: 7px; }
-.auth-input { width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: 11px; font-size: 15px; outline: none; transition: border-color .15s, box-shadow .15s; color: var(--text); font-family: inherit; background: var(--card-bg); }
-.auth-input::placeholder { color: #B6ADA3; }
+.auth-input { width: 100%; min-height: 48px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; outline: none; transition: border-color .15s, box-shadow .15s; color: var(--text); font-family: inherit; background: var(--card-bg); }
+.auth-input::placeholder { color: #9AA8C0; }
 .auth-input:focus { border-color: var(--blue); box-shadow: var(--ring); }
-.auth-btn { width: 100%; padding: 14px; background: var(--blue); color: #fff; border: none; border-radius: 999px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; transition: background .15s, box-shadow .15s; font-family: inherit; box-shadow: 0 6px 16px -8px rgba(23,96,125,.9); }
+.auth-btn { width: 100%; min-height: 50px; padding: 14px; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 6px; transition: background .15s, box-shadow .15s; font-family: inherit; }
 .auth-btn:hover { background: var(--blue-dark); }
 .auth-btn:disabled { opacity: .6; cursor: default; }
 .auth-error { background: var(--red-light); border: 1px solid #F0C7C2; color: var(--red); border-radius: 11px; padding: 12px 15px; font-size: 14px; margin-bottom: 18px; display: none; }
@@ -398,11 +421,65 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 </head>
 <body>
 
+<!-- ══ ИКОНКИ ══
+     Один спрайт вместо эмодзи. Эмодзи в интерфейсе рисуются шрифтом системы:
+     на Windows, macOS и Android это три разных набора, размеры не совпадают,
+     а цвет задан внутри самого символа — ✅ и ❌ невозможно перекрасить под
+     статус. Обводка 1.8, круглые концы, currentColor — как на лендинге. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- знак и навигация -->
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M3.5 17a9 9 0 1 1 17 0"/><path d="M12 13.5 16 9"/><circle cx="12" cy="17" r="1.4"/></symbol>
+  <symbol id="i-board" viewBox="0 0 24 24"><rect x="4.5" y="4" width="15" height="16" rx="2.5"/><path d="M9 3h6v3H9z"/><path d="M8.5 11h7M8.5 15h4.5"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M4 15v-2.4l1.6-4A2 2 0 0 1 7.5 7h9a2 2 0 0 1 1.9 1.6l1.6 4V15"/><path d="M4 15h16v2.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5V15M7 15v2.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5V15"/><path d="M5.6 12.2h12.8"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.7"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M15.2 4.3a5 5 0 0 0-6 6.3l-5 5a1.7 1.7 0 0 0 2.4 2.4l5-5a5 5 0 0 0 6.3-6l-2.9 2.9-2.3-.4-.4-2.3z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 20v-6M12 20V6M17 20v-9"/></symbol>
+  <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M4 10.5v3a1.5 1.5 0 0 0 1.5 1.5H8l7 4V6.5l-7 4H5.5A1.5 1.5 0 0 0 4 12z"/><path d="M18 9.5a4 4 0 0 1 0 5"/><path d="M8 15v4h2.5"/></symbol>
+  <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V4.5"/><circle cx="12" cy="3.5" r="1.2"/><path d="M9 13v1.5M15 13v1.5"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 12.5c0 3.6-3.6 6.5-8 6.5-.9 0-1.8-.1-2.6-.4L4 20.5l1.5-3.6C4.6 15.7 4 14.2 4 12.5 4 8.9 7.6 6 12 6s8 2.9 8 6.5z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M20.5 12h-2M5.5 12h-2M18 6l-1.5 1.5M7.5 16.5 6 18M18 18l-1.5-1.5M7.5 7.5 6 6"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 4v8"/><path d="M17.5 7a7.5 7.5 0 1 1-11 0"/></symbol>
+  <symbol id="i-road" viewBox="0 0 24 24"><path d="M8.5 4 5 20M15.5 4 19 20M12 4.5v2.5M12 10.8v2.5M12 17v2.5"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6.5-6.1 6.5-11a6.5 6.5 0 1 0-13 0c0 4.9 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.4"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 4 2.5 5.1 5.6.8-4 4 .9 5.6-5-2.7-5 2.7.9-5.6-4-4 5.6-.8z"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.8" width="11" height="18.4" rx="2.4"/><path d="M10.6 5.4h2.8M12 18.2h.1"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v10M8.2 10.4 12 14.2l3.8-3.8"/><path d="M4.5 16.5v1.8a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-1.8"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.3"/><path d="m15.6 15.6 3.9 3.9"/></symbol>
+
+  <!-- колонки доски и статусы -->
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 13h4l1.5 3h5L16 13h4"/><path d="M4 13 6.4 5.6A2 2 0 0 1 8.3 4.2h7.4a2 2 0 0 1 1.9 1.4L20 13v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-progress" viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8v4l2.5 2.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.2 12.2 2.6 2.6 5-5.4"/></symbol>
+  <symbol id="i-siren" viewBox="0 0 24 24"><path d="M7 17v-4.5a5 5 0 0 1 10 0V17"/><rect x="4.5" y="17" width="15" height="3" rx="1.2"/><path d="M12 4v2M5.5 7 7 8.2M18.5 7 17 8.2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><path d="M12 7.4V12l3.2 2"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14" rx="2.2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="M18.5 11.5 12 18a4 4 0 0 1-5.7-5.7l7-7a2.7 2.7 0 0 1 3.8 3.8l-6.9 7a1.4 1.4 0 0 1-2-2l6.3-6.3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4.2 21 19.5H3z"/><path d="M12 10v4M12 16.7v.1"/></symbol>
+  <symbol id="i-empty" viewBox="0 0 24 24"><path d="M4 12h4l1.5 3h5l1.5-3h4"/><path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/><path d="M12 4v6M9.4 7.6 12 10l2.6-2.4"/></symbol>
+
+  <!-- типы заявок -->
+  <symbol id="i-t-breakdown" viewBox="0 0 24 24"><path d="M3.4 17.6v-2.2l1.2-2.9a1.6 1.6 0 0 1 1.5-1h6.6a1.6 1.6 0 0 1 1.4.9l1.3 3v2.2"/><path d="M3.4 17.6h12"/><circle cx="6.3" cy="18.9" r="1.4"/><circle cx="12.9" cy="18.9" r="1.4"/><circle cx="17.6" cy="7.4" r="3.9"/><path d="M17.6 5.4v2.3M17.6 9.5v.1"/></symbol>
+  <symbol id="i-t-service" viewBox="0 0 24 24"><path d="M15.2 4.3a5 5 0 0 0-6 6.3l-5 5a1.7 1.7 0 0 0 2.4 2.4l5-5a5 5 0 0 0 6.3-6l-2.9 2.9-2.3-.4-.4-2.3z"/></symbol>
+  <symbol id="i-t-tire" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.4"/><path d="m7.3 7.3 2.4 2.4M16.7 7.3l-2.4 2.4M7.3 16.7l2.4-2.4M16.7 16.7l-2.4-2.4"/></symbol>
+  <symbol id="i-t-fuel" viewBox="0 0 24 24"><path d="M5 20V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v14"/><path d="M4 20h10"/><path d="M6.8 8.6h4.4"/><path d="M13 9h2.6a1.4 1.4 0 0 1 1.4 1.4v5.2a1.5 1.5 0 0 0 3 0V9.4l-2-2.4"/></symbol>
+  <symbol id="i-t-doc" viewBox="0 0 24 24"><path d="M13.5 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z"/><path d="M13.5 3.5V9H19"/><path d="M8.5 13h7M8.5 16.5h4.5"/></symbol>
+  <symbol id="i-t-fine" viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="11" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6.6 12h.1M17.3 12h.1"/></symbol>
+  <symbol id="i-t-accident" viewBox="0 0 24 24"><path d="m12 3.6 1.9 3.6 3.9-.9-1.4 3.8 3.2 2.4-3.6 1.7 1 3.9-3.9-1-2.1 3.4-2.1-3.4-3.9 1 1-3.9-3.6-1.7 3.2-2.4-1.4-3.8 3.9.9z"/><path d="M12 9v3.4M12 15.2v.1"/></symbol>
+  <symbol id="i-t-wash" viewBox="0 0 24 24"><path d="M12 3.8c2.6 3.3 4.2 5.7 4.2 7.6a4.2 4.2 0 0 1-8.4 0c0-1.9 1.6-4.3 4.2-7.6z"/><path d="M5.5 17.5c1.4 0 1.4 1.6 2.8 1.6s1.4-1.6 2.8-1.6 1.4 1.6 2.8 1.6 1.4-1.6 2.8-1.6"/></symbol>
+  <symbol id="i-t-swap" viewBox="0 0 24 24"><path d="M4.5 9h13l-3-3M19.5 15h-13l3 3"/></symbol>
+  <symbol id="i-t-tow" viewBox="0 0 24 24"><path d="M3.5 16v-6h7l2.5 3.2V16"/><path d="M3.5 16h11"/><circle cx="7" cy="17.6" r="1.5"/><circle cx="17.4" cy="17.6" r="1.5"/><path d="M13 16h6.5"/><path d="M14 10 19 5.5M19 5.5h1.8"/></symbol>
+  <symbol id="i-t-parts" viewBox="0 0 24 24"><path d="m12 4.2 6 3.4v6.8l-6 3.4-6-3.4V7.6z"/><circle cx="12" cy="11" r="2.6"/></symbol>
+  <symbol id="i-t-other" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><path d="M8.5 8.5h.1M12 8.5h.1M15.5 8.5h.1" transform="translate(0 3.5)"/></symbol>
+</svg>
+
+
 <!-- ── AUTH OVERLAY ── -->
 <div class="auth-overlay" id="auth-overlay">
   <div class="auth-card">
     <div class="auth-header">
-      <div class="auth-logo">🚗 FleetDesk<span class="beta-tag">Бета</span></div>
+      <div class="auth-logo"><svg class="ico"><use href="#i-gauge"/></svg> FleetDesk<span class="beta-tag">Бета</span></div>
       <div class="auth-tagline">Система управления корпоративным автопарком</div>
     </div>
     <div class="auth-tabs">
@@ -416,7 +493,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
       <div id="pane-login">
         <div class="auth-field">
           <label>Email</label>
-          <input class="auth-input" id="login-email" type="email" placeholder="admin@company.ru" autocomplete="email">
+          <input class="auth-input" id="login-email" type="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="admin@company.ru" autocomplete="email">
         </div>
         <div class="auth-field">
           <label>Пароль</label>
@@ -432,19 +509,19 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
       <div id="pane-register" style="display:none">
         <div class="auth-field">
           <label>Название компании</label>
-          <input class="auth-input" id="reg-company" type="text" placeholder="ООО Ромашка">
+          <input class="auth-input" id="reg-company" type="text" autocomplete="organization" placeholder="ООО Ромашка">
         </div>
         <div class="auth-field">
           <label>Ваше имя (Fleet Manager)</label>
-          <input class="auth-input" id="reg-name" type="text" placeholder="Иван Иванов">
+          <input class="auth-input" id="reg-name" type="text" autocomplete="name" placeholder="Иван Иванов">
         </div>
         <div class="auth-field">
           <label>Email</label>
-          <input class="auth-input" id="reg-email" type="email" placeholder="ivan@company.ru">
+          <input class="auth-input" id="reg-email" type="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="email" data-mask="email" placeholder="ivan@company.ru">
         </div>
         <div class="auth-field">
           <label>Пароль</label>
-          <input class="auth-input" id="reg-password" type="password" placeholder="Минимум 6 символов" onkeydown="if(event.key==='Enter')doRegister()">
+          <input class="auth-input" id="reg-password" type="password" autocomplete="new-password" minlength="6" placeholder="Минимум 6 символов" onkeydown="if(event.key==='Enter')doRegister()">
         </div>
         <button class="auth-btn" onclick="doRegister()">Создать аккаунт →</button>
       </div>
@@ -459,40 +536,40 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 <!-- ── SIDEBAR ── -->
 <nav class="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-mark">🚗 FleetDesk<span class="beta-tag on-dark">Бета</span></div>
+    <div class="logo-mark"><svg class="ico"><use href="#i-gauge"/></svg> FleetDesk<span class="beta-tag on-dark">Бета</span></div>
     <div class="logo-sub" id="sidebar-company">—</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-label">Управление</div>
     <div class="nav-item active" onclick="setPage('kanban')">
-      <span class="nav-icon">📋</span> Заявки
+      <span class="nav-icon"><svg class="ico"><use href="#i-board"/></svg></span> Заявки
       <span class="nav-badge" id="new-badge">3</span>
     </div>
     <div class="nav-item" onclick="setPage('fleet')">
-      <span class="nav-icon">🚗</span> Автопарк
+      <span class="nav-icon"><svg class="ico"><use href="#i-car"/></svg></span> Автопарк
     </div>
     <div class="nav-item" onclick="setPage('drivers')">
-      <span class="nav-icon">👤</span> Водители
+      <span class="nav-icon"><svg class="ico"><use href="#i-user"/></svg></span> Водители
     </div>
     <div class="nav-item" onclick="setPage('contractors')">
-      <span class="nav-icon">🔧</span> Подрядчики
+      <span class="nav-icon"><svg class="ico"><use href="#i-wrench"/></svg></span> Подрядчики
     </div>
     <div class="nav-label">Аналитика</div>
     <div class="nav-item" onclick="showToast('Раздел в разработке')">
-      <span class="nav-icon">📊</span> Отчёты
+      <span class="nav-icon"><svg class="ico"><use href="#i-chart"/></svg></span> Отчёты
     </div>
     <div class="nav-item" onclick="setPage('broadcast')">
-      <span class="nav-icon">📢</span> Рассылка
+      <span class="nav-icon"><svg class="ico"><use href="#i-megaphone"/></svg></span> Рассылка
     </div>
     <div class="nav-label">Система</div>
     <div class="nav-item" onclick="setPage('bot')">
-      <span class="nav-icon">🤖</span> Telegram Bot
+      <span class="nav-icon"><svg class="ico"><use href="#i-bot"/></svg></span> Telegram Bot
     </div>
     <div class="nav-item" onclick="setPage('maxbot')">
-      <span class="nav-icon">💬</span> MAX Bot
+      <span class="nav-icon"><svg class="ico"><use href="#i-chat"/></svg></span> MAX Bot
     </div>
     <div class="nav-item" onclick="setPage('settings')">
-      <span class="nav-icon">⚙️</span> Настройки
+      <span class="nav-icon"><svg class="ico"><use href="#i-gear"/></svg></span> Настройки
     </div>
   </div>
   <div class="sidebar-user">
@@ -501,7 +578,7 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
       <div class="user-name" id="sidebar-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
       <div class="user-role">Fleet Manager</div>
     </div>
-    <button class="logout-btn" onclick="doLogout()" title="Выйти">⏻</button>
+    <button class="logout-btn" onclick="doLogout()" title="Выйти"><svg class="ico"><use href="#i-power"/></svg></button>
   </div>
 </nav>
 
@@ -513,17 +590,17 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
     <div class="topbar-title" id="page-title">Заявки</div>
     <div class="stats-row" id="stats-row">
       <div class="stat-chip all active-filter" onclick="filterByStatus('all')" id="chip-all">Все <span id="cnt-all">0</span></div>
-      <div class="stat-chip new" onclick="filterByStatus('NEW')" id="chip-new">🆕 Новые <span id="cnt-new">0</span></div>
-      <div class="stat-chip wip" onclick="filterByStatus('IN_PROGRESS')" id="chip-wip">⚙️ В работе <span id="cnt-wip">0</span></div>
-      <div class="stat-chip done" onclick="filterByStatus('DONE')" id="chip-done">✅ Выполнено <span id="cnt-done">0</span></div>
-      <div class="stat-chip urgent" onclick="filterByStatus('urgent')" id="chip-urgent">🚨 Срочные <span id="cnt-urgent">0</span></div>
+      <div class="stat-chip new" onclick="filterByStatus('NEW')" id="chip-new"><svg class="ico"><use href="#i-inbox"/></svg> Новые <span id="cnt-new">0</span></div>
+      <div class="stat-chip wip" onclick="filterByStatus('IN_PROGRESS')" id="chip-wip"><svg class="ico"><use href="#i-progress"/></svg> В работе <span id="cnt-wip">0</span></div>
+      <div class="stat-chip done" onclick="filterByStatus('DONE')" id="chip-done"><svg class="ico"><use href="#i-check-circle"/></svg> Выполнено <span id="cnt-done">0</span></div>
+      <div class="stat-chip urgent" onclick="filterByStatus('urgent')" id="chip-urgent"><svg class="ico"><use href="#i-siren"/></svg> Срочные <span id="cnt-urgent">0</span></div>
     </div>
     <div class="topbar-spacer"></div>
     <div class="search-box">
-      <span>🔍</span>
+      <span><svg class="ico"><use href="#i-search"/></svg></span>
       <input id="search-input" placeholder="Поиск заявки..." oninput="applyFilters()">
     </div>
-    <button class="btn btn-primary" onclick="openNewTicketModal()">+ Новая заявка</button>
+    <button class="btn btn-primary" onclick="openNewTicketModal()"><svg class="ico"><use href="#i-plus"/></svg> Новая заявка</button>
   </div>
 
   <!-- FILTER BAR -->
@@ -564,19 +641,19 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
   <!-- KANBAN VIEW -->
   <div class="kanban" id="kanban-view">
     <div class="column col-new">
-      <div class="col-header">🆕 Новые <span class="col-count" id="col-cnt-new">0</span></div>
+      <div class="col-header"><svg class="ico"><use href="#i-inbox"/></svg> Новые <span class="col-count" id="col-cnt-new">0</span></div>
       <div class="col-wrap" id="col-NEW" data-status="NEW"
            ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)"
            ondrop="onColDrop(event,'NEW')"></div>
     </div>
     <div class="column col-wip">
-      <div class="col-header">⚙️ В работе <span class="col-count" id="col-cnt-wip">0</span></div>
+      <div class="col-header"><svg class="ico"><use href="#i-progress"/></svg> В работе <span class="col-count" id="col-cnt-wip">0</span></div>
       <div class="col-wrap" id="col-IN_PROGRESS" data-status="IN_PROGRESS"
            ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)"
            ondrop="onColDrop(event,'IN_PROGRESS')"></div>
     </div>
     <div class="column col-done">
-      <div class="col-header">✅ Выполнено <span class="col-count" id="col-cnt-done">0</span></div>
+      <div class="col-header"><svg class="ico"><use href="#i-check-circle"/></svg> Выполнено <span class="col-count" id="col-cnt-done">0</span></div>
       <div class="col-wrap" id="col-DONE" data-status="DONE"
            ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)"
            ondrop="onColDrop(event,'DONE')"></div>
@@ -636,6 +713,24 @@ select.fsel:focus { border-color: var(--blue); box-shadow: var(--ring); }
 </div>
 
 <!-- ── ИМПОРТ ДАННЫХ ── -->
+<!-- Маленькое окно для «добавить»: заменяет системный prompt() -->
+<div class="overlay" id="ask-overlay">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title-block">
+        <div class="modal-title" id="ask-title"></div>
+        <div class="modal-num" id="ask-note" style="margin:4px 0 0"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('ask-overlay').classList.remove('open')">&times;</button>
+    </div>
+    <div class="modal-body" id="ask-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="ask-cancel">Отмена</button>
+      <button class="btn btn-primary" id="ask-submit">Добавить</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="import-overlay" onclick="if(event.target===this)closeImport()">
   <div class="modal" style="max-width:640px">
     <div class="modal-header">
@@ -838,19 +933,21 @@ let CONTRACTORS = [
   { id:'c5', name:'АвтоБлеск',         specializations:['car_wash'], phone:'+7 495 500-99-00' },
 ];
 
+// Тип заявки — имя иконки в спрайте, а не символ. Эмодзи здесь были ещё и
+// неточны: шиномонтаж обозначался колесом обозрения, штраф — самоцветом.
 const TICKET_TYPES = {
-  breakdown:   { name:'Поломка / Неисправность', icon:'🔴' },
-  maintenance: { name:'Плановое ТО',              icon:'🔧' },
-  tires:       { name:'Шины / Резина',            icon:'🛞' },
-  fuel:        { name:'Топливо',                  icon:'⛽' },
-  documents:   { name:'Документы',                icon:'📄' },
-  fines:       { name:'Штрафы',                   icon:'💸' },
-  accident:    { name:'ДТП / Авария',             icon:'🚨' },
-  car_wash:    { name:'Мойка',                    icon:'🚿' },
-  replacement: { name:'Подменный автомобиль',      icon:'🏥' },
-  tow_truck:   { name:'Эвакуатор',                icon:'🚛' },
-  spare_parts: { name:'Запчасти',                 icon:'🔩' },
-  other:       { name:'Прочее',                   icon:'❓' },
+  breakdown:   { name:'Поломка / Неисправность', icon:'t-breakdown' },
+  maintenance: { name:'Плановое ТО',              icon:'t-service'   },
+  tires:       { name:'Шины / Резина',            icon:'t-tire'      },
+  fuel:        { name:'Топливо',                  icon:'t-fuel'      },
+  documents:   { name:'Документы',                icon:'t-doc'       },
+  fines:       { name:'Штрафы',                   icon:'t-fine'      },
+  accident:    { name:'ДТП / Авария',             icon:'t-accident'  },
+  car_wash:    { name:'Мойка',                    icon:'t-wash'      },
+  replacement: { name:'Подменный автомобиль',      icon:'t-swap'      },
+  tow_truck:   { name:'Эвакуатор',                icon:'t-tow'       },
+  spare_parts: { name:'Запчасти',                 icon:'t-parts'     },
+  other:       { name:'Прочее',                   icon:'t-other'     },
 };
 
 const PRIORITY_LABELS = { URGENT:'Срочный', HIGH:'Высокий', MEDIUM:'Средний', LOW:'Низкий' };
@@ -1388,7 +1485,7 @@ function renderKanban() {
     const el = document.getElementById('col-'+s);
     if (!el) return;
     if (cols[s].length === 0) {
-      el.innerHTML = '<div class="empty-col"><div class="empty-col-icon">📭</div>Нет заявок</div>';
+      el.innerHTML = `<div class="empty-col"><div class="empty-col-icon">${ic('empty')}</div>Заявок пока нет</div>`;
     } else {
       el.innerHTML = cols[s].map(renderCard).join('');
     }
@@ -1454,13 +1551,17 @@ async function onColDrop(e, status) {
     showToast(`${t.num} → ${names[status]}`);
   } catch (err) {
     t.status = prev;                 // сервер не принял — возвращаем как было
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
   }
   renderKanban();
 }
 
 // Заявка «застоялась», если по ней давно не было движения
-const STALE_HOURS = 12;
+// Пороги простоя в часах. Ночь и выходные — не простой: настоящее
+// залёживание начинается примерно с двух рабочих дней.
+const STALE_SOFT = 48;    // двое суток — тихая пометка
+const STALE_WARN = 96;    // четверо  — янтарь
+const STALE_HOT  = 240;   // десять   — красный
 
 function lastMovedAt(t) {
   const times = [t.created, ...(t.history || []).map(h => h.time),
@@ -1473,7 +1574,28 @@ function staleHours(t) {
   return Math.floor((Date.now() - lastMovedAt(t)) / 3600000);
 }
 
-const isStale = (t) => staleHours(t) >= STALE_HOURS;
+function staleTier(t) {
+  const h = staleHours(t);
+  if (h >= STALE_HOT)  return 'hot';
+  if (h >= STALE_WARN) return 'warn';
+  if (h >= STALE_SOFT) return 'soft';
+  return null;
+}
+
+// Часами человек не думает: «672 ч» никому ни о чём не говорит.
+function plural(n, one, few, many) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b > 1 && b < 5)   return few;
+  if (b === 1)          return one;
+  return many;
+}
+function staleLabel(t) {
+  const d = Math.floor(staleHours(t) / 24);
+  if (d >= 30) { const m = Math.floor(d / 30); return `${m} ${plural(m,'месяц','месяца','месяцев')} без движения`; }
+  if (d >= 14) { const w = Math.floor(d / 7);  return `${w} ${plural(w,'неделя','недели','недель')} без движения`; }
+  return `${d} ${plural(d,'день','дня','дней')} без движения`;
+}
 
 function renderCard(t) {
   const u   = USERS.find(u => u.id === t.userId) || {};
@@ -1483,18 +1605,16 @@ function renderCard(t) {
   const pri = t.priority.toLowerCase();
   const priLabel = { urgent:'Срочный', high:'Высокий', medium:'Средний', low:'Низкий' }[pri] || '';
   const dt = new Date(t.created).toLocaleDateString('ru', { day:'2-digit', month:'short' });
-  const stale = isStale(t);
-  const hours = stale ? staleHours(t) : 0;
+  const tier = staleTier(t);
 
-  return `<div class="card ${pri}${stale?' stale':''}" onclick="openModal('${t.id}')"
+  return `<div class="card ${pri}${tier === 'hot' ? ' stale-hot' : ''}" onclick="openModal('${t.id}')"
        draggable="true" data-id="${t.id}"
        ondragstart="onCardDragStart(event,'${t.id}')" ondragend="onCardDragEnd(event)">
     <div class="card-top">
-      <span class="card-type-icon">${tp.icon||'📋'}</span>
+      <span class="card-type-icon">${ic(tp.icon || 'board')}</span>
       <span class="card-num">${t.num}</span>
-      <span class="card-priority pri-${pri}">${priLabel}</span>
+      ${pri === 'urgent' || pri === 'high' ? `<span class="card-priority pri-${pri}">${priLabel}</span>` : ''}
     </div>
-    ${stale ? `<div class="stale-note">🔥 Без движения ${hours} ч — требует внимания</div>` : ''}
     <div class="card-title">${t.title}</div>
     <div class="card-meta">
       <div class="card-meta-row">
@@ -1502,14 +1622,15 @@ function renderCard(t) {
         ${u.name||'—'}
       </div>
       <div class="card-meta-row">
-        🚗 ${v.plate||'—'} · ${v.brand||''} ${v.model||''}
+        ${ic('car')} ${v.plate||'—'} · ${v.brand||''} ${v.model||''}
       </div>
       <div class="card-meta-row">
-        📅 ${dt}${t.due ? ' · до ' + new Date(t.due).toLocaleDateString('ru',{day:'2-digit',month:'short'}) : ''}
-        ${(t.media || []).length ? ` · 📎 ${t.media.length}` : ''}
+        ${ic('calendar')} ${dt}${t.due ? ' · до ' + new Date(t.due).toLocaleDateString('ru',{day:'2-digit',month:'short'}) : ''}
+        ${(t.media || []).length ? ` · ${ic('clip')} ${t.media.length}` : ''}
+        ${tier ? `<span class="stale stale-${tier}">${ic('clock')} ${staleLabel(t)}</span>` : ''}
       </div>
     </div>
-    ${ctr ? `<div class="card-contractor">🔧 ${ctr.name}</div>` : ''}
+    ${ctr ? `<div class="card-contractor">${ic('wrench')} ${ctr.name}</div>` : ''}
   </div>`;
 }
 
@@ -1546,7 +1667,7 @@ function openModal(id) {
   const v   = VEHICLES.find(v => v.id === t.vehicleId) || {};
   const tp  = TICKET_TYPES[t.type] || {};
 
-  document.getElementById('m-icon').textContent  = tp.icon || '📋';
+  document.getElementById('m-icon').innerHTML  = ic(tp.icon || 'board');
   document.getElementById('m-num').textContent   = t.num + ' · ' + tp.name;
   document.getElementById('m-title').textContent = t.title;
 
@@ -1587,7 +1708,7 @@ function openModal(id) {
   ).join('');
 
   const typeOptions = Object.entries(TICKET_TYPES).map(([key, tp]) =>
-    `<option value="${key}" ${t.type === key ? 'selected' : ''}>${tp.icon} ${tp.name}</option>`
+    `<option value="${key}" ${t.type === key ? 'selected' : ''}>${tp.name}</option>`
   ).join('');
 
   document.getElementById('modal-body').innerHTML = `
@@ -1609,7 +1730,7 @@ function openModal(id) {
           </div>
         </div>
         <div class="info-item"><div class="info-label">Автомобиль</div>
-          <div class="info-val">🚗 ${v.plate||'—'} · ${v.brand||''} ${v.model||''}</div>
+          <div class="info-val">${ic('car')} ${v.plate||'—'} · ${v.brand||''} ${v.model||''}</div>
         </div>
         <div class="info-item"><div class="info-label">Приоритет</div>
           <div class="info-val" style="margin-top:4px">
@@ -1791,7 +1912,7 @@ function handleOverlayClick(e) {
 
 function updateModalTypeIcon(typeKey) {
   const tp = TICKET_TYPES[typeKey] || {};
-  document.getElementById('m-icon').textContent = tp.icon || '📋';
+  document.getElementById('m-icon').innerHTML = ic(tp.icon || 'board');
   const t = tickets.find(t => t.id === state.openTicketId);
   if (t) document.getElementById('m-num').textContent = t.num + ' · ' + tp.name;
 }
@@ -1803,7 +1924,7 @@ async function saveTicketToServer(t, successMsg) {
     Object.assign(t, fromServerTicket(saved));
     if (successMsg) showToast(successMsg);
   } catch (err) {
-    showToast('❌ Не сохранено: ' + err.message);
+    showToast('Не сохранено: ' + err.message, 'err');
   }
   renderKanban();
   if (state.openTicketId === t.id) openModal(t.id);
@@ -1842,13 +1963,13 @@ function addComment() {
 // ══════════════════════════════════════════
 function openNewTicketModal() {
   const typeOptions = Object.entries(TICKET_TYPES).map(([k,v]) =>
-    `<option value="${k}">${v.icon} ${v.name}</option>`).join('');
+    `<option value="${k}">${v.name}</option>`).join('');
   const vehicleOptions = VEHICLES.map(v =>
     `<option value="${v.id}">${v.plate} · ${v.brand} ${v.model}</option>`).join('');
   const userOptions = USERS.map(u =>
     `<option value="${u.id}">${u.name}</option>`).join('');
 
-  document.getElementById('m-icon').textContent  = '➕';
+  document.getElementById('m-icon').innerHTML  = ic('plus');
   document.getElementById('m-num').textContent   = 'Новая заявка';
   document.getElementById('m-title').textContent = 'Создание заявки';
   state.openTicketId = '__new__';
@@ -1893,7 +2014,7 @@ function openNewTicketModal() {
 async function saveModal() {
   if (state.openTicketId === '__new__') {
     const title = document.getElementById('new-title')?.value.trim();
-    if (!title) { showToast('⚠️ Введите заголовок'); return; }
+    if (!title) { showToast('Введите заголовок', 'warn'); return; }
     const payload = {
       type:     document.getElementById('new-type').value,
       title,
@@ -1907,9 +2028,9 @@ async function saveModal() {
     try {
       const saved = await api('/tickets', { method: 'POST', body: payload });
       tickets.unshift(fromServerTicket(saved));
-      showToast('✅ Заявка ' + saved.num + ' создана');
+      showToast('Заявка ' + saved.num + ' создана', 'ok');
     } catch (err) {
-      showToast('❌ Не создана: ' + err.message);
+      showToast('Не создана: ' + err.message, 'err');
     }
     renderKanban();
     return;
@@ -2044,9 +2165,9 @@ function renderDriversPage() {
         <option value="vacation" ${statusFilter==='vacation'  ?'selected':''}>В отпуске (${counts.vacation})</option>
         <option value="fired"    ${statusFilter==='fired'     ?'selected':''}>Уволен (${counts.fired})</option>
       </select>
-      <button class="btn btn-ghost" onclick="openAiImport()">🤖 Загрузка с ИИ</button>
-      <button class="btn btn-ghost" onclick="openImport('drivers')">📥 Из шаблона</button>
-      <button class="btn btn-primary" onclick="createDriver()">+ Водитель</button>
+      <button class="btn btn-ghost" onclick="openAiImport()">${ic('bot')} Загрузка с ИИ</button>
+      <button class="btn btn-ghost" onclick="openImport('drivers')"><svg class="ico"><use href="#i-download"/></svg> Из шаблона</button>
+      <button class="btn btn-primary" onclick="createDriver()"><svg class="ico"><use href="#i-plus"/></svg> Водитель</button>
     </div>
 
     ${filtered.length === 0
@@ -2063,7 +2184,7 @@ function renderDriversPage() {
             if (u.medical_expires && (new Date(u.medical_expires)-today)/86400000 < 30) docWarns.push('⚠ Мед. справка');
             return `<div class="fleet-card" onclick="openDriverModal('${u.id}')" style="display:flex;flex-direction:column;gap:12px">
               <div style="display:flex;align-items:center;gap:12px">
-                <div class="driver-ava-lg" style="background:${u.color}">${u.initials}</div>
+                <div class="driver-ava-lg" style="${avaStyle(u.color)}">${u.initials}</div>
                 <div style="flex:1;min-width:0">
                   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
                     <span style="font-weight:700;font-size:14px">${u.name}</span>
@@ -2086,7 +2207,7 @@ function renderDriversPage() {
                 </div>
                 <div style="padding:8px;background:var(--bg);border-radius:7px">
                   <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px">Стиль вождения</div>
-                  <div style="font-weight:600">⭐ ${u.driving_style}/5 · ${u.fuel_per_100km} л/100км</div>
+                  <div style="font-weight:600">${ic('star')} ${u.driving_style}/5 · ${u.fuel_per_100km} л/100км</div>
                 </div>
                 <div style="padding:8px;background:var(--bg);border-radius:7px">
                   <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px">Активные заявки</div>
@@ -2110,8 +2231,8 @@ function renderFleetPage() {
     const urg    = active.filter(t => t.priority==='URGENT').length;
     if (v.status==='repair') return `<span class="ibadge ib-repair">🔧 Ремонт</span>`;
     if (v.status==='idle')   return `<span class="ibadge ib-idle">⏸ Простой</span>`;
-    if (urg>0)  return `<span class="ibadge" style="background:#FBEDEB;color:#BE3A2F;border:1px solid #F0C7C2">🚨 ${urg} срочных</span>`;
-    if (active.length>0) return `<span class="ibadge" style="background:#FCF2E1;color:#B26A08;border:1px solid #EFD9B4">${ticketsWord(active.length)}</span>`;
+    if (urg>0)  return `<span class="ibadge" style="background:var(--red-light);color:var(--red);border:1px solid #F3C9CF">${ic('siren')} ${urg} срочных</span>`;
+    if (active.length>0) return `<span class="ibadge" style="background:var(--amber-light);color:var(--amber);border:1px solid #EBD8B0">${ticketsWord(active.length)}</span>`;
     return `<span class="ibadge ib-active">✓ ОК</span>`;
   };
 
@@ -2128,18 +2249,17 @@ function renderFleetPage() {
         <h2 style="font-size:15px;font-weight:700;margin-bottom:4px">Автомобили (${VEHICLES.length})</h2>
         <p style="font-size:12px;color:var(--text-muted)">Нажмите на карточку для просмотра и редактирования</p>
       </div>
-      <button class="btn btn-ghost" onclick="openAiImport()">🤖 Загрузка с ИИ</button>
-      <button class="btn btn-ghost" onclick="openImport('vehicles')">📥 Из шаблона</button>
-      <button class="btn btn-primary" onclick="createVehicle()">+ Автомобиль</button>
+      <button class="btn btn-ghost" onclick="openAiImport()">${ic('bot')} Загрузка с ИИ</button>
+      <button class="btn btn-ghost" onclick="openImport('vehicles')"><svg class="ico"><use href="#i-download"/></svg> Из шаблона</button>
+      <button class="btn btn-primary" onclick="createVehicle()"><svg class="ico"><use href="#i-plus"/></svg> Автомобиль</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:32px">
       ${VEHICLES.map(v => {
         const driver = USERS.find(u => u.id === v.assigned_user_id);
         const activeTickets = tickets.filter(t => t.vehicleId===v.id && t.status!=='DONE' && t.status!=='CANCELLED');
-        const typeIcons = {sedan:'🚗', suv:'🚙', van:'🚐', truck:'🚛'};
         return `<div class="fleet-card" onclick="openVehicleModal('${v.id}')">
           <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
-            <div style="font-size:30px;line-height:1">${typeIcons[v.type]||'🚗'}</div>
+            <div style="font-size:30px;line-height:1;color:var(--text-muted)">${ic('car')}</div>
             <div style="flex:1">
               <div style="font-weight:700;font-size:14px">${v.brand} ${v.model} ${v.year}</div>
               <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-top:1px">${v.plate}</div>
@@ -2148,14 +2268,14 @@ function renderFleetPage() {
           </div>
           <div style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text-muted)">
             <div>🛣 <strong style="color:var(--text)">${(v.mileage||0).toLocaleString('ru')} км</strong> · До ТО: ${v.next_service_km ? ((v.next_service_km - (v.mileage||0)) > 0 ? (v.next_service_km-(v.mileage||0)).toLocaleString('ru')+' км' : 'пора') : '—'}</div>
-            <div>📍 ${v.location||'—'}</div>
+            <div>${ic('pin')} ${v.location||'—'}</div>
             ${driver ? `<div style="display:flex;align-items:center;gap:5px;margin-top:2px">
-              <div style="width:18px;height:18px;border-radius:50%;background:${driver.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700">${driver.initials}</div>
+              <div style="width:18px;height:18px;border-radius:50%;${avaStyle(driver.color)};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700">${driver.initials}</div>
               ${driver.name}
             </div>` : ''}
           </div>
           ${activeTickets.length>0 ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px">
-            ${activeTickets.map(t=>`<span onclick="event.stopPropagation();openModal('${t.id}')" style="cursor:pointer;display:inline-flex;align-items:center;gap:3px;background:var(--bg);padding:2px 7px;border-radius:6px;font-size:11px;border:1px solid var(--border)">${TICKET_TYPES[t.type]?.icon||'📋'} ${t.num}</span>`).join('')}
+            ${activeTickets.map(t=>`<span onclick="event.stopPropagation();openModal('${t.id}')" style="cursor:pointer;display:inline-flex;align-items:center;gap:3px;background:var(--bg);padding:2px 7px;border-radius:6px;font-size:11px;border:1px solid var(--border)">${ic(TICKET_TYPES[t.type]?.icon || 'board')} ${t.num}</span>`).join('')}
           </div>` : ''}
         </div>`;
       }).join('')}
@@ -2172,7 +2292,7 @@ function renderFleetPage() {
         if (u.license_expires && (new Date(u.license_expires)-today)/(86400000)<60) docWarn.push('⚠ ВУ истекает');
         if (u.medical_expires && (new Date(u.medical_expires)-today)/(86400000)<30) docWarn.push('⚠ Мед. справка');
         return `<div class="driver-card" onclick="openDriverModal('${u.id}')">
-          <div class="driver-ava-lg" style="background:${u.color}">${u.initials}</div>
+          <div class="driver-ava-lg" style="${avaStyle(u.color)}">${u.initials}</div>
           <div style="flex:1">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
               <span style="font-weight:700;font-size:14px">${u.name}</span>
@@ -2180,14 +2300,14 @@ function renderFleetPage() {
               ${docWarn.map(w=>`<span style="font-size:10px;color:#BE3A2F;font-weight:700">${w}</span>`).join('')}
             </div>
             <div style="font-size:12px;color:var(--text-muted);display:flex;gap:14px;flex-wrap:wrap">
-              ${vehicle ? `<span>🚗 ${vehicle.plate} ${vehicle.brand} ${vehicle.model}</span>` : '<span>Без ТС</span>'}
-              <span>📱 ${u.telegram}</span>
+              ${vehicle ? `<span>${ic('car')} ${vehicle.plate} ${vehicle.brand} ${vehicle.model}</span>` : '<span>Без ТС</span>'}
+              <span>${ic('phone')} ${u.telegram}</span>
               <span>ВУ: ${u.license_category}</span>
               ${driverTickets>0 ? `<span style="color:var(--orange);font-weight:600">${driverTickets} ${plural(driverTickets,'активная заявка','активные заявки','активных заявок')}</span>` : ''}
             </div>
           </div>
           <div style="font-size:12px;color:var(--text-muted);text-align:right;flex-shrink:0">
-            <div>⭐ ${u.driving_style}/5</div>
+            <div>${ic('star')} ${u.driving_style}/5</div>
             <div>${u.fuel_per_100km} л/100км</div>
           </div>
         </div>`;
@@ -2228,7 +2348,6 @@ function openVehicleModal(id) {
   vModalContext = { type:'vehicle', id, activeTab:0 };
 
   const driver = USERS.find(u => u.id === v.assigned_user_id);
-  const typeIcons = {sedan:'🚗', suv:'🚙', van:'🚐', truck:'🚛'};
   const vTypeLabel = {sedan:'Седан', suv:'Внедорожник/SUV', van:'Микроавтобус/Фургон', truck:'Грузовик'};
   const statusLabel = {active:'Активен', repair:'На ремонте', idle:'Простой'};
   const statusClass = {active:'ib-active', repair:'ib-repair', idle:'ib-idle'};
@@ -2236,7 +2355,7 @@ function openVehicleModal(id) {
   const tlLabel = {maintenance:'ТО', repair:'Ремонт', tires:'Шины', accident:'ДТП'};
 
   document.getElementById('vm-icon-wrap').style.background = v.status==='active'?'#E7F4EC':v.status==='repair'?'#FDF0E3':'#F6F0E4';
-  document.getElementById('vm-icon').textContent = typeIcons[v.type]||'🚗';
+  document.getElementById('vm-icon').innerHTML = ic('car');
   document.getElementById('vm-subtitle').textContent = `${v.plate} · VIN: ${v.vin}`;
   document.getElementById('vm-title').textContent = `${v.brand} ${v.model} ${v.year}`;
   document.getElementById('vm-status-badge').innerHTML = `<span class="ibadge ${statusClass[v.status]||'ib-idle'}">${statusLabel[v.status]||v.status}</span>`;
@@ -2256,7 +2375,7 @@ function openVehicleModal(id) {
         <div class="fg"><div class="fg-label">Модель</div><input class="fg-input" id="v-model" value="${v.model}"></div>
       </div>
       <div class="frow3" style="margin-bottom:14px">
-        <div class="fg"><div class="fg-label">Год выпуска</div><input class="fg-input" id="v-year" value="${v.year}"></div>
+        <div class="fg"><div class="fg-label">Год выпуска</div><input class="fg-input" id="v-year" value="${v.year}" data-mask="year" inputmode="numeric" placeholder="2021"></div>
         <div class="fg"><div class="fg-label">Цвет</div><input class="fg-input" id="v-color" value="${v.color}"></div>
         <div class="fg"><div class="fg-label">Тип кузова</div>
           <select class="fg-select" id="v-type">
@@ -2268,8 +2387,8 @@ function openVehicleModal(id) {
         </div>
       </div>
       <div class="frow" style="margin-bottom:14px">
-        <div class="fg"><div class="fg-label">Госномер</div><input class="fg-input" id="v-plate" value="${v.plate}"></div>
-        <div class="fg"><div class="fg-label">VIN</div><input class="fg-input" id="v-vin" value="${v.vin}" style="font-family:monospace"></div>
+        <div class="fg"><div class="fg-label">Госномер</div><input class="fg-input" id="v-plate" value="${v.plate}" data-mask="plate" data-required placeholder="А123ВЕ777" style="font-family:var(--fd-font-mono);text-transform:uppercase"></div>
+        <div class="fg"><div class="fg-label">VIN</div><input class="fg-input" id="v-vin" value="${v.vin}" data-mask="vin" placeholder="17 знаков" style="font-family:var(--fd-font-mono);text-transform:uppercase"></div>
       </div>
       <div style="background:var(--bg);border-radius:9px;padding:14px;margin-bottom:14px">
         <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Габариты и масса</div>
@@ -2305,7 +2424,7 @@ function openVehicleModal(id) {
         <div class="fg"><div class="fg-label">Текущее местоположение</div><input class="fg-input" id="v-location" value="${v.location||''}"></div>
       </div>
       <div class="frow" style="margin-bottom:14px">
-        <div class="fg"><div class="fg-label">Пробег, км</div><input class="fg-input" id="v-mileage" type="number" value="${v.mileage}"></div>
+        <div class="fg"><div class="fg-label">Пробег, км</div><input class="fg-input" id="v-mileage" value="${v.mileage}" data-mask="digits" inputmode="numeric" placeholder="128000"></div>
         <div class="fg"><div class="fg-label">Пробег до след. ТО, км</div><input class="fg-input" id="v-nextservicekm" type="number" value="${v.next_service_km}"></div>
       </div>
       <div style="margin-top:8px">
@@ -2410,6 +2529,7 @@ function openVehicleModal(id) {
       </div>
     </div>
   `;
+  bindFields(document.getElementById('vm-body'));
 
   document.getElementById('vmodal-overlay').classList.add('open');
 }
@@ -2417,7 +2537,7 @@ function openVehicleModal(id) {
 async function addVehicleHistory(vehicleId) {
   const v = VEHICLES.find(v => v.id === vehicleId);
   const desc = document.getElementById('h-desc').value.trim();
-  if (!v || !desc) { showToast('⚠ Введите описание'); return; }
+  if (!v || !desc) { showToast('Введите описание', 'warn'); return; }
   v.history = [{
     date: document.getElementById('h-date').value,
     type: document.getElementById('h-type').value,
@@ -2426,9 +2546,9 @@ async function addVehicleHistory(vehicleId) {
   try {
     const saved = await api(`/vehicles/${v.id}`, { method: 'PATCH', body: v });
     Object.assign(v, fromServerVehicle(saved));
-    showToast('✅ Запись добавлена');
+    showToast('Запись добавлена', 'ok');
   } catch (err) {
-    showToast('❌ Не сохранено: ' + err.message);
+    showToast('Не сохранено: ' + err.message, 'err');
   }
   openVehicleModal(vehicleId);
 }
@@ -2452,7 +2572,7 @@ function openContractorModal(id) {
   document.getElementById('vm-subtitle').textContent = 'Подрядчик';
   document.getElementById('vm-title').textContent = c.name;
   document.getElementById('vm-status-badge').innerHTML = activeTickets.length
-    ? `<span class="ibadge" style="background:#FCF2E1;color:#B26A08;border:1px solid #EFD9B4">${activeTickets.length} в работе</span>`
+    ? `<span class="ibadge" style="background:var(--amber-light);color:var(--amber);border:1px solid #EBD8B0">${activeTickets.length} в работе</span>`
     : `<span class="ibadge ib-active">Свободен</span>`;
   document.getElementById('vm-footer-info').textContent =
     `Заявок всего: ${ctrTickets.length} · Активных: ${activeTickets.length}`;
@@ -2464,7 +2584,7 @@ function openContractorModal(id) {
   const specCheckboxes = Object.entries(TICKET_TYPES).map(([key, tp]) => `
     <label style="display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--bg);border-radius:7px;font-size:12px;cursor:pointer">
       <input type="checkbox" class="c-spec" value="${key}" ${specs.includes(key)?'checked':''} style="cursor:pointer">
-      ${tp.icon} ${tp.name}
+      ${ic(tp.icon)} ${tp.name}
     </label>`).join('');
 
   const STATUS_NAMES = { NEW:'Новая', IN_PROGRESS:'В работе', WAITING:'Ожидание', DONE:'Выполнено', CANCELLED:'Отменена' };
@@ -2573,13 +2693,14 @@ function openContractorModal(id) {
             const v  = VEHICLES.find(v => v.id === t.vehicleId);
             return `<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer"
                         onclick="closeVModal();setTimeout(()=>openModal('${t.id}'),100)">
-              <span style="font-size:18px">${tp.icon||'📋'}</span>
+              <span style="font-size:18px">${ic(tp.icon || 'board')}</span>
               <div style="flex:1;min-width:0">
                 <div style="font-size:13px;font-weight:600">${t.num} · ${t.title||''}</div>
                 <div style="font-size:11px;color:var(--text-muted)">${v?v.plate:'—'} · ${new Date(t.created).toLocaleDateString('ru')}</div>
               </div>
               <span style="font-size:11px;color:var(--text-muted);white-space:nowrap">${STATUS_NAMES[t.status]||t.status}</span>
             </div>`;
+  bindFields(document.getElementById('vm-body'));
           }).join('')}
     </div>
   `;
@@ -2622,7 +2743,7 @@ async function deleteContractor(id) {
     renderContractorsPage();
     showToast('Подрядчик удалён');
   } catch (err) {
-    showToast('❌ Не удалён: ' + err.message);
+    showToast('Не удалён: ' + err.message, 'err');
   }
 }
 
@@ -2630,9 +2751,9 @@ async function saveContractorToServer(c) {
   try {
     const saved = await api(`/contractors/${c.id}`, { method: 'PATCH', body: c });
     Object.assign(c, fromServerContractor(saved));
-    showToast('✅ Данные подрядчика сохранены');
+    showToast('Данные подрядчика сохранены', 'ok');
   } catch (err) {
-    showToast('❌ Не сохранено: ' + err.message);
+    showToast('Не сохранено: ' + err.message, 'err');
   }
   refreshCurrentPage();
 }
@@ -2681,12 +2802,12 @@ function openDriverModal(id) {
         </div>
       </div>
       <div class="frow" style="margin-bottom:14px">
-        <div class="fg"><div class="fg-label">Телефон</div><input class="fg-input" id="d-phone" value="${u.phone}"></div>
-        <div class="fg"><div class="fg-label">Email</div><input class="fg-input" id="d-email" value="${u.email}"></div>
+        <div class="fg"><div class="fg-label">Телефон</div><input class="fg-input" id="d-phone" value="${u.phone}" data-mask="phone" type="tel" inputmode="tel" placeholder="+7 900 000-00-00"></div>
+        <div class="fg"><div class="fg-label">Email</div><input class="fg-input" id="d-email" value="${u.email}" data-mask="email" type="email" inputmode="email" placeholder="ivan@company.ru"></div>
       </div>
       <div class="frow">
         <div class="fg"><div class="fg-label">Telegram</div>
-          <input class="fg-input" id="d-telegram" value="${u.telegram}" placeholder="ник без @"></div>
+          <input class="fg-input" id="d-telegram" value="${u.telegram}" data-mask="telegram" placeholder="ник без @"></div>
         <div class="fg"><div class="fg-label">MAX</div>
           <input class="fg-input" id="d-max" value="${u.max_username ? '@' + u.max_username : ''}" placeholder="ник без @"></div>
       </div>
@@ -2702,7 +2823,7 @@ function openDriverModal(id) {
       <div style="margin-bottom:16px">
         <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.01em;margin-bottom:10px">Водительское удостоверение</div>
         <div class="frow">
-          <div class="fg"><div class="fg-label">Серия и номер</div><input class="fg-input" id="d-licnum" value="${u.license_number}" style="font-family:monospace"></div>
+          <div class="fg"><div class="fg-label">Серия и номер</div><input class="fg-input" id="d-licnum" value="${u.license_number}" data-mask="license" inputmode="numeric" placeholder="12 34 567890" style="font-family:var(--fd-font-mono)"></div>
           <div class="fg"><div class="fg-label">Категории</div><input class="fg-input" id="d-liccat" value="${u.license_category}"></div>
         </div>
         <div class="dl-row"><span class="dl-label">📋 Срок действия ВУ</span><div style="display:flex;align-items:center;gap:8px"><input type="date" id="d-licexp" value="${u.license_expires||''}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">${dlBadge(u.license_expires)}</div></div>
@@ -2753,10 +2874,11 @@ function openDriverModal(id) {
         ${activeTickets.length>0 ? activeTickets.map(t=>{
           const v2=VEHICLES.find(v=>v.id===t.vehicleId);
           return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;cursor:pointer;border:1px solid var(--border)" onclick="closeVModal();setTimeout(()=>openModal('${t.id}'),100)">
-            <span style="font-size:16px">${TICKET_TYPES[t.type]?.icon||'📋'}</span>
+            <span style="font-size:16px">${ic(TICKET_TYPES[t.type]?.icon || 'board')}</span>
             <div style="flex:1"><div style="font-size:12px;font-weight:600">${t.num} · ${t.title}</div><div style="font-size:11px;color:var(--text-muted)">${v2?v2.plate:''}</div></div>
             <span style="font-size:11px;color:var(--blue)">Открыть →</span>
-          </div>`;}).join('')
+          </div>`;
+  bindFields(document.getElementById('vm-body'));}).join('')
         : '<div style="font-size:12px;color:var(--text-muted);padding:12px 0">Активных заявок нет</div>'}
       </div>
       <div style="display:flex;gap:16px;padding:12px;background:var(--bg);border-radius:9px;margin-top:12px">
@@ -2911,45 +3033,86 @@ function refreshCurrentPage() {
 
 // ── Создание записей ───────────────────────────────────────
 async function createDriver() {
-  const name = prompt('ФИО водителя:');
-  if (!name || !name.trim()) return;
+  const r = await askForm({
+    title: 'Новый водитель',
+    note:  'Права и документы — в карточке после создания.',
+    submit:'Добавить водителя',
+    fields: [
+      { name:'name',  label:'Фамилия, имя и отчество', required:true, placeholder:'Иванов Алексей Петрович' },
+      { name:'phone', label:'Телефон', mask:'phone', inputmode:'tel', placeholder:'+7 900 000-00-00' },
+      { name:'telegram', label:'Ник в Telegram', mask:'telegram', placeholder:'без @' },
+      { name:'status', label:'Статус', value:'active', options:[
+        { value:'active',   label:'Работает'  },
+        { value:'vacation', label:'В отпуске' },
+        { value:'sick',     label:'Болеет'    },
+      ]},
+    ],
+  });
+  if (!r) return;
   try {
-    const saved = await api('/drivers', { method: 'POST', body: { name: name.trim(), status: 'active' } });
+    const saved = await api('/drivers', { method: 'POST', body: {
+      name: r.name, phone: r.phone || null, telegram: r.telegram || null, status: r.status } });
     USERS.push(fromServerDriver(saved));
     renderDriversPage();
     openDriverModal(saved.id);
-    showToast('✅ Водитель добавлен — заполните карточку');
+    showToast('Водитель добавлен — заполните карточку', 'ok');
   } catch (err) {
-    showToast('❌ Не добавлен: ' + err.message);
+    showToast('Не добавлен: ' + err.message, 'err');
   }
 }
 
 async function createContractor() {
-  const name = prompt('Название подрядчика:');
-  if (!name || !name.trim()) return;
+  const r = await askForm({
+    title: 'Новый подрядчик',
+    note:  'Специализации и договор — в карточке.',
+    submit:'Добавить подрядчика',
+    fields: [
+      { name:'name',  label:'Название', required:true, placeholder:'СТО «Авторем»' },
+      { name:'phone', label:'Телефон',  mask:'phone', inputmode:'tel', placeholder:'+7 495 000-00-00' },
+    ],
+  });
+  if (!r) return;
   try {
-    const saved = await api('/contractors', { method: 'POST', body: { name: name.trim() } });
+    const saved = await api('/contractors', { method: 'POST', body: { name: r.name, phone: r.phone || null } });
     CONTRACTORS.push(fromServerContractor(saved));
     renderContractorsPage();
     openContractorModal(saved.id);
-    showToast('✅ Подрядчик добавлен — заполните карточку');
+    showToast('Подрядчик добавлен — заполните карточку', 'ok');
   } catch (err) {
-    showToast('❌ Не добавлен: ' + err.message);
+    showToast('Не добавлен: ' + err.message, 'err');
   }
 }
 
 async function createVehicle() {
-  const plate = prompt('Гос. номер автомобиля:');
-  if (!plate || !plate.trim()) return;
+  const r = await askForm({
+    title: 'Новый автомобиль',
+    note:  'Остальное можно заполнить в карточке.',
+    submit:'Добавить автомобиль',
+    fields: [
+      { name:'plate', label:'Госномер', mask:'plate', required:true,
+        placeholder:'А123ВЕ777', style:'font-family:var(--fd-font-mono);text-transform:uppercase' },
+      { name:'brand', label:'Марка',  placeholder:'Toyota' },
+      { name:'model', label:'Модель', placeholder:'Camry'  },
+      { name:'year',  label:'Год выпуска', mask:'year', inputmode:'numeric', placeholder:'2021' },
+      { name:'status', label:'Статус', value:'active', options:[
+        { value:'active',  label:'В работе'   },
+        { value:'service', label:'На сервисе' },
+        { value:'idle',    label:'Простой'    },
+      ]},
+    ],
+  });
+  if (!r) return;
   try {
-    const saved = await api('/vehicles', { method: 'POST', body: { plate: plate.trim(), status: 'active' } });
+    const saved = await api('/vehicles', { method: 'POST', body: {
+      plate: r.plate, brand: r.brand || null, model: r.model || null,
+      year: r.year ? +r.year : null, status: r.status } });
     VEHICLES.push(fromServerVehicle(saved));
     renderFleetPage();
     populateVehicleFilter(true);
     openVehicleModal(saved.id);
-    showToast('✅ Автомобиль добавлен — заполните карточку');
+    showToast('Автомобиль добавлен — заполните карточку', 'ok');
   } catch (err) {
-    showToast('❌ Не добавлен: ' + err.message);
+    showToast('Не добавлен: ' + err.message, 'err');
   }
 }
 
@@ -2979,9 +3142,9 @@ async function saveVehicleToServer(v) {
       { method: v.id ? 'PATCH' : 'POST', body: v });
     Object.assign(v, fromServerVehicle(saved));
     syncAssignmentLocal({ vehicleId: v.id, userId: v.assigned_user_id });
-    showToast('✅ Данные автомобиля сохранены');
+    showToast('Данные автомобиля сохранены', 'ok');
   } catch (err) {
-    showToast('❌ Не сохранено: ' + err.message);
+    showToast('Не сохранено: ' + err.message, 'err');
   }
   refreshCurrentPage();
 }
@@ -2992,9 +3155,9 @@ async function saveDriverToServer(u) {
       { method: u.id ? 'PATCH' : 'POST', body: u });
     Object.assign(u, fromServerDriver(saved));
     syncAssignmentLocal({ userId: u.id, vehicleId: u.assigned_vehicle });
-    showToast('✅ Данные водителя сохранены');
+    showToast('Данные водителя сохранены', 'ok');
   } catch (err) {
-    showToast('❌ Не сохранено: ' + err.message);
+    showToast('Не сохранено: ' + err.message, 'err');
   }
   refreshCurrentPage();
 }
@@ -3110,16 +3273,16 @@ function renderDriverConnections(channel, isActive) {
     const last = i === USERS.length - 1;
     return `
       <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;${last?'':'border-bottom:1px solid var(--border)'}">
-        <div class="driver-ava-lg" style="background:${u.color};width:36px;height:36px;font-size:13px">${u.initials}</div>
+        <div class="driver-ava-lg" style="${avaStyle(u.color)};width:36px;height:36px;font-size:13px">${u.initials}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:13px">${u.name}</div>
           <div style="font-size:11px;color:var(--text-muted)">${nick} · ${vehicle ? vehicle.plate+' '+vehicle.brand : 'Без ТС'}</div>
         </div>
-        <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;${connected?'background:#E7F4EC;color:#2E7D4F;border:1px solid #BFE0CB':'background:#F6F0E4;color:#918979;border:1px solid var(--border)'}">
-          ${connected ? '✅ Подключён' : '⬜ Ожидает'}
+        <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;${connected?'background:var(--green-light);color:var(--green);border:1px solid #BEE0CD':'background:var(--sunk);color:var(--text-soft);border:1px solid var(--border-2)'}">
+          ${connected ? ic('check-circle') + ' Подключён' : ic('clock') + ' Ожидает'}
         </span>
-        ${!connected && isActive ? `<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="inviteDriver('${u.id}','${channel}')">📨 Пригласить</button>` : ''}
-        <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="openDriverModal('${u.id}')">👤</button>
+        ${!connected && isActive ? `<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="inviteDriver('${u.id}','${channel}')">${ic('megaphone')} Пригласить</button>` : ''}
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="openDriverModal('${u.id}')" title="Карточка водителя">${ic('user')}</button>
       </div>`;
   }).join('');
 }
@@ -3244,14 +3407,14 @@ function copyBotLink() {
 
 function copyLink(link) {
   if (navigator.clipboard) navigator.clipboard.writeText(link);
-  showToast('📋 Ссылка скопирована в буфер обмена');
+  showToast('Ссылка скопирована в буфер обмена');
 }
 
 function inviteDriver(userId) {
   const u = USERS.find(u => u.id === userId);
   if (!u) return;
   const link = `https://t.me/${state.botUsername || 'your_fleet_bot'}`;
-  showToast(`📨 Ссылка для ${u.name.split(' ')[0]}: ${link} (скопируйте и отправьте в мессенджере)`);
+  showToast(`Ссылка для ${u.name.split(' ')[0]}: ${link} (скопируйте и отправьте в мессенджере)`);
 }
 
 // ══════════════════════════════════════════
@@ -3259,9 +3422,9 @@ function renderContractorsPage() {
   const html = `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
       <h2 style="font-size:15px;font-weight:700;flex:1">Подрядчики (${CONTRACTORS.length})</h2>
-      <button class="btn btn-ghost" onclick="openAiImport()">🤖 Загрузка с ИИ</button>
-      <button class="btn btn-ghost" onclick="openImport('contractors')">📥 Из шаблона</button>
-      <button class="btn btn-primary" onclick="createContractor()">+ Подрядчик</button>
+      <button class="btn btn-ghost" onclick="openAiImport()">${ic('bot')} Загрузка с ИИ</button>
+      <button class="btn btn-ghost" onclick="openImport('contractors')"><svg class="ico"><use href="#i-download"/></svg> Из шаблона</button>
+      <button class="btn btn-primary" onclick="createContractor()"><svg class="ico"><use href="#i-plus"/></svg> Подрядчик</button>
     </div>
     ${CONTRACTORS.length === 0 ? `<div style="text-align:center;color:var(--text-muted);padding:60px 20px;font-size:13px">
       <div style="font-size:40px;margin-bottom:12px">🔧</div>Подрядчиков пока нет</div>` : ''}
@@ -3279,7 +3442,7 @@ function renderContractorsPage() {
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
               <span style="font-weight:700;font-size:14px">${c.name}</span>
-              ${activeCount ? `<span class="ibadge" style="background:#FCF2E1;color:#B26A08;border:1px solid #EFD9B4">${activeCount} в работе</span>` : ''}
+              ${activeCount ? `<span class="ibadge" style="background:var(--amber-light);color:var(--amber);border:1px solid #EBD8B0">${activeCount} в работе</span>` : ''}
               ${contractBadge(c)}
             </div>
             <div style="font-size:12px;color:var(--text-muted)">${specs || 'Специализация не указана'}</div>
@@ -3452,7 +3615,7 @@ function handleImportFile(input) {
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const table = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false, raw: false });
 
-      if (table.length < 2) { showToast('⚠️ В файле нет строк с данными'); return; }
+      if (table.length < 2) { showToast('В файле нет строк с данными', 'warn'); return; }
 
       // Сопоставляем колонки по заголовку — порядок в файле может отличаться
       const header = table[0].map(h => String(h || '').trim().toLowerCase());
@@ -3464,7 +3627,7 @@ function handleImportFile(input) {
 
       const missing = importState.columns.filter(c => c.required && index[c.key] === undefined);
       if (missing.length) {
-        showToast(`⚠️ В файле нет колонки «${missing[0].title}» — скачайте шаблон заново`);
+        showToast(`В файле нет колонки «${missing[0].title}» — скачайте шаблон заново`, 'warn');
         return;
       }
 
@@ -3486,13 +3649,13 @@ function handleImportFile(input) {
         rows.push(obj);
       }
 
-      if (!rows.length) { showToast('⚠️ Заполненных строк не найдено'); return; }
+      if (!rows.length) { showToast('Заполненных строк не найдено', 'warn'); return; }
 
       importState.rows = rows;
       renderImportPreview();
     } catch (err) {
       console.error('[import]', err);
-      showToast('❌ Не удалось прочитать файл: ' + err.message);
+      showToast('Не удалось прочитать файл: ' + err.message, 'err');
     } finally {
       input.value = '';
     }
@@ -3541,7 +3704,7 @@ async function runImport() {
     populateVehicleFilter(true);
     renderImportResult(res);
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
     if (btn) { btn.disabled = false; btn.textContent = 'Повторить'; }
   }
 }
@@ -3617,9 +3780,9 @@ function avaStyle(bg) {
   const h = String(bg || '').replace('#', '');
   if (h.length !== 6) return 'background:#918979;color:#fff';
   let rgb = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
-  const WHITE = [255, 255, 255], DARK = [36, 31, 27];
-  if (contrast(rgb, DARK) >= 4.5) return `background:${bg};color:#241F1B`;
-  for (let i = 0; i < 12 && contrast(rgb, WHITE) < 4.5; i++) rgb = rgb.map(c => Math.round(c * 0.88));
+  const WHITE = [255, 255, 255], DARK = [15, 30, 56];
+  if (contrast(rgb, DARK) >= 4.6) return `background:${bg};color:#0F1E38`;
+  for (let i = 0; i < 30 && contrast(rgb, WHITE) < 4.6; i++) rgb = rgb.map(c => Math.round(c * 0.9));
   const hex = '#' + rgb.map(c => c.toString(16).padStart(2, '0')).join('');
   return `background:${hex};color:#fff`;
 }
@@ -3865,7 +4028,7 @@ async function applyAiImport() {
     payload[kind] = rows.filter((_, i) => checked[i] !== false);
   }
   const total = payload.drivers.length + payload.vehicles.length + payload.contractors.length;
-  if (!total) { showToast('⚠️ Не выбрано ни одной строки'); return; }
+  if (!total) { showToast('Не выбрано ни одной строки', 'warn'); return; }
 
   const btn = document.getElementById('ai-apply');
   if (btn) { btn.disabled = true; btn.textContent = 'Загружаем…'; }
@@ -3877,7 +4040,7 @@ async function applyAiImport() {
     populateVehicleFilter(true);
     renderAiResult(res);
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
     if (btn) { btn.disabled = false; btn.textContent = 'Повторить'; }
   }
 }
@@ -3933,7 +4096,7 @@ async function renderBroadcastPage() {
 
   let recipients = [];
   try {
-    recipients = (await api('/broadcast/recipients')).recipients;
+    recipients = (await api('/broadcast/recipients')).recipients ?? [];
   } catch (err) {
     document.getElementById('other-content').innerHTML =
       `<div style="padding:30px;text-align:center;color:#BE3A2F">${err.message}</div>`;
@@ -4026,8 +4189,8 @@ function toggleAllRecipients(on) {
 
 async function sendBroadcast() {
   const text = document.getElementById('bc-text').value.trim();
-  if (!text) { showToast('⚠️ Введите текст сообщения'); return; }
-  if (!broadcastSelected.size) { showToast('⚠️ Выберите хотя бы одного получателя'); return; }
+  if (!text) { showToast('Введите текст сообщения', 'warn'); return; }
+  if (!broadcastSelected.size) { showToast('Выберите хотя бы одного получателя', 'warn'); return; }
 
   if (!confirm(`Отправить сообщение ${broadcastSelected.size} сотрудникам?\n\nОтменить отправку будет нельзя.`))
     return;
@@ -4054,7 +4217,7 @@ async function sendBroadcast() {
         <button class="btn btn-primary" onclick="broadcastSelected=null;renderBroadcastPage()">Новая рассылка</button>
       </div>`;
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
     btn.disabled = false;
     btn.innerHTML = `📤 Отправить <span id="bc-selected">${broadcastSelected.size}</span> получателям`;
   }
@@ -4191,7 +4354,7 @@ async function toggleDesktopNotifications(el) {
       return;
     }
     updatePref('desktop', true);
-    showToast('✅ Уведомления системы включены');
+    showToast('Уведомления системы включены', 'ok');
   } catch (_) {
     el.checked = false;
   }
@@ -4254,9 +4417,9 @@ async function saveCompanySettings() {
       phone: val('phone'), email: val('email'), website: val('website'), director: val('director'),
     }});
     document.getElementById('sidebar-company').textContent = settingsData.company.name;
-    showToast('✅ Данные компании сохранены');
+    showToast('Данные компании сохранены', 'ok');
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
   }
 }
 
@@ -4334,9 +4497,9 @@ async function saveNotificationSettings() {
   try {
     settingsData.notifications.settings =
       (await api('/settings/notifications', { method: 'PATCH', body })).settings;
-    showToast('✅ Настройки уведомлений сохранены');
+    showToast('Настройки уведомлений сохранены', 'ok');
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
   }
 }
 
@@ -4378,15 +4541,15 @@ function renderProfileSettings() {
 async function saveProfileSettings() {
   const name  = document.getElementById('p-name').value.trim();
   const email = document.getElementById('p-email').value.trim();
-  if (!name || !email) { showToast('⚠️ Заполните имя и e-mail'); return; }
+  if (!name || !email) { showToast('Заполните имя и e-mail', 'warn'); return; }
   try {
     const saved = await api('/settings/profile', { method: 'PATCH', body: { name, email } });
     Object.assign(state.currentAccount, saved);
     document.getElementById('sidebar-name').textContent = saved.name;
     document.getElementById('sidebar-ava').textContent  = saved.initials;
-    showToast('✅ Данные сохранены');
+    showToast('Данные сохранены', 'ok');
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
   }
 }
 
@@ -4394,14 +4557,14 @@ async function changePassword() {
   const oldP = document.getElementById('p-old').value;
   const nw   = document.getElementById('p-new').value;
   const nw2  = document.getElementById('p-new2').value;
-  if (!oldP || !nw) { showToast('⚠️ Заполните все поля'); return; }
-  if (nw !== nw2)   { showToast('⚠️ Новые пароли не совпадают'); return; }
+  if (!oldP || !nw) { showToast('Заполните все поля', 'warn'); return; }
+  if (nw !== nw2)   { showToast('Новые пароли не совпадают', 'warn'); return; }
   try {
     await api('/settings/password', { method: 'POST', body: { currentPassword: oldP, newPassword: nw } });
     ['p-old','p-new','p-new2'].forEach(id => document.getElementById(id).value = '');
-    showToast('✅ Пароль изменён');
+    showToast('Пароль изменён', 'ok');
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
   }
 }
 
@@ -4475,7 +4638,7 @@ async function inviteColleague() {
     settingsData.team = await api('/settings/team');
     renderTeamSettings();
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
   }
 }
 
@@ -4484,7 +4647,7 @@ async function reinvite(id) {
     const res = await api(`/settings/team/${id}/reinvite`, { method: 'POST' });
     showInviteLink(res);
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
   }
 }
 
@@ -4512,11 +4675,11 @@ function showInviteLink(res) {
 async function changeRole(id, role) {
   try {
     await api(`/settings/team/${id}`, { method: 'PATCH', body: { role } });
-    showToast('✅ Роль изменена');
+    showToast('Роль изменена', 'ok');
     settingsData.team = await api('/settings/team');
     renderTeamSettings();
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
     settingsData.team = await api('/settings/team').catch(() => settingsData.team);
     renderTeamSettings();
   }
@@ -4530,7 +4693,7 @@ async function removeColleague(id, email) {
     settingsData.team = await api('/settings/team');
     renderTeamSettings();
   } catch (err) {
-    showToast('❌ ' + err.message);
+    showToast('' + err.message, 'err');
   }
 }
 
@@ -4706,9 +4869,208 @@ function notifyDesktop(list) {
 // ══════════════════════════════════════════
 //  TOAST
 // ══════════════════════════════════════════
-function showToast(msg) {
+// ══════════════════════════════════════════
+//  МАЛЕНЬКАЯ ФОРМА ВМЕСТО prompt()
+// ══════════════════════════════════════════
+// Системный prompt() принимает любую строку и не умеет ни маски, ни подсказки,
+// ни «обязательно». Здесь то же самое, но полем с проверкой.
+function askForm({ title, note, fields, submit }) {
+  return new Promise(resolve => {
+    const ov = document.getElementById('ask-overlay');
+    const bd = document.getElementById('ask-body');
+    document.getElementById('ask-title').textContent = title;
+    document.getElementById('ask-note').textContent  = note || '';
+    document.getElementById('ask-note').style.display = note ? 'block' : 'none';
+    document.getElementById('ask-submit').textContent = submit || 'Добавить';
+
+    bd.innerHTML = fields.map((f, i) => `
+      <div class="fg">
+        <div class="fg-label">${f.label}${f.required ? ' <span style="color:var(--red)">*</span>' : ''}</div>
+        ${f.options
+          ? `<select class="fg-input" id="ask-f${i}">${f.options.map(o =>
+              `<option value="${o.value}"${o.value === f.value ? ' selected' : ''}>${o.label}</option>`).join('')}</select>`
+          : `<input class="fg-input" id="ask-f${i}" value="${f.value || ''}"
+               ${f.mask ? `data-mask="${f.mask}"` : ''} ${f.required ? 'data-required' : ''}
+               ${f.inputmode ? `inputmode="${f.inputmode}"` : ''}
+               placeholder="${f.placeholder || ''}" ${f.style ? `style="${f.style}"` : ''}>`}
+      </div>`).join('');
+    bindFields(bd);
+
+    const close = (val) => {
+      ov.classList.remove('open');
+      document.removeEventListener('keydown', onKey);
+      resolve(val);
+    };
+    const onKey = e => {
+      if (e.key === 'Escape') close(null);
+      if (e.key === 'Enter' && e.target.tagName !== 'SELECT') submitNow();
+    };
+    function submitNow() {
+      let ok = true;
+      const out = {};
+      fields.forEach((f, i) => {
+        const el = document.getElementById('ask-f' + i);
+        if (!el.tagName || el.tagName !== 'SELECT') {
+          if (!checkField(el, f.mask || '', f.required)) ok = false;
+        }
+        out[f.name] = el.value.trim();
+      });
+      if (!ok) return;
+      close(out);
+    }
+    document.getElementById('ask-submit').onclick = submitNow;
+    document.getElementById('ask-cancel').onclick = () => close(null);
+    ov.onclick = e => { if (e.target === ov) close(null); };
+    document.addEventListener('keydown', onKey);
+    ov.classList.add('open');
+    setTimeout(() => document.getElementById('ask-f0')?.focus(), 40);
+  });
+}
+
+// ══════════════════════════════════════════
+//  МАСКИ И ПРОВЕРКИ ПОЛЕЙ
+// ══════════════════════════════════════════
+// Поле, куда можно вписать что угодно, рано или поздно наполняется чем угодно,
+// и чинить это потом приходится руками в базе. Маска правит ввод на лету и
+// ничего не запрещает набирать — она приводит к одному виду; проверка на
+// blur говорит, что именно не так и каким должно быть.
+
+// Госномер РФ. Буквы — только те 12, что совпадают по начертанию с латиницей,
+// поэтому латинскую раскладку принимаем и переводим сама.
+const PLATE_RU = 'АВЕКМНОРСТУХ';
+const PLATE_LAT = { A:'А', B:'В', E:'Е', K:'К', M:'М', H:'Н', O:'О', P:'Р', C:'С', T:'Т', Y:'У', X:'Х' };
+function plateChar(ch) {
+  const up = ch.toUpperCase();
+  return PLATE_LAT[up] || up;
+}
+function maskPlate(el) {
+  const raw = [...el.value].map(plateChar).filter(c => PLATE_RU.includes(c) || /[0-9]/.test(c));
+  let out = '';
+  for (const c of raw) {
+    const i = out.length;
+    const isLetter = PLATE_RU.includes(c), isDigit = /[0-9]/.test(c);
+    if (i === 0 && isLetter) out += c;                       // А
+    else if (i >= 1 && i <= 3 && isDigit) out += c;          // 123
+    else if (i >= 4 && i <= 5 && isLetter) out += c;         // ВЕ
+    else if (i >= 6 && i <= 8 && isDigit) out += c;          // 777
+  }
+  el.value = out;
+}
+const plateValid = v => /^[АВЕКМНОРСТУХ]\d{3}[АВЕКМНОРСТУХ]{2}\d{2,3}$/.test(v);
+
+// VIN: 17 знаков, без I, O и Q — их исключили, чтобы не путать с 1 и 0.
+function maskVin(el) {
+  el.value = el.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '').slice(0, 17);
+}
+const vinValid = v => v.length === 17;
+
+function maskDigits(el, max) {
+  el.value = el.value.replace(/\D/g, '').slice(0, max || 12);
+}
+function maskYear(el) { maskDigits(el, 4); }
+const yearValid = v => { const n = +v; return n >= 1950 && n <= new Date().getFullYear() + 1; };
+
+// Телефон: человек пишет как привык — 8, +7, 7, со скобками. Приводим сами.
+function maskPhone(el) {
+  let d = el.value.replace(/\D/g, '');
+  if (d.startsWith('8')) d = '7' + d.slice(1);
+  if (d.startsWith('9') && d.length <= 10) d = '7' + d;
+  d = d.slice(0, 11);
+  if (!d) { el.value = ''; return; }
+  if (d[0] !== '7') { el.value = '+' + d; return; }        // иностранный номер не трогаем
+  const p = d.slice(1);
+  let out = '+7';
+  if (p.length) out += ' ' + p.slice(0, 3);
+  if (p.length > 3) out += ' ' + p.slice(3, 6);
+  if (p.length > 6) out += '-' + p.slice(6, 8);
+  if (p.length > 8) out += '-' + p.slice(8, 10);
+  el.value = out;
+}
+const phoneValid = v => !v || v.replace(/\D/g, '').length >= 11;
+
+// Водительское удостоверение: 10 цифр, показываем группами 12 34 567890
+function maskLicense(el) {
+  const d = el.value.replace(/\D/g, '').slice(0, 10);
+  el.value = d.length > 4 ? `${d.slice(0,2)} ${d.slice(2,4)} ${d.slice(4)}`
+           : d.length > 2 ? `${d.slice(0,2)} ${d.slice(2)}` : d;
+}
+const licenseValid = v => !v || v.replace(/\D/g, '').length === 10;
+
+function maskTelegram(el) {
+  el.value = el.value.replace(/^@+/, '').replace(/[^A-Za-z0-9_]/g, '').slice(0, 32);
+}
+const telegramValid = v => !v || /^[A-Za-z0-9_]{5,32}$/.test(v);
+
+const emailValid = v => !v || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+
+// Проверки, которые поле объявляет о себе само
+const CHECKS = {
+  plate:    { ok: plateValid,    hint: 'Формат: А123ВЕ777 — буква, три цифры, две буквы, регион' },
+  vin:      { ok: vinValid,      hint: '17 знаков, латиница и цифры, без I, O и Q' },
+  year:     { ok: yearValid,     hint: 'Год от 1950 до ' + (new Date().getFullYear() + 1) },
+  phone:    { ok: phoneValid,    hint: 'Не хватает цифр — нужно 11' },
+  license:  { ok: licenseValid,  hint: '10 цифр: серия и номер' },
+  telegram: { ok: telegramValid, hint: 'От 5 до 32 знаков: латиница, цифры и _' },
+  email:    { ok: emailValid,    hint: 'Похоже на опечатку в адресе' },
+};
+
+// Ошибку показываем под полем и словами, а не одной красной рамкой:
+// рамка сообщает, что что-то не так, но не что именно.
+function checkField(el, kind, required) {
+  const rule = CHECKS[kind];
+  const v = el.value.trim();
+  const empty = !v;
+  const bad = required && empty ? true : (!empty && rule && !rule.ok(v));
+  el.classList.toggle('bad', !!bad);
+  let note = el.nextElementSibling;
+  if (!note || !note.classList.contains('fg-err')) {
+    note = document.createElement('div');
+    note.className = 'fg-err';
+    el.after(note);
+  }
+  note.textContent = bad ? (required && empty ? 'Поле обязательно' : rule.hint) : '';
+  note.style.display = bad ? 'block' : 'none';
+  return !bad;
+}
+
+// Вешаем маску и проверку одной строкой из разметки
+function bindField(el, kind, required) {
+  if (!el || el.dataset.bound) return;
+  el.dataset.bound = '1';
+  const masks = { plate: maskPlate, vin: maskVin, year: maskYear, phone: maskPhone,
+                  license: maskLicense, telegram: maskTelegram };
+  const m = masks[kind];
+  if (m) el.addEventListener('input', () => { const p = el.selectionStart; m(el); if (p < el.value.length) el.setSelectionRange(p, p); });
+  if (kind === 'digits') el.addEventListener('input', () => maskDigits(el));
+  el.addEventListener('blur', () => checkField(el, kind, required));
+}
+
+// Пройтись по контейнеру и связать всё, что помечено data-mask
+function bindFields(root) {
+  (root || document).querySelectorAll('[data-mask]').forEach(el =>
+    bindField(el, el.dataset.mask, el.hasAttribute('data-required')));
+}
+
+// Иконка в строку: в шаблонах JS иначе не вставить
+function ic(name, size) {
+  return `<svg class="ico"${size ? ` style="font-size:${size}"` : ''}><use href="#i-${name}"/></svg>`;
+}
+
+// Вид тоста задаётся вторым доводом, а не символом внутри текста: так иконка
+// красится под сообщение, а сам текст остаётся текстом и его можно перевести
+// или прочитать экранным диктором отдельно от значка.
+const TOAST_ICONS = { ok:'check-circle', err:'alert', warn:'alert', info:'board' };
+function showToast(msg, kind) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  const name = TOAST_ICONS[kind];
+  t.className = 'toast' + (kind ? ' toast-' + kind : '');
+  if (name) {
+    t.innerHTML = ic(name);                 // значок — разметкой
+    t.appendChild(document.createTextNode(' ' + msg));  // текст — узлом, без вставки разметки
+  } else {
+    t.textContent = msg;
+  }
+  t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
@@ -4717,6 +5079,7 @@ function showToast(msg) {
 // ══════════════════════════════════════════
 (async function init() {
   state.prefs = loadPrefs();
+  bindFields(document.getElementById('auth-overlay'));
 
   // Esc и стрелки в просмотре вложений
   document.addEventListener('keydown', (e) => {
